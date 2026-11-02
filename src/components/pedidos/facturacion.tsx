@@ -85,11 +85,11 @@ function FacturableContent({ item }: { item: PedidoFacturable }) {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <div>
-          <p className="mb-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Chequeos</p>
+          <p className="mb-2.5 text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">Chequeos</p>
           <CheckList items={item.chequeos} />
         </div>
         <div>
-          <p className="mb-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="mb-2.5 text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
             Campos prellenados
           </p>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg bg-muted/60 p-3.5">
@@ -127,7 +127,10 @@ export async function FacturablesList() {
   if (items.length === 0) {
     return (
       <Card>
-        <EmptyState title="No hay pedidos para facturar" description="Cuando un pedido se confirma, aparece acá con sus chequeos." />
+        <EmptyState
+          title="No hay pedidos para facturar"
+          description="Cuando un pedido se confirma, aparece acá con sus chequeos."
+        />
       </Card>
     );
   }
@@ -208,7 +211,7 @@ export async function FacturasCard() {
                 <p className="text-xs text-muted-foreground">{factura.clienta}</p>
               </TableCell>
               <TableCell className="text-right tabular-nums">{formatCurrency(factura.total)}</TableCell>
-              <TableCell className="tabular-nums text-muted-foreground">
+              <TableCell className="text-muted-foreground tabular-nums">
                 <time dateTime={factura.emitidaAt}>{formatTime(factura.emitidaAt)}</time>
               </TableCell>
               <TableCell>
@@ -239,4 +242,3 @@ export function FacturasCardSkeleton() {
     </FacturasFrame>
   );
 }
-

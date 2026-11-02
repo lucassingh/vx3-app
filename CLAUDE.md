@@ -43,12 +43,12 @@ Conversaciones · M12 Clientas · M9 Pauta · M3 Bot · M4 Vidriera · M5 Pedido
 M6 Envíos · M7 Cobros · M8 Post-venta · M1 Productos · M2 Stock y compras ·
 M0 Configuración. Cada módulo es un **dominio** con los mismos archivos:
 
-| Qué | Dónde |
-| --- | --- |
-| Tipos y endpoints | `src/lib/api/contracts/<dominio>.ts` |
+| Qué                              | Dónde                                                    |
+| -------------------------------- | -------------------------------------------------------- |
+| Tipos y endpoints                | `src/lib/api/contracts/<dominio>.ts`                     |
 | Rutas y datos de la API simulada | `src/mocks/domains/<dominio>.ts` (+ `<dominio>.test.ts`) |
-| Componentes | `src/components/<dominio>/` |
-| Pantallas | `src/app/(dashboard)/<ruta>/page.tsx` |
+| Componentes                      | `src/components/<dominio>/`                              |
+| Pantallas                        | `src/app/(dashboard)/<ruta>/page.tsx`                    |
 
 Lo compartido: tipos de negocio en `src/lib/api/types.ts` (canal, estado del
 pedido, zona…), sus etiquetas y badges en `src/lib/domain.ts`, y los bloques

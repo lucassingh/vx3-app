@@ -90,7 +90,13 @@ export function toCatalogoProducto(producto: ProductoSeed): CatalogoProducto {
     stockPrendas: producto.stockPrendas,
     reservadoPrendas: producto.reservadoPrendas,
     presentaciones: presentaciones.map(({ codigo, label, prendas, precio, costo, listas, esBulto }) => ({
-      codigo, label, prendas, precio, costo, listas, esBulto,
+      codigo,
+      label,
+      prendas,
+      precio,
+      costo,
+      listas,
+      esBulto,
     })),
     fotos: fotosDe(producto),
     descripcion: {
@@ -128,10 +134,34 @@ function kpis(): Kpi[] {
   const repetidos = items.filter((item) => item.faltantes.some((f) => f.startsWith("SKU repetido"))).length;
   const sinMarca = items.filter((item) => !item.marca).length;
   return [
-    { id: "productos", label: "Productos en el catálogo", value: items.length, format: "number", hint: `${items.filter((item) => item.estado === "publicado").length} publicados en DUX` },
-    { id: "completos", label: "Completos para el bot", value: completos / items.length, format: "percent", hint: "Atributos, marca, tela y las 4 fotos" },
-    { id: "repetidos", label: "SKUs repetidos", value: repetidos, format: "number", hint: "Se resuelven antes de publicar" },
-    { id: "sin-marca", label: "Sin marca", value: sinMarca, format: "number", hint: "Tienen que existir en DUX escritas igual" },
+    {
+      id: "productos",
+      label: "Productos en el catálogo",
+      value: items.length,
+      format: "number",
+      hint: `${items.filter((item) => item.estado === "publicado").length} publicados en DUX`,
+    },
+    {
+      id: "completos",
+      label: "Completos para el bot",
+      value: completos / items.length,
+      format: "percent",
+      hint: "Atributos, marca, tela y las 4 fotos",
+    },
+    {
+      id: "repetidos",
+      label: "SKUs repetidos",
+      value: repetidos,
+      format: "number",
+      hint: "Se resuelven antes de publicar",
+    },
+    {
+      id: "sin-marca",
+      label: "Sin marca",
+      value: sinMarca,
+      format: "number",
+      hint: "Tienen que existir en DUX escritas igual",
+    },
   ];
 }
 
@@ -169,7 +199,13 @@ function control(): CatalogoControl[] {
       fallas: items
         .filter((item) => item.fotos.some((foto) => !foto.cargada))
         .map((item) =>
-          ref(item, `Falta: ${item.fotos.filter((foto) => !foto.cargada).map((foto) => foto.label.toLowerCase()).join(", ")}`),
+          ref(
+            item,
+            `Falta: ${item.fotos
+              .filter((foto) => !foto.cargada)
+              .map((foto) => foto.label.toLowerCase())
+              .join(", ")}`,
+          ),
         ),
     },
     {
@@ -204,17 +240,37 @@ function facetas(): CatalogoFacetas {
 
 /** Último correlativo de cada prefijo en DUX (el catálogo completo tiene más SKUs que la semilla). */
 const ULTIMO_EN_DUX: Record<string, number> = {
-  CJATN: 41, CJATG: 9, CJACN: 4, CJALN: 5, CAN: 18, CAG: 4, VN: 33, VG: 27, LN: 181, LG: 21,
-  CDTLN: 9, DSN: 5, BCN: 4, BRN: 2, UG: 9, BMN: 5, HB: 5, MTNH: 4, MSN: 7, MDTNN: 6, MLN: 10,
-  PVM: 5, IRTM: 6, ICTM: 1, MBL: 1,
+  CJATN: 41,
+  CJATG: 9,
+  CJACN: 4,
+  CJALN: 5,
+  CAN: 18,
+  CAG: 4,
+  VN: 33,
+  VG: 27,
+  LN: 181,
+  LG: 21,
+  CDTLN: 9,
+  DSN: 5,
+  BCN: 4,
+  BRN: 2,
+  UG: 9,
+  BMN: 5,
+  HB: 5,
+  MTNH: 4,
+  MSN: 7,
+  MDTNN: 6,
+  MLN: 10,
+  PVM: 5,
+  IRTM: 6,
+  ICTM: 1,
+  MBL: 1,
 };
 
 const prefijoDe = (sku: string) => sku.replace(/\d+$/, "");
 
 function proximoSku(prefijo: string, skus: string[]) {
-  const usados = skus
-    .filter((sku) => prefijoDe(sku) === prefijo)
-    .map((sku) => Number(sku.slice(prefijo.length)) || 0);
+  const usados = skus.filter((sku) => prefijoDe(sku) === prefijo).map((sku) => Number(sku.slice(prefijo.length)) || 0);
   return `${prefijo}${Math.max(ULTIMO_EN_DUX[prefijo] ?? 0, ...usados) + 1}`;
 }
 
@@ -238,7 +294,9 @@ function altaOpciones(): CatalogoAltaOpciones {
     const existente = rubro.subrubros.find((sub) => sub.nombre === producto.subrubro);
     if (!existente) {
       const prefijo = prefijoDe(producto.sku);
-      const conMarca = items.find((item) => item.subrubro === producto.subrubro && item.rubro === producto.rubro && item.marca);
+      const conMarca = items.find(
+        (item) => item.subrubro === producto.subrubro && item.rubro === producto.rubro && item.marca,
+      );
       rubro.subrubros.push({
         nombre: producto.subrubro,
         prefijo,
@@ -252,8 +310,42 @@ function altaOpciones(): CatalogoAltaOpciones {
     rubros: [...rubros.values()],
     marcas: facetas().marcas,
     proveedores: proveedores.map(({ id, nombre }) => ({ id, nombre })),
-    telas: ["Algodón", "Algodón lycra", "Algodón morley", "Encaje", "Lycra", "Microfibra", "Microfibra con encaje", "Segunda piel", "Térmica"],
-    colores: ["Blanco", "Negro", "Beige", "Rosa", "Rosa viejo", "Rosa claro", "Fucsia", "Rojo", "Bordó", "Azul", "Azul marino", "Celeste", "Verde", "Verde oliva", "Verde menta", "Gris", "Lila", "Violeta", "Salmón", "Amarillo", "Marrón", "Terracota", "Surtidos"],
+    telas: [
+      "Algodón",
+      "Algodón lycra",
+      "Algodón morley",
+      "Encaje",
+      "Lycra",
+      "Microfibra",
+      "Microfibra con encaje",
+      "Segunda piel",
+      "Térmica",
+    ],
+    colores: [
+      "Blanco",
+      "Negro",
+      "Beige",
+      "Rosa",
+      "Rosa viejo",
+      "Rosa claro",
+      "Fucsia",
+      "Rojo",
+      "Bordó",
+      "Azul",
+      "Azul marino",
+      "Celeste",
+      "Verde",
+      "Verde oliva",
+      "Verde menta",
+      "Gris",
+      "Lila",
+      "Violeta",
+      "Salmón",
+      "Amarillo",
+      "Marrón",
+      "Terracota",
+      "Surtidos",
+    ],
     aclaraciones: [
       "diseño de la foto, colores sujetos a stock",
       "colores y diseños de la foto",
@@ -266,11 +358,9 @@ function altaOpciones(): CatalogoAltaOpciones {
 
 function nuevoProducto(input: Partial<CatalogoAltaInput>, estado: CatalogoEstado): ProductoSeed {
   const familia = getCatalogo().productos.find((item) => item.rubro === input.rubro)?.familia ?? "lenceria";
-  const faltantes = [
-    !input.marca && "Marca",
-    !input.tela && "Tela",
-    estado === "borrador" && "Fotos",
-  ].filter((item): item is string => Boolean(item));
+  const faltantes = [!input.marca && "Marca", !input.tela && "Tela", estado === "borrador" && "Fotos"].filter(
+    (item): item is string => Boolean(item),
+  );
   return {
     sku: (input.sku ?? "").trim().toUpperCase(),
     nombre: input.nombre ?? "",
@@ -307,7 +397,9 @@ async function publicar(request: Request) {
 
   const catalogo = getCatalogo();
   const sku = (input.sku ?? "").trim().toUpperCase();
-  const existentes = catalogo.productos.filter((item) => item.estado !== "borrador" || item.sku !== sku).map((item) => item.sku);
+  const existentes = catalogo.productos
+    .filter((item) => item.estado !== "borrador" || item.sku !== sku)
+    .map((item) => item.sku);
 
   if (paso === "dux") {
     const [error] = erroresDeAlta(input, existentes);
@@ -324,7 +416,10 @@ async function guardarBorrador(request: Request) {
   const sku = (input?.sku ?? "").trim().toUpperCase();
   if (!sku) return errorResponse(422, "Para guardar el borrador hace falta al menos el SKU.");
   const catalogo = getCatalogo();
-  catalogo.productos = [nuevoProducto(input ?? {}, "borrador"), ...catalogo.productos.filter((item) => item.sku !== sku)];
+  catalogo.productos = [
+    nuevoProducto(input ?? {}, "borrador"),
+    ...catalogo.productos.filter((item) => item.sku !== sku),
+  ];
   return Response.json({ sku, paso: "borrador", detalle: "Borrador guardado en la app. No se publicó en DUX." });
 }
 
@@ -345,7 +440,12 @@ function combos(url: URL): CatalogoCombosResultado {
     .productos.filter((item) => item.ventas30dBultos > 0)
     .map((item) => ({ item, bultos: Math.max(0, bultosDisponibles(item)), semanal: item.ventas30dBultos / 4 }))
     .filter(({ bultos, semanal }) => bultos < semanal)
-    .map(({ item, bultos, semanal }) => ({ sku: item.sku, nombre: item.nombre, bultos, rotacionSemanal: Math.round(semanal * 10) / 10 }));
+    .map(({ item, bultos, semanal }) => ({
+      sku: item.sku,
+      nombre: item.nombre,
+      bultos,
+      rotacionSemanal: Math.round(semanal * 10) / 10,
+    }));
   const enQuiebre = new Set(quiebres.map((item) => item.sku));
 
   // Lo que está en quiebre no entra en un combo, salvo que se lo fuerce.
@@ -398,8 +498,20 @@ function combos(url: URL): CatalogoCombosResultado {
     }
     if (elegidos.length < 4 || total < COMBO_MIN) continue;
 
-    const firma = elegidos.map((c) => c.item.sku).toSorted().join("+");
-    if (resultado.some((combo) => combo.items.map((i) => i.sku).toSorted().join("+") === firma)) continue;
+    const firma = elegidos
+      .map((c) => c.item.sku)
+      .toSorted()
+      .join("+");
+    if (
+      resultado.some(
+        (combo) =>
+          combo.items
+            .map((i) => i.sku)
+            .toSorted()
+            .join("+") === firma,
+      )
+    )
+      continue;
 
     for (const c of elegidos) apariciones.set(c.item.sku, (apariciones.get(c.item.sku) ?? 0) + 1);
     const costo = elegidos.reduce((sum, c) => sum + c.bulto.costo, 0);
@@ -430,8 +542,20 @@ function combos(url: URL): CatalogoCombosResultado {
     combos: resultado,
     quiebres,
     sospechosos: [
-      { sku: "ICTM1", nombre: "Calza térmica de mujer Linda Luna", margenAparente: 0.85, margenReal: 0.23, motivo: "DUX tiene congelado el costo de una compra del año pasado." },
-      { sku: "MSN1", nombre: "Soquete Amanecer infantil", margenAparente: -0.04, margenReal: 0.23, motivo: "Costo cargado por docena en la prenda: margen negativo aparente." },
+      {
+        sku: "ICTM1",
+        nombre: "Calza térmica de mujer Linda Luna",
+        margenAparente: 0.85,
+        margenReal: 0.23,
+        motivo: "DUX tiene congelado el costo de una compra del año pasado.",
+      },
+      {
+        sku: "MSN1",
+        nombre: "Soquete Amanecer infantil",
+        margenAparente: -0.04,
+        margenReal: 0.23,
+        motivo: "Costo cargado por docena en la prenda: margen negativo aparente.",
+      },
     ],
   };
 }
@@ -446,7 +570,9 @@ export const routes: Route[] = [
     pattern: /^\/catalogo\/productos\/([^/]+)$/,
     handler: ({ params: [sku] }) => {
       const producto = getCatalogo().productos.find((item) => item.sku === decodeURIComponent(sku));
-      return producto ? Response.json(toCatalogoProducto(producto)) : errorResponse(404, `No existe el producto ${sku}.`);
+      return producto
+        ? Response.json(toCatalogoProducto(producto))
+        : errorResponse(404, `No existe el producto ${sku}.`);
     },
   },
   { method: "GET", pattern: /^\/catalogo\/alta\/opciones$/, handler: () => Response.json(altaOpciones()) },

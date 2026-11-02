@@ -23,13 +23,15 @@ npm run dev
 Con la API simulada no hace falta ninguna credencial. El login usa el usuario
 fijo de `src/lib/session.ts` hasta que entre la auth propia (fase 1.2).
 
-| Script | Qué hace |
-| --- | --- |
-| `npm run dev` | Servidor de desarrollo |
-| `npm run build` | Build de producción (valida tipos y las reglas de Cache Components) |
-| `npm run lint` | ESLint |
-| `npm test` | Tests una vez (lo mismo que corre la CI) |
-| `npm run test:watch` | Tests en modo watch |
+| Script               | Qué hace                                                            |
+| -------------------- | ------------------------------------------------------------------- |
+| `npm run dev`        | Servidor de desarrollo                                              |
+| `npm run build`      | Build de producción (valida tipos y las reglas de Cache Components) |
+| `npm run lint`       | ESLint                                                              |
+| `npm run typecheck`  | TypeScript sin emitir                                               |
+| `npm run format`     | Prettier sobre todo el repo (`format:check` solo verifica)          |
+| `npm test`           | Tests una vez (lo mismo que corre la CI)                            |
+| `npm run test:watch` | Tests en modo watch                                                 |
 
 ## Datos: API simulada y real
 
@@ -37,8 +39,8 @@ Los componentes nunca llaman a `fetch` directo: usan `api`, tipado con los
 contratos de `src/lib/api/contracts/` (uno por módulo).
 
 ```tsx
-import { api } from "@/lib/api/server";   // Server Components
-import { api } from "@/lib/api/browser";  // Client Components
+import { api } from "@/lib/api/server"; // Server Components
+import { api } from "@/lib/api/browser"; // Client Components
 ```
 
 `NEXT_PUBLIC_API_MOCK` elige entre la API simulada y la real (reiniciar

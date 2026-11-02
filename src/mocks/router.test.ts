@@ -3,21 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiErrorBody, DailyPoint, IndicadorCausa, Kpi, Notification, OperacionHoy } from "@/lib/api/types";
 import { resetDb } from "./db";
 import { handleMockRequest, MOCK_API_PREFIX } from "./router";
-import {
-  anuncios,
-  clientas,
-  DAY,
-  detalleDe,
-  getPedido,
-  getProducto,
-  pedidos,
-  presentacionesDe,
-} from "./seed";
+import { anuncios, clientas, DAY, detalleDe, getPedido, getProducto, pedidos, presentacionesDe } from "./seed";
 
 async function call<T>(path: string, init?: RequestInit) {
-  const response = await handleMockRequest(
-    new Request(`http://test.local${MOCK_API_PREFIX}${path}`, init),
-  );
+  const response = await handleMockRequest(new Request(`http://test.local${MOCK_API_PREFIX}${path}`, init));
   return { status: response.status, body: (await response.json()) as T };
 }
 

@@ -201,12 +201,10 @@ export function cobrosEndpoints(request: ApiRequest) {
       request<{ ok: true }>(`/cobros/conciliacion/${encodeURIComponent(id)}/rechazar`, {
         method: "POST",
       }),
-    confirmarAltos: () =>
-      request<{ confirmadas: number }>("/cobros/conciliacion/confirmar-altos", { method: "POST" }),
+    confirmarAltos: () => request<{ confirmadas: number }>("/cobros/conciliacion/confirmar-altos", { method: "POST" }),
     contraentrega: () => request<ContraentregaResumen>("/cobros/contraentrega"),
     reclamo: () => request<ReclamoTranstech>("/cobros/contraentrega/reclamo"),
-    enviarReclamo: () =>
-      request<{ ok: true }>("/cobros/contraentrega/reclamo", { method: "POST" }),
+    enviarReclamo: () => request<{ ok: true }>("/cobros/contraentrega/reclamo", { method: "POST" }),
     caja: () => request<CajaDelDia>("/cobros/caja"),
     actualizarSaldo: (id: string, saldo: number) =>
       request<CuentaCaja>(`/cobros/caja/cuentas/${encodeURIComponent(id)}`, {

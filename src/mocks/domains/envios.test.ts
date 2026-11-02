@@ -33,7 +33,10 @@ describe("cotizador", () => {
       simularFalla: false,
     });
     expect(cotizacion.destino).toMatchObject({ valido: true, zona: "amba_1" });
-    expect(cotizacion.opciones.find((opcion) => opcion.id === "mensajeria")).toMatchObject({ recomendada: true, precio: 4_500 });
+    expect(cotizacion.opciones.find((opcion) => opcion.id === "mensajeria")).toMatchObject({
+      recomendada: true,
+      precio: 4_500,
+    });
     expect(cotizacion.opciones.find((opcion) => opcion.id === "via_cargo")?.disponible).toBe(false);
     expect(cotizacion.id).toMatch(/^C-\d+$/);
   });
@@ -61,6 +64,10 @@ describe("despacho", () => {
     const despues = await call<GrupoDespacho[]>("GET", "/envios/despacho");
     const mensajeria = despues.find((grupo) => grupo.transporte === "mensajeria")!;
     expect(mensajeria.accion.hecho).toBe(true);
-    expect(mensajeria.envios.filter((envio) => envio.estado === "subido").every((envio) => envio.etiqueta?.startsWith("ZP-"))).toBe(true);
+    expect(
+      mensajeria.envios
+        .filter((envio) => envio.estado === "subido")
+        .every((envio) => envio.etiqueta?.startsWith("ZP-")),
+    ).toBe(true);
   });
 });

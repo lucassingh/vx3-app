@@ -64,8 +64,7 @@ export const routes: Route[] = [
   {
     method: "GET",
     pattern: /^\/notifications$/,
-    handler: () =>
-      Response.json(getAlertas().toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))),
+    handler: () => Response.json(getAlertas().toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))),
   },
   {
     method: "POST",

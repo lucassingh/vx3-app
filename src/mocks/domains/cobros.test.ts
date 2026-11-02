@@ -52,7 +52,11 @@ describe("contraentrega", () => {
 
 describe("conciliación", () => {
   it("confirmar los de puntaje alto los saca de pendientes", async () => {
-    const { body: confirmadas } = await call<{ confirmadas: number }>(cobros, "POST", "/cobros/conciliacion/confirmar-altos");
+    const { body: confirmadas } = await call<{ confirmadas: number }>(
+      cobros,
+      "POST",
+      "/cobros/conciliacion/confirmar-altos",
+    );
     expect(confirmadas.confirmadas).toBe(3);
 
     const { body } = await call<ConciliacionResumen>(cobros, "GET", "/cobros/conciliacion");
@@ -82,7 +86,13 @@ describe("caja del día", () => {
 
   it("lo que queda para mercadería es lo disponible, menos lo que vence hoy y la reserva", async () => {
     const { body } = await call<CajaDelDia>(cobros, "GET", "/cobros/caja");
-    expect(body.cuentas.map((cuenta) => cuenta.id)).toEqual(["santander", "supervielle", "provincia", "nacion", "efectivo"]);
+    expect(body.cuentas.map((cuenta) => cuenta.id)).toEqual([
+      "santander",
+      "supervielle",
+      "provincia",
+      "nacion",
+      "efectivo",
+    ]);
     expect(body.disponible).toBe(body.cuentas.reduce((total, cuenta) => total + cuenta.saldo, 0));
     expect(body.compromisosHoy.every((item) => item.vence === body.fecha)).toBe(true);
     expect(body.proximos.every((item) => item.vence > body.fecha)).toBe(true);
@@ -92,7 +102,9 @@ describe("caja del día", () => {
 
   it("corregir un saldo lo deja como cargado a mano y rehace la cuenta", async () => {
     const antes = (await call<CajaDelDia>(cobros, "GET", "/cobros/caja")).body;
-    const { status, body } = await call<CuentaCaja>(cobros, "POST", "/cobros/caja/cuentas/provincia", { saldo: 512_000 });
+    const { status, body } = await call<CuentaCaja>(cobros, "POST", "/cobros/caja/cuentas/provincia", {
+      saldo: 512_000,
+    });
     expect(status).toBe(200);
     expect(body).toMatchObject({ saldo: 512_000, origen: "manual" });
 

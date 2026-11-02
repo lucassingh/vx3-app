@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Check,
-  Clock,
-  FileCheck2,
-  MessageCircle,
-  PartyPopper,
-  TriangleAlert,
-  Undo2,
-} from "lucide-react";
+import { Check, Clock, FileCheck2, MessageCircle, PartyPopper, TriangleAlert, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { SegmentoBadge } from "@/components/kit/badges";
 import { EmptyState } from "@/components/kit/empty-state";
@@ -107,7 +99,7 @@ export function RecompraLista({ initialItems }: { initialItems: RecompraItemView
               return (
                 <TabsTrigger key={value} value={value}>
                   {label}
-                  <span className="tabular-nums text-muted-foreground">{count}</span>
+                  <span className="text-muted-foreground tabular-nums">{count}</span>
                 </TabsTrigger>
               );
             })}
@@ -169,7 +161,7 @@ function RecompraItem({
             <h3 id={titleId} className="truncate text-[15px] font-semibold tracking-tight">
               {item.nombre}
             </h3>
-            <p className="truncate text-xs tabular-nums text-muted-foreground">{item.telefono}</p>
+            <p className="truncate text-xs text-muted-foreground tabular-nums">{item.telefono}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -230,8 +222,8 @@ function RecompraItem({
             ) : (
               <>
                 <FileCheck2 aria-hidden className="mt-px size-3.5 shrink-0" />
-                Pasaron más de 24 h desde su último mensaje: desde la app sale como plantilla aprobada por
-                Meta, con costo por mensaje.
+                Pasaron más de 24 h desde su último mensaje: desde la app sale como plantilla aprobada por Meta, con
+                costo por mensaje.
               </>
             )}
           </p>

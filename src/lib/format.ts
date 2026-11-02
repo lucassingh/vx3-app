@@ -78,9 +78,7 @@ export function formatDelta({ value, unit }: NonNullable<Kpi["delta"]>) {
 
 /** Fechas sin hora (YYYY-MM-DD): se formatean en UTC para no correrse un día. */
 export function formatDate(isoDate: string, options: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...options }).format(
-    new Date(isoDate),
-  );
+  return new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...options }).format(new Date(isoDate));
 }
 
 /** Hora local de Buenos Aires de una fecha ISO: "14:35". */

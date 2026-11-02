@@ -3,22 +3,9 @@ import { BarList } from "@/components/kit/bar-list";
 import { KpiGrid, KpiGridSkeleton } from "@/components/kit/kpi-grid";
 import { Meter } from "@/components/kit/meter";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel, Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarListSkeleton, SkeletonText, TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import type { BotRendimiento, EtapaPuestaEnMarcha } from "@/lib/api/types";
@@ -121,7 +108,8 @@ export async function PuestaEnMarchaCard() {
       <div className="mt-6 space-y-2">
         <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
           <p>
-            Acierto sobre <span className="tabular-nums">{formatNumber(puesta.conversacionesEvaluadas)}</span> conversaciones reales
+            Acierto sobre <span className="tabular-nums">{formatNumber(puesta.conversacionesEvaluadas)}</span>{" "}
+            conversaciones reales
           </p>
           <p className="tabular-nums">
             <span className="text-xl font-semibold">{pct(puesta.acierto)}</span>
@@ -143,7 +131,8 @@ export async function PuestaEnMarchaCard() {
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Faltan {formatNumber(Math.max(0, Math.round((puesta.umbral - puesta.acierto) * 100)))} puntos para habilitar el bot completo.
+          Faltan {formatNumber(Math.max(0, Math.round((puesta.umbral - puesta.acierto) * 100)))} puntos para habilitar
+          el bot completo.
         </p>
       </div>
     </PuestaFrame>
@@ -221,7 +210,9 @@ function RecorridosFrame({ children }: { children: React.ReactNode }) {
       <CardHeader className="pb-4">
         <div>
           <CardTitle>Acierto por recorrido</CardTitle>
-          <CardDescription>Los casos que tiene que resolver el bot, medidos contra conversaciones reales</CardDescription>
+          <CardDescription>
+            Los casos que tiene que resolver el bot, medidos contra conversaciones reales
+          </CardDescription>
         </div>
       </CardHeader>
       {children}
@@ -249,7 +240,10 @@ export async function RecorridosCard() {
             <TableRow key={recorrido.id}>
               <TableCell>
                 <div className="flex items-center gap-3">
-                  <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-muted text-xs font-semibold">
+                  <span
+                    aria-hidden
+                    className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-muted text-xs font-semibold"
+                  >
                     {recorrido.id}
                   </span>
                   <div className="min-w-0">
@@ -389,10 +383,7 @@ function RespuestasFrame({ children }: { children: React.ReactNode }) {
 }
 
 export async function RespuestasCard() {
-  const [{ generadoEn, respuestas }, { recorridos }] = await Promise.all([
-    api.bot.respuestas(),
-    api.bot.rendimiento(),
-  ]);
+  const [{ generadoEn, respuestas }, { recorridos }] = await Promise.all([api.bot.respuestas(), api.bot.rendimiento()]);
   const now = new Date(generadoEn).getTime();
   const nombres = Object.fromEntries(recorridos.map((recorrido) => [recorrido.id, recorrido.nombre]));
 

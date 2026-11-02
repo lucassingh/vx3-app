@@ -86,7 +86,8 @@ export function ModeloYKeyForm({ config, apiKeyLabel }: { config: IaConfig; apiK
       <fieldset>
         <legend className="text-sm font-medium">Modelo del bot</legend>
         <p className="mt-1 text-[13px] text-muted-foreground">
-          La evaluación arranca por Haiku. Si un tipo de caso no llega a la vara de calidad, solo ese caso pasa a un modelo mayor.
+          La evaluación arranca por Haiku. Si un tipo de caso no llega a la vara de calidad, solo ese caso pasa a un
+          modelo mayor.
         </p>
         <div className="mt-4 grid gap-3 lg:grid-cols-3">
           {config.modelos.map((item) => (
@@ -107,7 +108,7 @@ export function ModeloYKeyForm({ config, apiKeyLabel }: { config: IaConfig; apiK
                   )}
                 </span>
                 <span className="font-mono text-[11px] text-muted-foreground">{item.id}</span>
-                <span className="text-pretty text-[13px] text-muted-foreground">{item.descripcion}</span>
+                <span className="text-[13px] text-pretty text-muted-foreground">{item.descripcion}</span>
                 <span className="mt-auto pt-1 text-sm tabular-nums">
                   ~{usd(item.costoMesUsd)} <span className="text-xs text-muted-foreground">por mes</span>
                 </span>
@@ -118,7 +119,9 @@ export function ModeloYKeyForm({ config, apiKeyLabel }: { config: IaConfig; apiK
       </fieldset>
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-        <p className={cn("flex items-center gap-1.5 text-[13px]", veces > 1 ? "text-warning" : "text-muted-foreground")}>
+        <p
+          className={cn("flex items-center gap-1.5 text-[13px]", veces > 1 ? "text-warning" : "text-muted-foreground")}
+        >
           {veces > 1 ? (
             <>
               <TriangleAlert aria-hidden className="size-4 shrink-0" />
@@ -301,7 +304,10 @@ export function TopeGastoForm({
         <div className="space-y-2">
           <Label htmlFor={`${id}-tope`}>Tope mensual</Label>
           <div className="relative">
-            <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground"
+            >
               US$
             </span>
             <Input
@@ -353,7 +359,9 @@ export function AdminKeyForm({ adminKey, label }: { adminKey: CredencialEnmascar
             <p className="text-xs text-muted-foreground">{texto} · se concilia cada noche</p>
           </>
         ) : (
-          <p className="text-[13px] text-muted-foreground">Sin cargar. El consumo se mide igual con lo que devuelve cada respuesta.</p>
+          <p className="text-[13px] text-muted-foreground">
+            Sin cargar. El consumo se mide igual con lo que devuelve cada respuesta.
+          </p>
         )}
       </div>
       <KeyDialog

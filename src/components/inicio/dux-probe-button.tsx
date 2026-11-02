@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable no-console -- PROVISORIO: el sondeo de DUX muestra las respuestas en la consola; se borra en la fase 1.4. */
 
 import { ChevronDown, Copy, FlaskConical } from "lucide-react";
 import { useState, useTransition } from "react";
@@ -94,9 +95,7 @@ export function DuxProbeButton() {
         <DialogContent variant="side" className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Respuesta de DUX</DialogTitle>
-            <DialogDescription>
-              Prueba provisoria contra la API real. El token no sale del servidor.
-            </DialogDescription>
+            <DialogDescription>Prueba provisoria contra la API real. El token no sale del servidor.</DialogDescription>
           </DialogHeader>
           <DialogBody>{result && <ProbeResultView result={result} />}</DialogBody>
         </DialogContent>
@@ -144,7 +143,7 @@ function ProbeResultView({ result }: { result: DuxProbeResult }) {
           </Button>
         </div>
       </div>
-      <p className="break-all font-mono text-xs text-muted-foreground">GET {result.request}</p>
+      <p className="font-mono text-xs break-all text-muted-foreground">GET {result.request}</p>
       {rows && (
         <p className="text-sm">
           <span className="font-semibold tabular-nums">{number(rows.count)}</span> registros en esta página

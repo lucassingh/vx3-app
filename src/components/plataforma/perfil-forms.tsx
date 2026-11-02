@@ -36,7 +36,12 @@ export function DatosForm() {
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor={`${id}-nombre`}>Nombre</Label>
-        <Input id={`${id}-nombre`} autoComplete="name" value={nombre} onChange={(event) => setNombre(event.target.value)} />
+        <Input
+          id={`${id}-nombre`}
+          autoComplete="name"
+          value={nombre}
+          onChange={(event) => setNombre(event.target.value)}
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor={`${id}-email`}>Email</Label>
@@ -133,7 +138,10 @@ export function SeguridadForm({ dosFactores, passwordLabel }: { dosFactores: boo
     });
   };
 
-  const errorProps = { "aria-invalid": error ? true : undefined, "aria-describedby": error ? `${id}-error` : undefined };
+  const errorProps = {
+    "aria-invalid": error ? true : undefined,
+    "aria-describedby": error ? `${id}-error` : undefined,
+  };
 
   return (
     <div className="space-y-6">

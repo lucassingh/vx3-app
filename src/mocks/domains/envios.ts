@@ -128,10 +128,34 @@ const GRUPOS: {
   corteDetalle: string;
   accion: { id: GrupoDespacho["accion"]["id"]; label: string };
 }[] = [
-  { transporte: "mensajeria", label: "Mensajería · Transtech", corte: "12:00", corteDetalle: "Etiquetas y carga en Zupply antes del mediodía", accion: { id: "zupply", label: "Subir a Zupply" } },
-  { transporte: "via_cargo", label: "Vía Cargo", corte: "17:30", corteDetalle: "La clienta paga el flete al retirar en la sucursal", accion: { id: "etiquetas", label: "Imprimir etiquetas" } },
-  { transporte: "correo", label: "Correo Argentino · MiCorreo", corte: "18:30", corteDetalle: "Se importa en MiCorreo con la tarifa Paq.ar, no la de encomienda clásica", accion: { id: "micorreo", label: "Importar en MiCorreo" } },
-  { transporte: "retira", label: "Retira en el local", corte: null, corteDetalle: "Seña del 10 % cobrada; el saldo se cobra al retirar", accion: { id: "aviso", label: "Avisar que está listo" } },
+  {
+    transporte: "mensajeria",
+    label: "Mensajería · Transtech",
+    corte: "12:00",
+    corteDetalle: "Etiquetas y carga en Zupply antes del mediodía",
+    accion: { id: "zupply", label: "Subir a Zupply" },
+  },
+  {
+    transporte: "via_cargo",
+    label: "Vía Cargo",
+    corte: "17:30",
+    corteDetalle: "La clienta paga el flete al retirar en la sucursal",
+    accion: { id: "etiquetas", label: "Imprimir etiquetas" },
+  },
+  {
+    transporte: "correo",
+    label: "Correo Argentino · MiCorreo",
+    corte: "18:30",
+    corteDetalle: "Se importa en MiCorreo con la tarifa Paq.ar, no la de encomienda clásica",
+    accion: { id: "micorreo", label: "Importar en MiCorreo" },
+  },
+  {
+    transporte: "retira",
+    label: "Retira en el local",
+    corte: null,
+    corteDetalle: "Seña del 10 % cobrada; el saldo se cobra al retirar",
+    accion: { id: "aviso", label: "Avisar que está listo" },
+  },
 ];
 
 const getEnviosDb = defineStore("envios", () => ({
@@ -187,9 +211,7 @@ function envioDe(pedidoId: string): EnvioDelDia {
 
 function despacho(): GrupoDespacho[] {
   const db = getEnviosDb();
-  const hoy = getPedidosDb().pedidos.filter(
-    (pedido) => pedido.creadoHaceMin < DAY && pedido.estado in ESTADO_ENVIO,
-  );
+  const hoy = getPedidosDb().pedidos.filter((pedido) => pedido.creadoHaceMin < DAY && pedido.estado in ESTADO_ENVIO);
   return GRUPOS.map((grupo) => ({
     transporte: grupo.transporte,
     label: grupo.label,
@@ -264,9 +286,22 @@ const VIGENCIA_HORAS = 48;
 
 /** Tabla propia por zona y peso, para cuando MiCorreo no responde. Suma un margen de seguridad. */
 function respaldoCorreo(zona: Zona, kg: number) {
-  const bandas = zona === "interior"
-    ? [[1, 9_800], [3, 12_400], [5, 14_900], [10, 19_800], [25, 27_900]]
-    : [[1, 8_400], [3, 10_600], [5, 12_700], [10, 16_900], [25, 23_800]];
+  const bandas =
+    zona === "interior"
+      ? [
+          [1, 9_800],
+          [3, 12_400],
+          [5, 14_900],
+          [10, 19_800],
+          [25, 27_900],
+        ]
+      : [
+          [1, 8_400],
+          [3, 10_600],
+          [5, 12_700],
+          [10, 16_900],
+          [25, 23_800],
+        ];
   return bandas.find(([hasta]) => kg <= hasta)?.[1] ?? 27_900;
 }
 
@@ -350,7 +385,9 @@ function cotizar(input: Partial<CotizarInput>): CotizacionEnvio {
         embalaje: TARIFAS.embalaje2,
         disponible: !amba,
         estimada: false,
-        detalle: amba ? "Para AMBA conviene la mensajería" : "La clienta paga el flete al retirar en la sucursal (RN-83)",
+        detalle: amba
+          ? "Para AMBA conviene la mensajería"
+          : "La clienta paga el flete al retirar en la sucursal (RN-83)",
       },
       {
         id: "retira",
@@ -402,9 +439,7 @@ export const routes: Route[] = [
     pattern: /^\/envios\/despacho\/(mensajeria|correo|via_cargo|retira)$/,
     handler: ({ params: [transporte] }) => {
       const mensaje = accionDespacho(transporte as Transporte);
-      return mensaje
-        ? Response.json({ ok: true, mensaje })
-        : errorResponse(404, `No hay despacho para ${transporte}.`);
+      return mensaje ? Response.json({ ok: true, mensaje }) : errorResponse(404, `No hay despacho para ${transporte}.`);
     },
   },
   { method: "GET", pattern: /^\/envios\/desvios$/, handler: () => Response.json(desvios()) },

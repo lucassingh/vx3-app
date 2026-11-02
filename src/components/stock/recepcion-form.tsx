@@ -8,14 +8,7 @@ import { ProductThumb } from "@/components/kit/product-thumb";
 import { precioBulto } from "@/components/productos/motor-precios";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CopyButton } from "@/components/ui/copy-button";
 import { Input, Label } from "@/components/ui/input";
@@ -43,7 +36,11 @@ const toNumber = (value: string) => {
   return Number.isFinite(number) ? number : 0;
 };
 
-function mensajeFaltantes(recepcion: Recepcion, fechaLabel: string, faltantes: { renglon: RecepcionRenglon; cantidad: number }[]) {
+function mensajeFaltantes(
+  recepcion: Recepcion,
+  fechaLabel: string,
+  faltantes: { renglon: RecepcionRenglon; cantidad: number }[],
+) {
   if (faltantes.length === 0) return "";
   const lineas = faltantes.map(
     ({ renglon, cantidad }) =>
@@ -73,7 +70,12 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
       ]),
     ),
   );
-  const [checks, setChecks] = useState<Record<CheckId, boolean>>({ orden: true, contado: true, foto: false, faltantes: false });
+  const [checks, setChecks] = useState<Record<CheckId, boolean>>({
+    orden: true,
+    contado: true,
+    foto: false,
+    faltantes: false,
+  });
   const [firmadoPor, setFirmadoPor] = useState(recepcion.firmadoPor ?? "");
   const [mensajeEditado, setMensajeEditado] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
@@ -99,7 +101,9 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
 
   const totalBoleta = filas.reduce((sum, fila) => sum + fila.renglon.boletaBultos, 0);
   const totalContado = filas.reduce((sum, fila) => sum + fila.contado, 0);
-  const faltantes = filas.filter((fila) => fila.diferencia < 0).map((fila) => ({ renglon: fila.renglon, cantidad: -fila.diferencia }));
+  const faltantes = filas
+    .filter((fila) => fila.diferencia < 0)
+    .map((fila) => ({ renglon: fila.renglon, cantidad: -fila.diferencia }));
   const sobrantes = filas.filter((fila) => fila.diferencia > 0).reduce((sum, fila) => sum + fila.diferencia, 0);
   const costosAlDia = filas.every((fila) => !fila.estado.cambioCosto || (fila.costoNuevo ?? 0) > 0);
   const nuevos = filas.filter((fila) => fila.renglon.nuevo);
@@ -108,7 +112,9 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
   const tipo = TIPO_PROVEEDOR[recepcion.proveedorTipo];
 
   const pendientes = [
-    ...CHECKS.filter((check) => !checks[check.id] && (check.id !== "faltantes" || faltantes.length > 0)).map((check) => check.label),
+    ...CHECKS.filter((check) => !checks[check.id] && (check.id !== "faltantes" || faltantes.length > 0)).map(
+      (check) => check.label,
+    ),
     ...(costosAlDia ? [] : ["Cargar el costo nuevo de los renglones marcados"]),
     ...(firmadoPor ? [] : ["La firma de otra persona"]),
   ];
@@ -120,7 +126,11 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
     }
     setCargando(true);
     const promise = api.stock.cargarRecepcion({
-      renglones: filas.map((fila) => ({ id: fila.renglon.id, contadoBultos: fila.contado, costoDocenaNuevo: fila.costoNuevo })),
+      renglones: filas.map((fila) => ({
+        id: fila.renglon.id,
+        contadoBultos: fila.contado,
+        costoDocenaNuevo: fila.costoNuevo,
+      })),
       firmadoPor,
     });
     toast.promise(promise, {
@@ -147,8 +157,8 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
           <div>
             <CardTitle>Recepción {recepcion.id}</CardTitle>
             <CardDescription>
-              Planilla de carga digital: lo que dice la boleta contra lo que se contó. En DUX se carga el código del bulto y la
-              cantidad en bultos (RN-33)
+              Planilla de carga digital: lo que dice la boleta contra lo que se contó. En DUX se carga el código del
+              bulto y la cantidad en bultos (RN-33)
             </CardDescription>
           </div>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4 sm:text-right">
@@ -176,11 +186,21 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
             <caption className="sr-only">Renglones de la boleta {recepcion.boleta}</caption>
             <thead className="border-y border-border bg-muted/60 text-left text-xs text-muted-foreground">
               <tr>
-                <th scope="col" className="px-3 py-2.5 pl-5 font-medium">Producto</th>
-                <th scope="col" className="px-3 py-2.5 text-right font-medium">Boleta</th>
-                <th scope="col" className="px-3 py-2.5 font-medium">Contado</th>
-                <th scope="col" className="px-3 py-2.5 text-right font-medium">Diferencia</th>
-                <th scope="col" className="px-3 py-2.5 pr-5 font-medium">¿Cambió el costo?</th>
+                <th scope="col" className="px-3 py-2.5 pl-5 font-medium">
+                  Producto
+                </th>
+                <th scope="col" className="px-3 py-2.5 text-right font-medium">
+                  Boleta
+                </th>
+                <th scope="col" className="px-3 py-2.5 font-medium">
+                  Contado
+                </th>
+                <th scope="col" className="px-3 py-2.5 text-right font-medium">
+                  Diferencia
+                </th>
+                <th scope="col" className="px-3 py-2.5 pr-5 font-medium">
+                  ¿Cambió el costo?
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -199,7 +219,8 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
                             {renglon.nuevo && <Badge variant="accent">Nuevo</Badge>}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            <span className="font-mono">{renglon.codigo}</span> · costo docena {formatCurrency(renglon.costoDocenaActual)}
+                            <span className="font-mono">{renglon.codigo}</span> · costo docena{" "}
+                            {formatCurrency(renglon.costoDocenaActual)}
                           </p>
                         </div>
                       </div>
@@ -270,10 +291,12 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
                                 disabled={cargada}
                               />
                               {fila.precioDespues !== null && fila.costoNuevo! > 0 && (
-                                <span className="inline-flex items-center gap-1.5 text-xs tabular-nums text-muted-foreground">
+                                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
                                   Bulto {formatCurrency(fila.precioAntes)}
                                   <ArrowRight aria-hidden className="size-3" />
-                                  <span className="font-semibold text-foreground">{formatCurrency(fila.precioDespues)}</span>
+                                  <span className="font-semibold text-foreground">
+                                    {formatCurrency(fila.precioDespues)}
+                                  </span>
                                 </span>
                               )}
                             </>
@@ -318,7 +341,8 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
             <div>
               <CardTitle>Cierre de la carga</CardTitle>
               <CardDescription>
-                La carga no está terminada hasta que costos y precios están al día y la firmó otra persona (RN-34, RN-37)
+                La carga no está terminada hasta que costos y precios están al día y la firmó otra persona (RN-34,
+                RN-37)
               </CardDescription>
             </div>
           </CardHeader>
@@ -333,10 +357,12 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
                       id={id}
                       checked={noAplica || checks[check.id]}
                       disabled={noAplica || cargada}
-                      onCheckedChange={(checked) => setChecks((actual) => ({ ...actual, [check.id]: checked === true }))}
+                      onCheckedChange={(checked) =>
+                        setChecks((actual) => ({ ...actual, [check.id]: checked === true }))
+                      }
                       className="mt-0.5"
                     />
-                    <Label htmlFor={id} className="font-normal leading-5">
+                    <Label htmlFor={id} className="leading-5 font-normal">
                       {check.label}
                       <span className="ml-1.5 text-xs text-muted-foreground">
                         {check.regla}
@@ -348,14 +374,14 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
               })}
               <li className="flex items-start gap-3">
                 <Checkbox id={`${uid}-real`} checked disabled className="mt-0.5" />
-                <Label htmlFor={`${uid}-real`} className="font-normal leading-5">
+                <Label htmlFor={`${uid}-real`} className="leading-5 font-normal">
                   Se carga lo que llegó realmente, en bultos
                   <span className="ml-1.5 text-xs text-muted-foreground">RN-33 · automático</span>
                 </Label>
               </li>
               <li className="flex items-start gap-3">
                 <Checkbox id={`${uid}-costos`} checked={costosAlDia} disabled className="mt-0.5" />
-                <Label htmlFor={`${uid}-costos`} className="font-normal leading-5">
+                <Label htmlFor={`${uid}-costos`} className="leading-5 font-normal">
                   Costos y precios al día de lo que cambió
                   <span className="ml-1.5 text-xs text-muted-foreground">RN-34 · automático</span>
                 </Label>
@@ -378,7 +404,8 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
                 ))}
               </NativeSelect>
               <p className="text-xs text-muted-foreground">
-                {tipo.label}: {tipo.reclamo.toLowerCase()} (RN-36). La boleta y el comprobante de DUX quedan adjuntos a la compra.
+                {tipo.label}: {tipo.reclamo.toLowerCase()} (RN-36). La boleta y el comprobante de DUX quedan adjuntos a
+                la compra.
               </p>
             </div>
           </CardContent>

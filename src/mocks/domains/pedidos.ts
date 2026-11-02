@@ -77,7 +77,8 @@ function pasosDe(pedido: PedidoSeed, now: number): PasoCicloPedido[] {
   const recorrido = recorridoDe(pedido);
   const final = pedido.estado === "anulado" || pedido.estado === "devuelto" ? pedido.estado : null;
   // Un pedido anulado se cae armándose; uno devuelto, después de despacharse.
-  const alcanzado = final === "anulado" ? 0 : final === "devuelto" ? recorrido.indexOf("despachado") : recorrido.indexOf(pedido.estado);
+  const alcanzado =
+    final === "anulado" ? 0 : final === "devuelto" ? recorrido.indexOf("despachado") : recorrido.indexOf(pedido.estado);
   const pasos = final ? [...recorrido.slice(0, alcanzado + 1), final] : recorrido;
   const actual = final ? pasos.length - 1 : alcanzado;
   const minutos = haceMin(pedido);
@@ -113,7 +114,12 @@ export function toPedidoBandeja(pedido: PedidoSeed, now = Date.now()): PedidoBan
     resumen: detalle.lineas.map((linea) => `${linea.codigo} ×${linea.bultos}`).join(" · "),
     bultos: detalle.lineas.reduce((sum, linea) => sum + linea.bultos, 0),
     lineas: detalle.lineas.map(({ codigo, nombre, presentacion, bultos, precioUnitario, subtotal }) => ({
-      codigo, nombre, presentacion, bultos, precioUnitario, subtotal,
+      codigo,
+      nombre,
+      presentacion,
+      bultos,
+      precioUnitario,
+      subtotal,
     })),
     mercaderia: detalle.mercaderia,
     envio: detalle.envio,
@@ -179,8 +185,18 @@ function trabados(): PedidoTrabado[] {
           motivo: "bajo_minimo",
           ultimoMensaje: `${nombre}, para llegar al mínimo de ${formatCurrency(PEDIDO_MINIMO)} te faltan ${formatCurrency(pedido.faltaParaMinimo)}. ¿Querés sumar media docena del conjunto Linda Luna con less regulable (${formatCurrency(sugerido.precio)})? Lo agrego a este mismo pedido, no hace falta armar uno nuevo 🙌`,
           pasos: [
-            { id: "falta", label: "Le dijo cuánto falta para el mínimo", estado: "hecho", at: isoAgo(minutos - 5, now) },
-            { id: "complementario", label: "Le propuso un complementario por la diferencia", estado: "hecho", at: isoAgo(minutos - 6, now) },
+            {
+              id: "falta",
+              label: "Le dijo cuánto falta para el mínimo",
+              estado: "hecho",
+              at: isoAgo(minutos - 5, now),
+            },
+            {
+              id: "complementario",
+              label: "Le propuso un complementario por la diferencia",
+              estado: "hecho",
+              at: isoAgo(minutos - 6, now),
+            },
             { id: "tarde", label: "Seguimiento de la tarde", estado: "proximo", at: null },
             { id: "anular", label: "A las 24 h se anula y se libera la reserva", estado: "pendiente", at: null },
           ],
@@ -195,7 +211,12 @@ function trabados(): PedidoTrabado[] {
         ultimoMensaje: `¡Hola ${nombre}! Te sigo guardando el pedido 😊 El conjunto se está moviendo mucho y quedan pocas medias docenas en tus colores. ¿Te lo confirmo así sale mañana temprano?`,
         pasos: [
           { id: "30m", label: "A los 30 minutos · primer mensaje", estado: "hecho", at: isoAgo(minutos - 30, now) },
-          { id: "tarde", label: "Esa tarde · segundo mensaje", estado: "hecho", at: isoAgo(Math.max(5, minutos - 150), now) },
+          {
+            id: "tarde",
+            label: "Esa tarde · segundo mensaje",
+            estado: "hecho",
+            at: isoAgo(Math.max(5, minutos - 150), now),
+          },
           { id: "manana", label: "Mañana a la mañana · tercer mensaje", estado: "proximo", at: null },
           { id: "anular", label: "A las 24 h se anula y se libera la reserva", estado: "pendiente", at: null },
         ],
@@ -227,7 +248,9 @@ function facturable(pedido: PedidoBandeja, nota?: string): PedidoFacturable {
       label: "Comprobante de pago",
       estado: !transferencia ? "na" : comprobanteRecibido ? "ok" : "falla",
       detalle: !transferencia
-        ? contraentrega ? "Contraentrega: se cobra en la entrega" : "Se cobra en el local"
+        ? contraentrega
+          ? "Contraentrega: se cobra en la entrega"
+          : "Se cobra en el local"
         : comprobanteRecibido
           ? `Leído en el chat${banco ? ` · ${banco}` : ""}`
           : "La clienta todavía no mandó el comprobante",
@@ -260,7 +283,8 @@ function facturable(pedido: PedidoBandeja, nota?: string): PedidoFacturable {
     {
       id: "transporte",
       label: "Transporte compatible con el pago",
-      estado: contraentrega && (pedido.transporte !== "mensajeria" || pedido.clienta.zona === "interior") ? "falla" : "ok",
+      estado:
+        contraentrega && (pedido.transporte !== "mensajeria" || pedido.clienta.zona === "interior") ? "falla" : "ok",
       detalle: contraentrega ? "Contraentrega en AMBA con mensajería" : "Pago anticipado: cualquier transporte",
     },
     {
@@ -339,16 +363,18 @@ function toFactura(factura: FacturaState, now: number): FacturaEmitida {
 
 function facturar(ids: string[]) {
   const db = getPedidosDb();
-  const listos = new Set(facturables().filter((item) => item.listo).map((item) => item.pedido.id));
+  const listos = new Set(
+    facturables()
+      .filter((item) => item.listo)
+      .map((item) => item.pedido.id),
+  );
   const now = Date.now();
   const emitidas: FacturaState[] = [];
 
   for (const pedido of db.pedidos) {
     if (!ids.includes(pedido.id) || !listos.has(pedido.id)) continue;
     const fiscal = pedido.pago === "transferencia";
-    const numero = fiscal
-      ? `FC-B 0002-000${db.nextFc++}`
-      : `CV 0002-000${db.nextCv++}`;
+    const numero = fiscal ? `FC-B 0002-000${db.nextFc++}` : `CV 0002-000${db.nextCv++}`;
     pedido.estado = "facturado";
     pedido.factura = numero;
     pedido.nota = undefined;

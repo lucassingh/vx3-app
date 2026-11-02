@@ -79,7 +79,13 @@ export function CotizadorForm({ opciones }: { opciones: CotizadorOpciones }) {
   useEffect(() => {
     let active = true;
     api.envios
-      .cotizar({ cp: "1824", localidad: "Lanús", items: INICIAL.map(({ sku, bultos }) => ({ sku, bultos })), modoCorreo: "domicilio", simularFalla: false })
+      .cotizar({
+        cp: "1824",
+        localidad: "Lanús",
+        items: INICIAL.map(({ sku, bultos }) => ({ sku, bultos })),
+        modoCorreo: "domicilio",
+        simularFalla: false,
+      })
       .then((result) => active && setCotizacion(result))
       .catch(() => {})
       .finally(() => active && setBooting(false));
@@ -120,7 +126,9 @@ export function CotizadorForm({ opciones }: { opciones: CotizadorOpciones }) {
         <CardContent className="pt-5">
           <form onSubmit={onSubmit} className="space-y-6">
             <fieldset className="space-y-3">
-              <legend className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Destino</legend>
+              <legend className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+                Destino
+              </legend>
               <div className="grid gap-3 sm:grid-cols-[8rem_1fr]">
                 <div className="space-y-2">
                   <Label htmlFor={`${id}-cp`}>Código postal</Label>
@@ -162,7 +170,7 @@ export function CotizadorForm({ opciones }: { opciones: CotizadorOpciones }) {
             </fieldset>
 
             <fieldset className="space-y-3">
-              <legend className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+              <legend className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
                 Productos, en bultos
               </legend>
               <ul className="space-y-2">
@@ -193,7 +201,9 @@ export function CotizadorForm({ opciones }: { opciones: CotizadorOpciones }) {
                       onChange={(event) =>
                         setItems((current) =>
                           current.map((row) =>
-                            row.key === item.key ? { ...row, bultos: Math.max(1, Number(event.target.value) || 1) } : row,
+                            row.key === item.key
+                              ? { ...row, bultos: Math.max(1, Number(event.target.value) || 1) }
+                              : row,
                           ),
                         )
                       }
@@ -217,7 +227,10 @@ export function CotizadorForm({ opciones }: { opciones: CotizadorOpciones }) {
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  setItems((current) => [...current, { key: nextKey.current++, sku: opciones.productos[0]?.sku ?? "", bultos: 1 }])
+                  setItems((current) => [
+                    ...current,
+                    { key: nextKey.current++, sku: opciones.productos[0]?.sku ?? "", bultos: 1 },
+                  ])
                 }
               >
                 <Plus />
@@ -226,7 +239,9 @@ export function CotizadorForm({ opciones }: { opciones: CotizadorOpciones }) {
             </fieldset>
 
             <fieldset className="space-y-3">
-              <legend className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Entrega del Correo</legend>
+              <legend className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+                Entrega del Correo
+              </legend>
               <div className="inline-flex h-9 items-center gap-0.5 rounded-lg border border-border bg-muted p-0.5">
                 {(["domicilio", "sucursal"] as const).map((modo) => (
                   <label
@@ -269,12 +284,22 @@ export function CotizadorForm({ opciones }: { opciones: CotizadorOpciones }) {
 
       <div aria-live="polite" aria-busy={pending}>
         {cotizacion ? (
-          <Resultado cotizacion={cotizacion} pending={pending} guardada={guardada === cotizacion.id} saving={saving} onGuardar={guardar} />
+          <Resultado
+            cotizacion={cotizacion}
+            pending={pending}
+            guardada={guardada === cotizacion.id}
+            saving={saving}
+            onGuardar={guardar}
+          />
         ) : pending || booting ? (
           <ResultadoSkeleton />
         ) : (
           <Card>
-            <EmptyState icon={Calculator} title="Todavía no hay cotización" description="Completá el destino y los productos." />
+            <EmptyState
+              icon={Calculator}
+              title="Todavía no hay cotización"
+              description="Completá el destino y los productos."
+            />
           </Card>
         )}
       </div>
@@ -305,7 +330,8 @@ function Resultado({
             Cotización <span className="font-mono">{cotizacion.id}</span>
           </CardTitle>
           <CardDescription>
-            Vence en {cotizacion.vigenciaHoras} h · queda guardada con todos los datos de entrada y la respuesta del Correo
+            Vence en {cotizacion.vigenciaHoras} h · queda guardada con todos los datos de entrada y la respuesta del
+            Correo
           </CardDescription>
         </div>
         <Badge variant={cotizacion.fuente === "respaldo" ? "warning" : "success"} dot>
@@ -339,7 +365,7 @@ function Resultado({
 
         {cotizacion.cajas.length > 0 && (
           <section className="space-y-2.5">
-            <h3 className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+            <h3 className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
               Bultos armados · {formatNumber(cotizacion.pesoTotalKg)} kg con embalaje
             </h3>
             <ul className="divide-y divide-border rounded-lg border border-border">
@@ -362,7 +388,7 @@ function Resultado({
 
         {cotizacion.opciones.length > 0 && (
           <section className="space-y-2.5">
-            <h3 className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Opciones</h3>
+            <h3 className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">Opciones</h3>
             <ul className="space-y-2">
               {cotizacion.opciones.map((opcion) => (
                 <li
@@ -382,7 +408,9 @@ function Resultado({
                     <p className="text-[13px] text-muted-foreground">{opcion.detalle}</p>
                     {opcion.porCaja && opcion.porCaja.length > 1 && opcion.disponible && (
                       <p className="text-xs text-muted-foreground tabular-nums">
-                        {opcion.porCaja.map((precio, index) => `Bulto ${index + 1}: ${formatCurrency(precio)}`).join(" · ")}
+                        {opcion.porCaja
+                          .map((precio, index) => `Bulto ${index + 1}: ${formatCurrency(precio)}`)
+                          .join(" · ")}
                       </p>
                     )}
                   </div>

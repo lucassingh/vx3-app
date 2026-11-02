@@ -1,38 +1,15 @@
 "use client";
 
-import {
-  Ban,
-  History,
-  Lock,
-  MessageSquareQuote,
-  Plus,
-  Rocket,
-  Save,
-  Trash2,
-} from "lucide-react";
+import { Ban, History, Lock, MessageSquareQuote, Plus, Rocket, Save, Trash2 } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NativeSelect, Textarea } from "@/components/ui/textarea";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api } from "@/lib/api/browser";
 import type { BotConfig, MedioPago, Transporte, Zona } from "@/lib/api/types";
 import { MEDIO_PAGO, TRANSPORTE, ZONA } from "@/lib/domain";
@@ -147,7 +124,13 @@ function TextList({
  * preguntas, palancas, derivación y límites. Cada cambio queda en un borrador
  * versionado; publicar corre antes el set de evaluación (RF-M3-10).
  */
-export function ConfigEditor({ initial, versiones: initialVersiones }: { initial: Editable; versiones: VersionesView }) {
+export function ConfigEditor({
+  initial,
+  versiones: initialVersiones,
+}: {
+  initial: Editable;
+  versiones: VersionesView;
+}) {
   const [config, setConfig] = useState(initial);
   const [saved, setSaved] = useState(initial);
   const [versiones, setVersiones] = useState(initialVersiones);
@@ -198,7 +181,8 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
         const resultado = await toast
           .promise(publicar, {
             loading: "Corriendo el set de evaluación con 412 conversaciones reales…",
-            success: (r) => `Versión ${r.numero} publicada · ${r.aprobados} de ${r.casos} casos bien (${pct(r.acierto)})`,
+            success: (r) =>
+              `Versión ${r.numero} publicada · ${r.aprobados} de ${r.casos} casos bien (${pct(r.acierto)})`,
             error: "No se pudo publicar: la versión publicada sigue igual",
           })
           .unwrap();
@@ -234,7 +218,10 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
             <CardTitle>{identidad.nombre || "Asistente"}</CardTitle>
             <CardDescription>
               {versiones.borrador || dirty ? (
-                <>Estás editando el borrador de la versión {borradorNumero}. La versión {versiones.publicada.numero} sigue atendiendo.</>
+                <>
+                  Estás editando el borrador de la versión {borradorNumero}. La versión {versiones.publicada.numero}{" "}
+                  sigue atendiendo.
+                </>
               ) : (
                 <>Sin cambios pendientes: atiende la versión {versiones.publicada.numero}.</>
               )}
@@ -272,10 +259,18 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
             <TabsContent value="identidad" className="space-y-6 pt-6">
               <div className="grid gap-5 md:grid-cols-3">
                 <Field id="bot-nombre" label="Nombre del asistente" hint="Así se presenta con las clientas.">
-                  <Input id="bot-nombre" value={identidad.nombre} onChange={(event) => updateIdentidad({ nombre: event.target.value })} />
+                  <Input
+                    id="bot-nombre"
+                    value={identidad.nombre}
+                    onChange={(event) => updateIdentidad({ nombre: event.target.value })}
+                  />
                 </Field>
                 <Field id="bot-trato" label="Trato">
-                  <NativeSelect id="bot-trato" value={identidad.trato} onChange={(event) => updateIdentidad({ trato: event.target.value as "vos" | "usted" })}>
+                  <NativeSelect
+                    id="bot-trato"
+                    value={identidad.trato}
+                    onChange={(event) => updateIdentidad({ trato: event.target.value as "vos" | "usted" })}
+                  >
                     <option value="vos">Vos (cercano)</option>
                     <option value="usted">Usted (formal)</option>
                   </NativeSelect>
@@ -284,7 +279,9 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                   <NativeSelect
                     id="bot-emojis"
                     value={identidad.emojis}
-                    onChange={(event) => updateIdentidad({ emojis: event.target.value as Editable["identidad"]["emojis"] })}
+                    onChange={(event) =>
+                      updateIdentidad({ emojis: event.target.value as Editable["identidad"]["emojis"] })
+                    }
                   >
                     <option value="nunca">Nunca</option>
                     <option value="pocos">Pocos, al cerrar una idea</option>
@@ -293,7 +290,12 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                 </Field>
               </div>
               <Field id="bot-guia" label="Guía de tono" hint="La lee el bot antes de cada respuesta.">
-                <Textarea id="bot-guia" rows={3} value={identidad.guia} onChange={(event) => updateIdentidad({ guia: event.target.value })} />
+                <Textarea
+                  id="bot-guia"
+                  rows={3}
+                  value={identidad.guia}
+                  onChange={(event) => updateIdentidad({ guia: event.target.value })}
+                />
               </Field>
               <div className="grid gap-6 lg:grid-cols-2">
                 <TextList
@@ -318,12 +320,22 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
             {/* ---- Reglas comerciales ---- */}
             <TabsContent value="reglas" className="space-y-6 pt-6">
               <p className="rounded-lg bg-muted px-3.5 py-2.5 text-[13px] text-muted-foreground">
-                Son campos con tipo, no texto libre: las aplica el sistema y el bot no las puede saltear aunque se lo pidan.
+                Son campos con tipo, no texto libre: las aplica el sistema y el bot no las puede saltear aunque se lo
+                pidan.
               </p>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                <Field id="bot-minimo" label="Pedido mínimo, sin envío" hint="Si no llega, el bot dice cuánto falta exacto.">
+                <Field
+                  id="bot-minimo"
+                  label="Pedido mínimo, sin envío"
+                  hint="Si no llega, el bot dice cuánto falta exacto."
+                >
                   <div className="relative">
-                    <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground"
+                    >
+                      $
+                    </span>
                     <Input
                       id="bot-minimo"
                       type="number"
@@ -348,20 +360,48 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                       value={Math.round(reglas.senaRetiro * 100)}
                       onChange={(event) => updateReglas({ senaRetiro: Number(event.target.value) / 100 })}
                     />
-                    <span aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-muted-foreground"
+                    >
+                      %
+                    </span>
                   </div>
                 </Field>
                 <Field id="bot-corte" label="Corte para despachar hoy en AMBA" hint="Lo usa la palanca “Despacho hoy”.">
-                  <Input id="bot-corte" type="time" value={reglas.corteDespachoAmba} onChange={(event) => updateReglas({ corteDespachoAmba: event.target.value })} />
+                  <Input
+                    id="bot-corte"
+                    type="time"
+                    value={reglas.corteDespachoAmba}
+                    onChange={(event) => updateReglas({ corteDespachoAmba: event.target.value })}
+                  />
                 </Field>
                 <Field id="bot-desde" label="Atiende desde">
-                  <Input id="bot-desde" type="time" value={reglas.horarioDesde} onChange={(event) => updateReglas({ horarioDesde: event.target.value })} />
+                  <Input
+                    id="bot-desde"
+                    type="time"
+                    value={reglas.horarioDesde}
+                    onChange={(event) => updateReglas({ horarioDesde: event.target.value })}
+                  />
                 </Field>
-                <Field id="bot-hasta" label="Atiende hasta" hint="Fuera de horario responde y deja el resumen para el equipo.">
-                  <Input id="bot-hasta" type="time" value={reglas.horarioHasta} onChange={(event) => updateReglas({ horarioHasta: event.target.value })} />
+                <Field
+                  id="bot-hasta"
+                  label="Atiende hasta"
+                  hint="Fuera de horario responde y deja el resumen para el equipo."
+                >
+                  <Input
+                    id="bot-hasta"
+                    type="time"
+                    value={reglas.horarioHasta}
+                    onChange={(event) => updateReglas({ horarioHasta: event.target.value })}
+                  />
                 </Field>
                 <Field id="bot-dias" label="Días">
-                  <Input id="bot-dias" value={reglas.diasAtencion} onChange={(event) => updateReglas({ diasAtencion: event.target.value })} />
+                  <Input
+                    id="bot-dias"
+                    value={reglas.diasAtencion}
+                    onChange={(event) => updateReglas({ diasAtencion: event.target.value })}
+                  />
                 </Field>
               </div>
 
@@ -369,7 +409,10 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                 <legend className="text-[13px] font-medium">Medios de pago que ofrece</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {reglas.mediosPago.map((medio) => (
-                    <div key={medio.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5">
+                    <div
+                      key={medio.id}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
+                    >
                       <Label htmlFor={`pago-${medio.id}`} className="font-normal">
                         {MEDIO_PAGO[medio.id]}
                       </Label>
@@ -378,7 +421,9 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                         checked={medio.activo}
                         onCheckedChange={(activo) =>
                           updateReglas({
-                            mediosPago: reglas.mediosPago.map((item) => (item.id === medio.id ? { ...item, activo } : item)),
+                            mediosPago: reglas.mediosPago.map((item) =>
+                              item.id === medio.id ? { ...item, activo } : item,
+                            ),
                           })
                         }
                       />
@@ -436,7 +481,8 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                   </Table>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Vía Cargo: la clienta paga el flete al retirar. Retiro por el local: seña del {Math.round(reglas.senaRetiro * 100)} %.
+                  Vía Cargo: la clienta paga el flete al retirar. Retiro por el local: seña del{" "}
+                  {Math.round(reglas.senaRetiro * 100)} %.
                 </p>
               </div>
             </TabsContent>
@@ -456,7 +502,12 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                           id={`${faq.id}-pregunta`}
                           value={faq.pregunta}
                           onChange={(event) =>
-                            update("preguntas", config.preguntas.map((item) => (item.id === faq.id ? { ...item, pregunta: event.target.value } : item)))
+                            update(
+                              "preguntas",
+                              config.preguntas.map((item) =>
+                                item.id === faq.id ? { ...item, pregunta: event.target.value } : item,
+                              ),
+                            )
                           }
                         />
                       </div>
@@ -465,7 +516,12 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                         variant="ghost"
                         size="icon"
                         aria-label={`Quitar la pregunta “${faq.pregunta}”`}
-                        onClick={() => update("preguntas", config.preguntas.filter((item) => item.id !== faq.id))}
+                        onClick={() =>
+                          update(
+                            "preguntas",
+                            config.preguntas.filter((item) => item.id !== faq.id),
+                          )
+                        }
                       >
                         <Trash2 />
                       </Button>
@@ -477,7 +533,12 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                         rows={2}
                         value={faq.respuesta}
                         onChange={(event) =>
-                          update("preguntas", config.preguntas.map((item) => (item.id === faq.id ? { ...item, respuesta: event.target.value } : item)))
+                          update(
+                            "preguntas",
+                            config.preguntas.map((item) =>
+                              item.id === faq.id ? { ...item, respuesta: event.target.value } : item,
+                            ),
+                          )
                         }
                       />
                     </div>
@@ -512,7 +573,10 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                         id={`${palanca.id}-activa`}
                         checked={palanca.activa}
                         onCheckedChange={(activa) =>
-                          update("palancas", config.palancas.map((item) => (item.id === palanca.id ? { ...item, activa } : item)))
+                          update(
+                            "palancas",
+                            config.palancas.map((item) => (item.id === palanca.id ? { ...item, activa } : item)),
+                          )
                         }
                       />
                     </div>
@@ -522,7 +586,12 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                         rows={2}
                         value={palanca.condicion}
                         onChange={(event) =>
-                          update("palancas", config.palancas.map((item) => (item.id === palanca.id ? { ...item, condicion: event.target.value } : item)))
+                          update(
+                            "palancas",
+                            config.palancas.map((item) =>
+                              item.id === palanca.id ? { ...item, condicion: event.target.value } : item,
+                            ),
+                          )
                         }
                       />
                     </Field>
@@ -532,7 +601,12 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                         rows={2}
                         value={palanca.ejemplo}
                         onChange={(event) =>
-                          update("palancas", config.palancas.map((item) => (item.id === palanca.id ? { ...item, ejemplo: event.target.value } : item)))
+                          update(
+                            "palancas",
+                            config.palancas.map((item) =>
+                              item.id === palanca.id ? { ...item, ejemplo: event.target.value } : item,
+                            ),
+                          )
                         }
                       />
                     </Field>
@@ -562,11 +636,15 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
             {/* ---- Derivación ---- */}
             <TabsContent value="derivacion" className="space-y-4 pt-6">
               <p className="text-[13px] text-muted-foreground">
-                La derivación clara es requisito de Meta. La conversación pasa a la bandeja con un resumen, y la persona elige el motivo al tomarla.
+                La derivación clara es requisito de Meta. La conversación pasa a la bandeja con un resumen, y la persona
+                elige el motivo al tomarla.
               </p>
               <ul className="divide-y divide-border rounded-lg border border-border">
                 {config.derivacion.map((regla) => (
-                  <li key={regla.id} className="grid items-center gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_14rem_auto]">
+                  <li
+                    key={regla.id}
+                    className="grid items-center gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_14rem_auto]"
+                  >
                     <p className="text-[13px] font-medium">{regla.cuando}</p>
                     <div>
                       <Label htmlFor={`${regla.id}-a`} className="sr-only">
@@ -576,7 +654,12 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                         id={`${regla.id}-a`}
                         value={regla.a}
                         onChange={(event) =>
-                          update("derivacion", config.derivacion.map((item) => (item.id === regla.id ? { ...item, a: event.target.value } : item)))
+                          update(
+                            "derivacion",
+                            config.derivacion.map((item) =>
+                              item.id === regla.id ? { ...item, a: event.target.value } : item,
+                            ),
+                          )
                         }
                       >
                         {RESPONSABLES.map((responsable) => (
@@ -590,7 +673,10 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                       aria-label={`Derivar cuando: ${regla.cuando}`}
                       checked={regla.activa}
                       onCheckedChange={(activa) =>
-                        update("derivacion", config.derivacion.map((item) => (item.id === regla.id ? { ...item, activa } : item)))
+                        update(
+                          "derivacion",
+                          config.derivacion.map((item) => (item.id === regla.id ? { ...item, activa } : item)),
+                        )
                       }
                     />
                   </li>
@@ -663,7 +749,10 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
           <CardFooter className="block px-0 py-0">
             <ol className="divide-y divide-border">
               {versiones.historial.map((version) => (
-                <li key={`${version.numero}-${version.cuando}`} className="flex items-start justify-between gap-3 px-5 py-3">
+                <li
+                  key={`${version.numero}-${version.cuando}`}
+                  className="flex items-start justify-between gap-3 px-5 py-3"
+                >
                   <div className="min-w-0">
                     <p className="text-[13px] font-medium">
                       v{version.numero} · {version.resumen}
@@ -672,7 +761,7 @@ export function ConfigEditor({ initial, versiones: initialVersiones }: { initial
                       {version.cuando} · {version.por}
                     </p>
                   </div>
-                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{version.acierto}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{version.acierto}</span>
                 </li>
               ))}
             </ol>

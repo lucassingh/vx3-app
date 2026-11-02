@@ -47,9 +47,7 @@ export function TakeDialog({
         >
           <DialogHeader>
             <DialogTitle>Tomar la conversación con {clienta}</DialogTitle>
-            <DialogDescription>
-              El bot deja de responder hasta que la devuelvas o la cierres.
-            </DialogDescription>
+            <DialogDescription>El bot deja de responder hasta que la devuelvas o la cierres.</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <fieldset>

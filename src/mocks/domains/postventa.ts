@@ -1,24 +1,8 @@
-import type {
-  Kpi,
-  OrigenReclamo,
-  PostventaResumen,
-  ReclamoPostventa,
-  TipoReclamo,
-} from "@/lib/api/types";
+import type { Kpi, OrigenReclamo, PostventaResumen, ReclamoPostventa, TipoReclamo } from "@/lib/api/types";
 import { formatCurrency } from "@/lib/format";
 import { defineStore } from "../db";
 import { errorResponse, readJson, type Route } from "../http";
-import {
-  clientaRef,
-  DAY,
-  detalleDe,
-  getPedido,
-  getProducto,
-  HOUR,
-  isoAgo,
-  pedidos,
-  presentacionesDe,
-} from "../seed";
+import { clientaRef, DAY, detalleDe, getPedido, getProducto, HOUR, isoAgo, pedidos, presentacionesDe } from "../seed";
 
 /** M8 · Post-venta (RN-50 a RN-63). */
 
@@ -62,15 +46,124 @@ type ReclamoSeed = {
 };
 
 const RECLAMOS: ReclamoSeed[] = [
-  { id: "R-0231", pedidoId: "V-1042", tipo: 1, sku: "LN35", prendas: 1, relato: "Me llegaron 5 less en la media docena en vez de 6.", creadoHaceMin: 22 * HOUR, estado: "abierto", recibida: ["Video de apertura"], origen: null, origenSugerido: "armado" },
-  { id: "R-0230", pedidoId: "V-1045", tipo: 2, sku: "CJATN14", prendas: 1, relato: "Un conjunto vino con una mancha chica en la copa.", creadoHaceMin: 6 * HOUR, estado: "abierto", recibida: ["Foto de la falla"], origen: null, origenSugerido: "proveedor" },
-  { id: "R-0229", pedidoId: "V-1038", tipo: 6, sku: "VN16", prendas: 0, relato: "El Correo dice que la dirección no existe y el paquete está en la sucursal.", creadoHaceMin: 30 * HOUR, estado: "abierto", recibida: [], origen: "envio", origenSugerido: "envio" },
-  { id: "R-0228", pedidoId: "V-1037", tipo: 3, sku: "VN31", prendas: 0, relato: "Pedí vedetinas Need Feel y me llegó media docena de vedetinas Sakura.", creadoHaceMin: 10 * HOUR, estado: "esperando_evidencia", recibida: [], origen: null, origenSugerido: "armado", llego: "VN25" },
-  { id: "R-0227", pedidoId: "V-1044", tipo: 5, sku: "VN14", prendas: 0, relato: "Me dijeron que llegaba ayer y todavía no tengo nada.", creadoHaceMin: 3 * HOUR, estado: "abierto", recibida: [], origen: "envio", origenSugerido: "envio" },
-  { id: "R-0226", pedidoId: "V-1039", tipo: 4, sku: "BCN2", prendas: 0, relato: "El body es más transparente de lo que se veía en la foto.", creadoHaceMin: 2 * DAY, estado: "resuelto", recibida: ["Foto del producto"], origen: "catalogo", origenSugerido: "catalogo" },
-  { id: "R-0225", pedidoId: "V-1036", tipo: 1, sku: "LN35", prendas: 2, relato: "Faltan dos less de la media docena.", creadoHaceMin: 5 * DAY, estado: "resuelto", recibida: ["Video de apertura"], origen: "armado", origenSugerido: "armado" },
-  { id: "R-0224", pedidoId: "V-1035", tipo: 1, sku: "CAN9", prendas: 1, relato: "Vinieron cinco corpiños en lugar de seis.", creadoHaceMin: 6 * DAY, estado: "resuelto", recibida: ["Video de apertura"], origen: "armado", origenSugerido: "armado" },
-  { id: "R-0223", pedidoId: "V-1043", tipo: 2, sku: "CJATN14", prendas: 1, relato: "Se descosió un bretel al probarlo.", creadoHaceMin: 2 * DAY + 5 * HOUR, estado: "resuelto", recibida: ["Video de apertura", "Foto de la falla"], origen: "proveedor", origenSugerido: "proveedor" },
+  {
+    id: "R-0231",
+    pedidoId: "V-1042",
+    tipo: 1,
+    sku: "LN35",
+    prendas: 1,
+    relato: "Me llegaron 5 less en la media docena en vez de 6.",
+    creadoHaceMin: 22 * HOUR,
+    estado: "abierto",
+    recibida: ["Video de apertura"],
+    origen: null,
+    origenSugerido: "armado",
+  },
+  {
+    id: "R-0230",
+    pedidoId: "V-1045",
+    tipo: 2,
+    sku: "CJATN14",
+    prendas: 1,
+    relato: "Un conjunto vino con una mancha chica en la copa.",
+    creadoHaceMin: 6 * HOUR,
+    estado: "abierto",
+    recibida: ["Foto de la falla"],
+    origen: null,
+    origenSugerido: "proveedor",
+  },
+  {
+    id: "R-0229",
+    pedidoId: "V-1038",
+    tipo: 6,
+    sku: "VN16",
+    prendas: 0,
+    relato: "El Correo dice que la dirección no existe y el paquete está en la sucursal.",
+    creadoHaceMin: 30 * HOUR,
+    estado: "abierto",
+    recibida: [],
+    origen: "envio",
+    origenSugerido: "envio",
+  },
+  {
+    id: "R-0228",
+    pedidoId: "V-1037",
+    tipo: 3,
+    sku: "VN31",
+    prendas: 0,
+    relato: "Pedí vedetinas Need Feel y me llegó media docena de vedetinas Sakura.",
+    creadoHaceMin: 10 * HOUR,
+    estado: "esperando_evidencia",
+    recibida: [],
+    origen: null,
+    origenSugerido: "armado",
+    llego: "VN25",
+  },
+  {
+    id: "R-0227",
+    pedidoId: "V-1044",
+    tipo: 5,
+    sku: "VN14",
+    prendas: 0,
+    relato: "Me dijeron que llegaba ayer y todavía no tengo nada.",
+    creadoHaceMin: 3 * HOUR,
+    estado: "abierto",
+    recibida: [],
+    origen: "envio",
+    origenSugerido: "envio",
+  },
+  {
+    id: "R-0226",
+    pedidoId: "V-1039",
+    tipo: 4,
+    sku: "BCN2",
+    prendas: 0,
+    relato: "El body es más transparente de lo que se veía en la foto.",
+    creadoHaceMin: 2 * DAY,
+    estado: "resuelto",
+    recibida: ["Foto del producto"],
+    origen: "catalogo",
+    origenSugerido: "catalogo",
+  },
+  {
+    id: "R-0225",
+    pedidoId: "V-1036",
+    tipo: 1,
+    sku: "LN35",
+    prendas: 2,
+    relato: "Faltan dos less de la media docena.",
+    creadoHaceMin: 5 * DAY,
+    estado: "resuelto",
+    recibida: ["Video de apertura"],
+    origen: "armado",
+    origenSugerido: "armado",
+  },
+  {
+    id: "R-0224",
+    pedidoId: "V-1035",
+    tipo: 1,
+    sku: "CAN9",
+    prendas: 1,
+    relato: "Vinieron cinco corpiños en lugar de seis.",
+    creadoHaceMin: 6 * DAY,
+    estado: "resuelto",
+    recibida: ["Video de apertura"],
+    origen: "armado",
+    origenSugerido: "armado",
+  },
+  {
+    id: "R-0223",
+    pedidoId: "V-1043",
+    tipo: 2,
+    sku: "CJATN14",
+    prendas: 1,
+    relato: "Se descosió un bretel al probarlo.",
+    creadoHaceMin: 2 * DAY + 5 * HOUR,
+    estado: "resuelto",
+    recibida: ["Video de apertura", "Foto de la falla"],
+    origen: "proveedor",
+    origenSugerido: "proveedor",
+  },
 ];
 
 const getPostventaDb = defineStore("postventa", (now) => ({
@@ -81,7 +174,9 @@ const getPostventaDb = defineStore("postventa", (now) => ({
 /** Compras de la clienta en los últimos 30 días, para la excepción del video (RN-52). */
 function compra30d(clientaId: string) {
   return pedidos
-    .filter((pedido) => pedido.clientaId === clientaId && pedido.estado !== "anulado" && pedido.creadoHaceMin < 30 * DAY)
+    .filter(
+      (pedido) => pedido.clientaId === clientaId && pedido.estado !== "anulado" && pedido.creadoHaceMin < 30 * DAY,
+    )
     .reduce((sum, pedido) => sum + detalleDe(pedido).total, 0);
 }
 
@@ -102,7 +197,8 @@ function resolucionDe(seed: ReclamoSeed) {
     case 2: {
       const costo = Math.round(bulto.costo / divisor);
       return {
-        sugerida: "Si la mancha es chica y lavable, ofrecer que se la quede a precio de costo; si no, reintegro (RN-55).",
+        sugerida:
+          "Si la mancha es chica y lavable, ofrecer que se la quede a precio de costo; si no, reintegro (RN-55).",
         monto: prenda - costo,
         calculo: `${calculoPrenda} · a costo ${formatCurrency(costo)} → reintegro ${formatCurrency(prenda - costo)}`,
       };
@@ -120,7 +216,11 @@ function resolucionDe(seed: ReclamoSeed) {
       };
     }
     case 4:
-      return { sugerida: "Mandarle la captura del catálogo: no hay cambio (RN-57).", monto: 0, calculo: "Sin reintegro" };
+      return {
+        sugerida: "Mandarle la captura del catálogo: no hay cambio (RN-57).",
+        monto: 0,
+        calculo: "Sin reintegro",
+      };
     case 5:
       return {
         sugerida: "Buscar el envío en Zupply, consultar a Transtech y avisarle cuando se resuelva (RN-58).",
@@ -227,7 +327,13 @@ function resumen(): PostventaResumen {
     .reduce((sum, reclamo) => sum + reclamo.resolucion.monto, 0);
 
   const kpis: Kpi[] = [
-    { id: "abiertos", label: "Reclamos abiertos", value: abiertos.length, format: "number", hint: "Responsable: Lucía" },
+    {
+      id: "abiertos",
+      label: "Reclamos abiertos",
+      value: abiertos.length,
+      format: "number",
+      hint: "Responsable: Lucía",
+    },
     {
       id: "vencen",
       label: "Vencen hoy",
@@ -235,7 +341,13 @@ function resumen(): PostventaResumen {
       format: "number",
       hint: "Respuesta en 24 h como máximo (RN-50)",
     },
-    { id: "reintegrado", label: "Reintegrado · 7 días", value: reintegrado, format: "currency", hint: "Con su nota de crédito vinculada" },
+    {
+      id: "reintegrado",
+      label: "Reintegrado · 7 días",
+      value: reintegrado,
+      format: "currency",
+      hint: "Con su nota de crédito vinculada",
+    },
     {
       id: "tipo1",
       label: "Faltantes · 4 semanas",
@@ -249,8 +361,7 @@ function resumen(): PostventaResumen {
     kpis,
     reclamos: reclamos.toSorted(
       (a, b) =>
-        Number(a.estado === "resuelto") - Number(b.estado === "resuelto") ||
-        a.horasRestantes - b.horasRestantes,
+        Number(a.estado === "resuelto") - Number(b.estado === "resuelto") || a.horasRestantes - b.horasRestantes,
     ),
     causas: {
       origenes: ORIGENES_RECLAMO,

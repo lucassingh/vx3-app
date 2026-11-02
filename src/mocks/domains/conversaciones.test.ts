@@ -1,12 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it } from "vitest";
-import type {
-  ApiErrorBody,
-  BandejaConversaciones,
-  BotPrueba,
-  Conversacion,
-  VidrieraResumen,
-} from "@/lib/api/types";
+import type { ApiErrorBody, BandejaConversaciones, BotPrueba, Conversacion, VidrieraResumen } from "@/lib/api/types";
 import { resetDb } from "../db";
 import { handleMockRequest, MOCK_API_PREFIX } from "../router";
 
@@ -36,7 +30,10 @@ describe("conversaciones", () => {
     const texto = await call<ApiErrorBody>("/conversaciones/cv-08/mensajes", post({ tipo: "texto", texto: "Hola!" }));
     expect(texto.status).toBe(409);
 
-    const plantilla = await call<Conversacion>("/conversaciones/cv-08/mensajes", post({ tipo: "plantilla", texto: "", plantillaId: "pl-1" }));
+    const plantilla = await call<Conversacion>(
+      "/conversaciones/cv-08/mensajes",
+      post({ tipo: "plantilla", texto: "", plantillaId: "pl-1" }),
+    );
     expect(plantilla.body.mensajes.at(-1)).toMatchObject({ tipo: "texto", plantilla: "seguimiento_consulta" });
   });
 

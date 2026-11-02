@@ -22,14 +22,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api/browser";
 import type { Integracion, IntegracionEstado } from "@/lib/api/types";
 import { toast } from "@/lib/toast";
@@ -69,13 +62,7 @@ function probar(integracion: Pick<Integracion, "id">) {
   });
 }
 
-export function IntegracionCard({
-  integracion,
-  labels,
-}: {
-  integracion: Integracion;
-  labels: IntegracionLabels;
-}) {
+export function IntegracionCard({ integracion, labels }: { integracion: Integracion; labels: IntegracionLabels }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -148,7 +135,7 @@ export function IntegracionCard({
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col gap-4 pt-4">
-        <p className="text-pretty text-[13px] text-muted-foreground">{integracion.detalle}</p>
+        <p className="text-[13px] text-pretty text-muted-foreground">{integracion.detalle}</p>
 
         <dl className="grid grid-cols-3 gap-3">
           {integracion.metricas.map((metrica) => (

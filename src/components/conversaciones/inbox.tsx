@@ -21,13 +21,7 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { NativeSelect } from "@/components/ui/textarea";
 import { api } from "@/lib/api/browser";
-import type {
-  Conversacion,
-  LineaWhatsapp,
-  NuevoMensaje,
-  PlantillaWhatsapp,
-  RespuestaRapida,
-} from "@/lib/api/types";
+import type { Conversacion, LineaWhatsapp, NuevoMensaje, PlantillaWhatsapp, RespuestaRapida } from "@/lib/api/types";
 import { toast } from "@/lib/toast";
 import { cn, normalizeText } from "@/lib/utils";
 import { Composer } from "./composer";
@@ -91,7 +85,9 @@ export function Inbox({ initial, respuestasRapidas, plantillas, motivosToma }: I
         matches(filtro, item) &&
         (linea === "todas" || item.linea === linea) &&
         (!term ||
-          normalizeText(`${item.clienta.nombre} ${item.clienta.telefono} ${item.pedidoAbiertoId ?? ""} ${item.ultimo.texto}`).includes(term)),
+          normalizeText(
+            `${item.clienta.nombre} ${item.clienta.telefono} ${item.pedidoAbiertoId ?? ""} ${item.ultimo.texto}`,
+          ).includes(term)),
     );
   }, [items, filtro, linea, query]);
 
@@ -209,14 +205,22 @@ export function Inbox({ initial, respuestasRapidas, plantillas, motivosToma }: I
     if (!selected) return;
     const temp: MensajeView =
       mensaje.tipo === "nota"
-        ? { id: `tmp-${Date.now()}`, tipo: "nota", autorNombre: YO, texto: mensaje.texto, enviadoEn: new Date().toISOString(), hora: "ahora" }
+        ? {
+            id: `tmp-${Date.now()}`,
+            tipo: "nota",
+            autorNombre: YO,
+            texto: mensaje.texto,
+            enviadoEn: new Date().toISOString(),
+            hora: "ahora",
+          }
         : {
             id: `tmp-${Date.now()}`,
             tipo: "texto",
             autor: "persona",
             autorNombre: YO,
             texto: mensaje.texto.replaceAll("{{nombre}}", selected.clienta.nombre.split(" ")[0]),
-            plantilla: mensaje.tipo === "plantilla" ? plantillas.find((p) => p.id === mensaje.plantillaId)?.nombre : undefined,
+            plantilla:
+              mensaje.tipo === "plantilla" ? plantillas.find((p) => p.id === mensaje.plantillaId)?.nombre : undefined,
             enviadoEn: new Date().toISOString(),
             hora: "ahora",
           };
@@ -229,11 +233,16 @@ export function Inbox({ initial, respuestasRapidas, plantillas, motivosToma }: I
         ...(takes && { estado: "persona" as const, asignadaA: YO }),
         sinLeer: mensaje.tipo === "nota" ? c.sinLeer : 0,
         mensajes: [...c.mensajes, temp],
-        ultimo: { texto: mensaje.tipo === "nota" ? `Nota interna: ${temp.texto}` : temp.texto, hace: "ahora", deClienta: false },
+        ultimo: {
+          texto: mensaje.tipo === "nota" ? `Nota interna: ${temp.texto}` : temp.texto,
+          hace: "ahora",
+          deClienta: false,
+        },
       }),
       () => api.conversaciones.enviar(selected.id, mensaje),
       {
-        success: mensaje.tipo === "nota" ? "Nota guardada" : takes ? "Mensaje enviado · tomaste la conversación" : undefined,
+        success:
+          mensaje.tipo === "nota" ? "Nota guardada" : takes ? "Mensaje enviado · tomaste la conversación" : undefined,
         error: mensaje.tipo === "nota" ? "No se pudo guardar la nota" : "No se pudo enviar el mensaje",
       },
     );
@@ -274,7 +283,11 @@ export function Inbox({ initial, respuestasRapidas, plantillas, motivosToma }: I
                 <option value="local">Local</option>
               </NativeSelect>
             </div>
-            <div role="group" aria-label="Filtrar conversaciones" className="scrollbar-thin -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
+            <div
+              role="group"
+              aria-label="Filtrar conversaciones"
+              className="-mx-1 flex scrollbar-thin gap-1.5 overflow-x-auto px-1 pb-0.5"
+            >
               {FILTROS.map(({ id, label }) => (
                 <button
                   key={id}
@@ -293,10 +306,14 @@ export function Inbox({ initial, respuestasRapidas, plantillas, motivosToma }: I
           <p aria-live="polite" className="sr-only">
             {visibles.length} conversaciones
           </p>
-          <ul className="scrollbar-thin min-h-0 flex-1 divide-y divide-border overflow-y-auto">
+          <ul className="min-h-0 flex-1 scrollbar-thin divide-y divide-border overflow-y-auto">
             {visibles.map((item) => (
               <li key={item.id}>
-                <ConversationRow conversacion={item} selected={item.id === selectedId} onSelect={() => select(item.id)} />
+                <ConversationRow
+                  conversacion={item}
+                  selected={item.id === selectedId}
+                  onSelect={() => select(item.id)}
+                />
               </li>
             ))}
             {visibles.length === 0 && (
@@ -333,7 +350,7 @@ export function Inbox({ initial, respuestasRapidas, plantillas, motivosToma }: I
 
         <aside
           aria-label="Ficha de la clienta"
-          className="scrollbar-thin hidden min-h-0 overflow-y-auto border-l border-border xl:block"
+          className="hidden min-h-0 scrollbar-thin overflow-y-auto border-l border-border xl:block"
         >
           {selected && <FichaPanel conversacion={selected} />}
         </aside>
@@ -371,7 +388,8 @@ function ConversationRow({
 }) {
   const estado = ESTADO_CONVERSACION[conversacion.estado];
   const LineIcon = conversacion.linea === "local" ? Store : MessageCircle;
-  const OrigenIcon = conversacion.origen.tipo === "anuncio" ? Megaphone : conversacion.origen.tipo === "recompra" ? Repeat : Users;
+  const OrigenIcon =
+    conversacion.origen.tipo === "anuncio" ? Megaphone : conversacion.origen.tipo === "recompra" ? Repeat : Users;
 
   return (
     <button
@@ -382,7 +400,7 @@ function ConversationRow({
     >
       <span className="relative shrink-0">
         <Avatar name={conversacion.clienta.nombre} className="size-9" />
-        <span className="absolute -bottom-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-surface ring-1 ring-border">
+        <span className="absolute -right-0.5 -bottom-0.5 grid size-4 place-items-center rounded-full bg-surface ring-1 ring-border">
           <LineIcon aria-hidden className="size-2.5 text-muted-foreground" />
         </span>
       </span>
@@ -395,7 +413,12 @@ function ConversationRow({
             {conversacion.ultimo.hace}
           </span>
         </span>
-        <span className={cn("mt-0.5 block truncate text-[13px]", conversacion.sinLeer > 0 ? "text-foreground" : "text-muted-foreground")}>
+        <span
+          className={cn(
+            "mt-0.5 block truncate text-[13px]",
+            conversacion.sinLeer > 0 ? "text-foreground" : "text-muted-foreground",
+          )}
+        >
           {conversacion.ultimo.texto}
         </span>
         <span className="mt-1.5 flex items-center gap-1.5">
@@ -462,7 +485,7 @@ function ChatPanel({
         </Button>
         <Avatar name={conversacion.clienta.nombre} className="hidden size-9 sm:inline-flex" />
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-[15px] font-semibold leading-5 tracking-tight">{conversacion.clienta.nombre}</h2>
+          <h2 className="truncate text-[15px] leading-5 font-semibold tracking-tight">{conversacion.clienta.nombre}</h2>
           <p className="truncate text-xs text-muted-foreground">
             <span className="tabular-nums">{conversacion.clienta.telefono}</span> · {LINEA[conversacion.linea]}
             {conversacion.asignadaA && ` · ${conversacion.asignadaA}`}
@@ -491,7 +514,13 @@ function ChatPanel({
               <CircleCheck />
             </Button>
           )}
-          <Button variant="outline" size="icon-sm" className="xl:hidden" onClick={onShowFicha} aria-label="Ver la ficha de la clienta">
+          <Button
+            variant="outline"
+            size="icon-sm"
+            className="xl:hidden"
+            onClick={onShowFicha}
+            aria-label="Ver la ficha de la clienta"
+          >
             <PanelRight />
           </Button>
         </div>
@@ -518,7 +547,7 @@ function ChatPanel({
         ref={logRef}
         role="log"
         aria-label={`Mensajes con ${conversacion.clienta.nombre}`}
-        className="scrollbar-thin min-h-0 flex-1 space-y-3 overflow-y-auto bg-canvas/60 px-3 py-5 sm:px-5"
+        className="min-h-0 flex-1 scrollbar-thin space-y-3 overflow-y-auto bg-canvas/60 px-3 py-5 sm:px-5"
       >
         {conversacion.mensajes.map((mensaje) => (
           <MessageItem key={mensaje.id} mensaje={mensaje} />

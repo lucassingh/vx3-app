@@ -30,16 +30,76 @@ export function calcularPresentaciones(familia: Familia, sku: string, costoDocen
 
   if (familia === "medias") {
     return [
-      { codigo: `${base}-3`, label: "Pack de 3", terminacion: "PACK DE 3", prendas: 3, coeficiente: 2.21, precio: ceilTo((cd / 4) * 2.21, 100), costo: cd / 4, listas: [LOCAL], esBulto: false },
-      { codigo: `${base}-6`, label: "Pack de 6", terminacion: "PACK DE 6", prendas: 6, coeficiente: 1.8182, precio: ceilTo((cd / 2) * 1.8182, 100), costo: cd / 2, listas: [LOCAL], esBulto: false },
-      { codigo: `${base}-12`, label: "Docena", terminacion: "DOCENA", prendas: 12, coeficiente: 1.3, precio: ceilTo(cd * 1.3, 100), costo: cd, listas: [MAYORISTA, LOCAL], esBulto: true },
+      {
+        codigo: `${base}-3`,
+        label: "Pack de 3",
+        terminacion: "PACK DE 3",
+        prendas: 3,
+        coeficiente: 2.21,
+        precio: ceilTo((cd / 4) * 2.21, 100),
+        costo: cd / 4,
+        listas: [LOCAL],
+        esBulto: false,
+      },
+      {
+        codigo: `${base}-6`,
+        label: "Pack de 6",
+        terminacion: "PACK DE 6",
+        prendas: 6,
+        coeficiente: 1.8182,
+        precio: ceilTo((cd / 2) * 1.8182, 100),
+        costo: cd / 2,
+        listas: [LOCAL],
+        esBulto: false,
+      },
+      {
+        codigo: `${base}-12`,
+        label: "Docena",
+        terminacion: "DOCENA",
+        prendas: 12,
+        coeficiente: 1.3,
+        precio: ceilTo(cd * 1.3, 100),
+        costo: cd,
+        listas: [MAYORISTA, LOCAL],
+        esBulto: true,
+      },
     ];
   }
 
   return [
-    { codigo: base, label: "Prenda", terminacion: "UNIDAD", prendas: 1, coeficiente: 2.21, precio: ceilTo((cd / 12) * 2.21, 100), costo: cd / 12, listas: [LOCAL], esBulto: false },
-    { codigo: `${base}-6`, label: "Media docena", terminacion: "MEDIA DOCENA", prendas: 6, coeficiente: 1.3, precio: ceilTo((cd / 2) * 1.3, 100), costo: cd / 2, listas: [MAYORISTA, LOCAL], esBulto: true },
-    { codigo: `${base}-12`, label: "Docena", terminacion: "DOCENA", prendas: 12, coeficiente: 1.1765, precio: ceilTo(cd * 1.1765, 100), costo: cd, listas: [MAYORISTA, LOCAL], esBulto: false },
+    {
+      codigo: base,
+      label: "Prenda",
+      terminacion: "UNIDAD",
+      prendas: 1,
+      coeficiente: 2.21,
+      precio: ceilTo((cd / 12) * 2.21, 100),
+      costo: cd / 12,
+      listas: [LOCAL],
+      esBulto: false,
+    },
+    {
+      codigo: `${base}-6`,
+      label: "Media docena",
+      terminacion: "MEDIA DOCENA",
+      prendas: 6,
+      coeficiente: 1.3,
+      precio: ceilTo((cd / 2) * 1.3, 100),
+      costo: cd / 2,
+      listas: [MAYORISTA, LOCAL],
+      esBulto: true,
+    },
+    {
+      codigo: `${base}-12`,
+      label: "Docena",
+      terminacion: "DOCENA",
+      prendas: 12,
+      coeficiente: 1.1765,
+      precio: ceilTo(cd * 1.1765, 100),
+      costo: cd,
+      listas: [MAYORISTA, LOCAL],
+      esBulto: false,
+    },
   ];
 }
 

@@ -19,13 +19,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { NativeSelect } from "@/components/ui/textarea";
@@ -121,7 +115,11 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
   const [skuReciclado, setSkuReciclado] = useState("");
   const [fotos, setFotos] = useState<Partial<Record<FotoTipo, { url: string; nombre: string }>>>({});
   const [intentado, setIntentado] = useState(false);
-  const [pasos, setPasos] = useState<Record<CatalogoAltaPaso, PasoEstado>>({ dux: "idle", precios: "idle", tiendanube: "idle" });
+  const [pasos, setPasos] = useState<Record<CatalogoAltaPaso, PasoEstado>>({
+    dux: "idle",
+    precios: "idle",
+    tiendanube: "idle",
+  });
   const [publicando, setPublicando] = useState(false);
   const [publicado, setPublicado] = useState<string | null>(null);
 
@@ -159,7 +157,11 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
   const skusExistentes = opciones.skus.map((item) => item.sku);
   const errores = erroresDeAlta(input, skusExistentes);
   const avisos = avisosDeAlta(input, opciones.marcas);
-  if (!fotos.colores) avisos.push({ campo: "fotos", mensaje: "Sin la foto de todos los colores, Tienda Nube no publica el bulto (RN-09)." });
+  if (!fotos.colores)
+    avisos.push({
+      campo: "fotos",
+      mensaje: "Sin la foto de todos los colores, Tienda Nube no publica el bulto (RN-09).",
+    });
 
   const errorDe = (campo: AltaProblema["campo"]) =>
     intentado ? errores.find((item) => item.campo === campo)?.mensaje : undefined;
@@ -251,7 +253,9 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
           <CardHeader>
             <div>
               <CardTitle>Clasificación</CardTitle>
-              <CardDescription>Rubro, subrubro y marca tienen que existir en DUX escritos igual (RN-07)</CardDescription>
+              <CardDescription>
+                Rubro, subrubro y marca tienen que existir en DUX escritos igual (RN-07)
+              </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-5 pt-5">
@@ -260,15 +264,24 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
               <div className="min-w-0 flex-1 space-y-0.5">
                 <Label htmlFor={id("reciclado")}>¿Es el mismo producto con otros colores?</Label>
                 <p className="text-xs text-muted-foreground">
-                  Misma tela, corte y fabricante: no se crea SKU, se suman las fotos (RN-04). Si cambia el corte, la tela o un detalle, va SKU nuevo.
+                  Misma tela, corte y fabricante: no se crea SKU, se suman las fotos (RN-04). Si cambia el corte, la
+                  tela o un detalle, va SKU nuevo.
                 </p>
               </div>
               <Switch id={id("reciclado")} checked={reciclado} onCheckedChange={setReciclado} />
             </div>
 
             {reciclado ? (
-              <Field id={id("sku-reciclado")} label="Producto existente" hint="Se le suma la foto nueva y se ajusta la aclaración del nombre.">
-                <NativeSelect id={id("sku-reciclado")} value={skuReciclado} onChange={(event) => setSkuReciclado(event.target.value)}>
+              <Field
+                id={id("sku-reciclado")}
+                label="Producto existente"
+                hint="Se le suma la foto nueva y se ajusta la aclaración del nombre."
+              >
+                <NativeSelect
+                  id={id("sku-reciclado")}
+                  value={skuReciclado}
+                  onChange={(event) => setSkuReciclado(event.target.value)}
+                >
                   <option value="">Elegí el SKU</option>
                   {opciones.skus.map((item) => (
                     <option key={item.sku} value={item.sku}>
@@ -280,7 +293,11 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field id={id("rubro")} label="Rubro">
-                  <NativeSelect id={id("rubro")} value={rubro} onChange={(event) => elegirSubrubro(event.target.value, "")}>
+                  <NativeSelect
+                    id={id("rubro")}
+                    value={rubro}
+                    onChange={(event) => elegirSubrubro(event.target.value, "")}
+                  >
                     {opciones.rubros.map((item) => (
                       <option key={item.rubro} value={item.rubro}>
                         {item.rubro}
@@ -308,7 +325,8 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                   error={errorDe("sku")}
                   hint={
                     <>
-                      Próximo correlativo de <span className="font-mono">{subActual?.prefijo}</span> en DUX. La terminación del pack la agrega el sistema.
+                      Próximo correlativo de <span className="font-mono">{subActual?.prefijo}</span> en DUX. La
+                      terminación del pack la agrega el sistema.
                     </>
                   }
                 >
@@ -322,7 +340,7 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                       {...invalid("sku")}
                     />
                     {sku === subActual?.proximoSku ? (
-                      <Badge variant="primary" className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <Badge variant="primary" className="absolute top-1/2 right-2 -translate-y-1/2">
                         Sugerido
                       </Badge>
                     ) : (
@@ -330,7 +348,7 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                         type="button"
                         variant="ghost"
                         size="icon-xs"
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2"
+                        className="absolute top-1/2 right-1.5 -translate-y-1/2"
                         aria-label="Volver al SKU sugerido"
                         onClick={() => setSku(subActual?.proximoSku ?? "")}
                       >
@@ -340,7 +358,11 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                   </div>
                 </Field>
                 <Field id={id("proveedor")} label="Proveedor">
-                  <NativeSelect id={id("proveedor")} value={proveedorId} onChange={(event) => setProveedorId(event.target.value)}>
+                  <NativeSelect
+                    id={id("proveedor")}
+                    value={proveedorId}
+                    onChange={(event) => setProveedorId(event.target.value)}
+                  >
                     {opciones.proveedores.map((item) => (
                       <option key={item.id} value={item.id}>
                         {item.nombre}
@@ -359,13 +381,20 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
               <CardHeader>
                 <div>
                   <CardTitle>Nombre y atributos</CardTitle>
-                  <CardDescription>Con vocabulario controlado: así el bot y la vidriera pueden filtrar por talle, color y tela</CardDescription>
+                  <CardDescription>
+                    Con vocabulario controlado: así el bot y la vidriera pueden filtrar por talle, color y tela
+                  </CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="space-y-5 pt-5">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field id={id("base")} label="Producto" error={errorDe("nombre")}>
-                    <Input id={id("base")} value={base} onChange={(event) => setBase(event.target.value)} {...invalid("nombre")} />
+                    <Input
+                      id={id("base")}
+                      value={base}
+                      onChange={(event) => setBase(event.target.value)}
+                      {...invalid("nombre")}
+                    />
                   </Field>
                   <Field id={id("marca")} label="Marca" hint="Elegí una de las que existen en DUX.">
                     <Input
@@ -382,8 +411,17 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                       ))}
                     </datalist>
                   </Field>
-                  <Field id={id("detalle")} label="Detalle significativo" hint="Solo si distingue al producto: “con aro y push up”.">
-                    <Input id={id("detalle")} value={detalle} onChange={(event) => setDetalle(event.target.value)} placeholder="Ej. con puntilla" />
+                  <Field
+                    id={id("detalle")}
+                    label="Detalle significativo"
+                    hint="Solo si distingue al producto: “con aro y push up”."
+                  >
+                    <Input
+                      id={id("detalle")}
+                      value={detalle}
+                      onChange={(event) => setDetalle(event.target.value)}
+                      placeholder="Ej. con puntilla"
+                    />
                   </Field>
                   <Field id={id("tela")} label="Tela">
                     <NativeSelect id={id("tela")} value={tela} onChange={(event) => setTela(event.target.value)}>
@@ -396,13 +434,23 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                     </NativeSelect>
                   </Field>
                   <Field id={id("talles")} label="Curva de talles" error={errorDe("talles")}>
-                    <Input id={id("talles")} value={talles} onChange={(event) => setTalles(event.target.value)} placeholder="Ej. 90 a 105" {...invalid("talles")} />
+                    <Input
+                      id={id("talles")}
+                      value={talles}
+                      onChange={(event) => setTalles(event.target.value)}
+                      placeholder="Ej. 90 a 105"
+                      {...invalid("talles")}
+                    />
                   </Field>
                 </div>
 
-                <fieldset className="space-y-2" aria-describedby={errorDe("colores") ? `${id("colores")}-error` : undefined}>
+                <fieldset
+                  className="space-y-2"
+                  aria-describedby={errorDe("colores") ? `${id("colores")}-error` : undefined}
+                >
                   <legend className="text-[13px] font-medium">
-                    Curva de colores <span className="font-normal text-muted-foreground">· {colores.length} elegidos</span>
+                    Curva de colores{" "}
+                    <span className="font-normal text-muted-foreground">· {colores.length} elegidos</span>
                   </legend>
                   <div className="flex flex-wrap gap-1.5">
                     {opciones.colores.map((color) => {
@@ -415,10 +463,16 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                           onClick={() => toggleColor(color)}
                           className={cn(
                             "inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[13px] transition-[background-color,border-color,scale] duration-150 ease-snappy active:scale-[0.96]",
-                            activo ? "border-primary bg-primary/10 font-medium" : "border-border-strong bg-surface hover:bg-muted",
+                            activo
+                              ? "border-primary bg-primary/10 font-medium"
+                              : "border-border-strong bg-surface hover:bg-muted",
                           )}
                         >
-                          <span aria-hidden className="size-3 rounded-full ring-1 ring-foreground/15" style={{ background: swatchFor(color) }} />
+                          <span
+                            aria-hidden
+                            className="size-3 rounded-full ring-1 ring-foreground/15"
+                            style={{ background: swatchFor(color) }}
+                          />
                           {color}
                           {activo && <Check aria-hidden className="size-3.5 text-primary" />}
                         </button>
@@ -464,14 +518,18 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                 <div>
                   <CardTitle>Costo y precios</CardTitle>
                   <CardDescription>
-                    El costo vive en la prenda (docena ÷ 12) y el motor calcula el piso de cada pack, redondeado hacia arriba a $ 100
+                    El costo vive en la prenda (docena ÷ 12) y el motor calcula el piso de cada pack, redondeado hacia
+                    arriba a $ 100
                   </CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="pt-5">
                 <Field id={id("costo")} label="Costo de la docena" error={errorDe("costoDocena")} className="max-w-xs">
                   <div className="relative">
-                    <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground"
+                    >
                       $
                     </span>
                     <Input
@@ -494,11 +552,21 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                   <caption className="sr-only">Presentaciones con sus precios calculados</caption>
                   <thead className="bg-muted/60 text-left text-xs text-muted-foreground">
                     <tr>
-                      <th scope="col" className="px-3 py-2.5 pl-5 font-medium">Código</th>
-                      <th scope="col" className="px-3 py-2.5 font-medium">Presentación</th>
-                      <th scope="col" className="px-3 py-2.5 text-right font-medium">Coeficiente</th>
-                      <th scope="col" className="px-3 py-2.5 text-right font-medium">Precio</th>
-                      <th scope="col" className="px-3 py-2.5 pr-5 font-medium">Listas</th>
+                      <th scope="col" className="px-3 py-2.5 pl-5 font-medium">
+                        Código
+                      </th>
+                      <th scope="col" className="px-3 py-2.5 font-medium">
+                        Presentación
+                      </th>
+                      <th scope="col" className="px-3 py-2.5 text-right font-medium">
+                        Coeficiente
+                      </th>
+                      <th scope="col" className="px-3 py-2.5 text-right font-medium">
+                        Precio
+                      </th>
+                      <th scope="col" className="px-3 py-2.5 pr-5 font-medium">
+                        Listas
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -513,7 +581,7 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                             </Badge>
                           )}
                         </td>
-                        <td className="px-3 py-3 text-right tabular-nums text-muted-foreground">
+                        <td className="px-3 py-3 text-right text-muted-foreground tabular-nums">
                           × {formatNumber(item.coeficiente, { maximumFractionDigits: 4 })}
                         </td>
                         <td className="px-3 py-3 text-right font-semibold tabular-nums">
@@ -531,7 +599,9 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
               <CardHeader>
                 <div>
                   <CardTitle>Medidas y peso del bulto</CardTitle>
-                  <CardDescription>Con metro y balanza: son obligatorios para cotizar el envío bulto por bulto (RN-84)</CardDescription>
+                  <CardDescription>
+                    Con metro y balanza: son obligatorios para cotizar el envío bulto por bulto (RN-84)
+                  </CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="pt-5">
@@ -585,7 +655,10 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
           <CardHeader>
             <div>
               <CardTitle>Fotos</CardTitle>
-              <CardDescription>Las cuatro de RN-08, con su tipo. Se acabó la convención de nombres en Drive: la app las ordena y recorta sola</CardDescription>
+              <CardDescription>
+                Las cuatro de RN-08, con su tipo. Se acabó la convención de nombres en Drive: la app las ordena y
+                recorta sola
+              </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="pt-5">
@@ -610,7 +683,11 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                       {cargada ? (
                         // Vista previa local (blob:), no pasa por el optimizador de imágenes.
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={cargada.url} alt={`Vista previa: ${foto.label}`} className="absolute inset-0 size-full object-cover" />
+                        <img
+                          src={cargada.url}
+                          alt={`Vista previa: ${foto.label}`}
+                          className="absolute inset-0 size-full object-cover"
+                        />
                       ) : (
                         <>
                           <ImagePlus aria-hidden className="size-6 text-muted-foreground" />
@@ -624,7 +701,13 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                         <p className="truncate text-xs text-muted-foreground">{cargada ? cargada.nombre : foto.hint}</p>
                       </div>
                       {cargada && (
-                        <Button type="button" variant="ghost" size="icon-xs" aria-label={`Quitar la foto ${foto.label}`} onClick={() => cargarFoto(foto.tipo, undefined)}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={`Quitar la foto ${foto.label}`}
+                          onClick={() => cargarFoto(foto.tipo, undefined)}
+                        >
                           <X />
                         </Button>
                       )}
@@ -643,7 +726,9 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
             <div>
               <CardTitle>{reciclado ? "Reciclado de SKU" : "Así va a quedar"}</CardTitle>
               <CardDescription>
-                {reciclado ? "Las fotos se suman al producto que ya existe" : "Nombre según la regla RN-05, con la terminación de cada pack"}
+                {reciclado
+                  ? "Las fotos se suman al producto que ya existe"
+                  : "Nombre según la regla RN-05, con la terminación de cada pack"}
               </CardDescription>
             </div>
           </CardHeader>
@@ -653,8 +738,12 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                 <p className="text-sm text-muted-foreground">
                   {skuReciclado ? (
                     <>
-                      Se suman <span className="font-medium text-foreground">{Object.values(fotos).filter(Boolean).length} fotos</span> a{" "}
-                      <span className="font-mono text-foreground">{skuReciclado}</span> y su nombre pasa a decir “colores sujetos a stock”.
+                      Se suman{" "}
+                      <span className="font-medium text-foreground">
+                        {Object.values(fotos).filter(Boolean).length} fotos
+                      </span>{" "}
+                      a <span className="font-mono text-foreground">{skuReciclado}</span> y su nombre pasa a decir
+                      “colores sujetos a stock”.
                     </>
                   ) : (
                     "Elegí el producto existente y cargá las fotos nuevas."
@@ -740,7 +829,13 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
                         </span>
                         <span className={cn(estado === "idle" && "text-muted-foreground")}>{paso.label}</span>
                         <span className="sr-only">
-                          {estado === "done" ? ": hecho" : estado === "running" ? ": en curso" : estado === "error" ? ": falló" : ""}
+                          {estado === "done"
+                            ? ": hecho"
+                            : estado === "running"
+                              ? ": en curso"
+                              : estado === "error"
+                                ? ": falló"
+                                : ""}
                         </span>
                       </li>
                     );

@@ -17,19 +17,13 @@ import { ApiError, parseResponse, withDefaults } from "./http";
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (isMockApi()) {
     await connection();
-    const mockRequest = new Request(
-      `http://mock.local${MOCK_API_PREFIX}${path}`,
-      withDefaults(init),
-    );
+    const mockRequest = new Request(`http://mock.local${MOCK_API_PREFIX}${path}`, withDefaults(init));
     return parseResponse<T>(await handleMockRequest(mockRequest));
   }
 
   const baseUrl = process.env.API_URL;
   if (!baseUrl) {
-    throw new ApiError(
-      500,
-      "Falta API_URL: con NEXT_PUBLIC_API_MOCK=false hay que definir la URL de la API real.",
-    );
+    throw new ApiError(500, "Falta API_URL: con NEXT_PUBLIC_API_MOCK=false hay que definir la URL de la API real.");
   }
   return parseResponse<T>(await fetch(`${baseUrl}${path}`, withDefaults(init)));
 }

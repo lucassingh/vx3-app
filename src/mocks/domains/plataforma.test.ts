@@ -18,7 +18,10 @@ beforeEach(() => {
 
 describe("reglas de negocio", () => {
   it("rechaza un coeficiente menor a 1 y no toca la regla", async () => {
-    const { status, body } = await call<ApiErrorBody>("/plataforma/reglas", patch([{ id: "coef-media-docena", valor: 0.9 }]));
+    const { status, body } = await call<ApiErrorBody>(
+      "/plataforma/reglas",
+      patch([{ id: "coef-media-docena", valor: 0.9 }]),
+    );
     expect(status).toBe(422);
     expect(body.error.message).toMatch(/menor a 1/);
 
@@ -27,7 +30,10 @@ describe("reglas de negocio", () => {
   });
 
   it("guarda el cambio con el antes y el después, en el historial y en la auditoría", async () => {
-    const { status, body } = await call<{ cambios: CambioRegla[] }>("/plataforma/reglas", patch([{ id: "minimo", valor: 50_000 }]));
+    const { status, body } = await call<{ cambios: CambioRegla[] }>(
+      "/plataforma/reglas",
+      patch([{ id: "minimo", valor: 50_000 }]),
+    );
     expect(status).toBe(200);
     expect(body.cambios).toEqual([expect.objectContaining({ antes: "$ 45.000", despues: "$ 50.000" })]);
 

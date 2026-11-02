@@ -1,33 +1,12 @@
-import {
-  CircleAlert,
-  CircleCheck,
-  Copy,
-  PackageSearch,
-  ShieldCheck,
-  Tag,
-  Bot,
-} from "lucide-react";
+import { CircleAlert, CircleCheck, Copy, PackageSearch, ShieldCheck, Tag, Bot } from "lucide-react";
 import { Suspense } from "react";
 import { EmptyState } from "@/components/kit/empty-state";
 import { KpiGrid, KpiGridSkeleton } from "@/components/kit/kpi-grid";
 import { ProductThumb } from "@/components/kit/product-thumb";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel, Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SkeletonText } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import type { CatalogoEstado, CatalogoProducto, CatalogoQuery } from "@/lib/api/types";
@@ -164,9 +143,17 @@ function SaludBadge({ producto }: { producto: CatalogoProducto }) {
     );
   }
   const [primero] = producto.faltantes;
-  const label = primero ? (primero.startsWith("SKU repetido") ? "SKU repetido" : `Falta: ${primero.toLowerCase()}`) : "Sin publicar";
+  const label = primero
+    ? primero.startsWith("SKU repetido")
+      ? "SKU repetido"
+      : `Falta: ${primero.toLowerCase()}`
+    : "Sin publicar";
   return (
-    <Badge variant={primero?.startsWith("SKU repetido") ? "danger" : "warning"} dot title={producto.faltantes.join(" · ")}>
+    <Badge
+      variant={primero?.startsWith("SKU repetido") ? "danger" : "warning"}
+      dot
+      title={producto.faltantes.join(" · ")}
+    >
       {label}
       {producto.faltantes.length > 1 && ` +${producto.faltantes.length - 1}`}
     </Badge>
@@ -204,15 +191,22 @@ function ProductoTile({ producto }: { producto: CatalogoProducto }) {
           type="button"
           className="group flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-surface text-left shadow-card transition-[border-color,box-shadow,scale] duration-150 ease-snappy hover:border-border-strong active:scale-[0.99]"
         >
-          <ProductThumb sku={producto.sku} colors={producto.colores} size="lg" className="rounded-none border-0 border-b" />
+          <ProductThumb
+            sku={producto.sku}
+            colors={producto.colores}
+            size="lg"
+            className="rounded-none border-0 border-b"
+          />
           <span className="flex flex-1 flex-col gap-2 p-3.5">
             <span className="flex items-center justify-between gap-2">
               <span className="font-mono text-xs text-muted-foreground">{producto.sku}</span>
               <Badge variant={estado.tone}>{estado.label}</Badge>
             </span>
-            <span className="line-clamp-2 text-sm font-medium leading-snug">{producto.nombre}</span>
+            <span className="line-clamp-2 text-sm leading-snug font-medium">{producto.nombre}</span>
             <span className="text-[13px] text-muted-foreground">
-              <span className="font-semibold text-foreground tabular-nums">{formatCurrency(producto.bulto.precio)}</span>{" "}
+              <span className="font-semibold text-foreground tabular-nums">
+                {formatCurrency(producto.bulto.precio)}
+              </span>{" "}
               · {producto.bulto.label.toLowerCase()}
             </span>
             <span className="text-xs text-muted-foreground">
@@ -338,7 +332,9 @@ export async function CatalogoProductosCard({ children }: { children: React.Reac
       <CardHeader className="pb-4">
         <div className="w-full">
           <CardTitle>Productos</CardTitle>
-          <CardDescription>Fuente única del contenido: lo que va a DUX, Tienda Nube, la vidriera, el bot y Meta</CardDescription>
+          <CardDescription>
+            Fuente única del contenido: lo que va a DUX, Tienda Nube, la vidriera, el bot y Meta
+          </CardDescription>
         </div>
         <Suspense fallback={<CatalogoFiltrosFallback />}>
           <CatalogoFiltros facetas={facetas} />
@@ -355,7 +351,9 @@ export function CatalogoProductosCardSkeleton() {
       <CardHeader className="pb-4">
         <div className="w-full">
           <CardTitle>Productos</CardTitle>
-          <CardDescription>Fuente única del contenido: lo que va a DUX, Tienda Nube, la vidriera, el bot y Meta</CardDescription>
+          <CardDescription>
+            Fuente única del contenido: lo que va a DUX, Tienda Nube, la vidriera, el bot y Meta
+          </CardDescription>
         </div>
         <CatalogoFiltrosFallback />
       </CardHeader>

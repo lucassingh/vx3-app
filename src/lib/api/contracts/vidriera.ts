@@ -67,6 +67,7 @@ export function vidrieraEndpoints(request: ApiRequest) {
       request<VidrieraColeccion>(`/vidriera/colecciones/${encodeURIComponent(id)}`, json("PATCH", cambios)),
     actualizarDestacado: (sku: string, cambios: { activo: boolean }) =>
       request<VidrieraDestacado>(`/vidriera/destacados/${encodeURIComponent(sku)}`, json("PATCH", cambios)),
-    cambiarAcceso: (acceso: VidrieraAcceso) => request<{ acceso: VidrieraAcceso }>("/vidriera/acceso", json("PATCH", { acceso })),
+    cambiarAcceso: (acceso: VidrieraAcceso) =>
+      request<{ acceso: VidrieraAcceso }>("/vidriera/acceso", json("PATCH", { acceso })),
   };
 }

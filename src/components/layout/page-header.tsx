@@ -18,13 +18,10 @@ function PageHeaderFrame({ children }: { children: React.ReactNode }) {
     <div className="relative isolate overflow-hidden border-b border-border bg-surface">
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-40 -top-56 -z-10 size-[34rem] rounded-full bg-[radial-gradient(closest-side,var(--color-primary),transparent)] opacity-[0.07] dark:opacity-[0.09]"
+        className="pointer-events-none absolute -top-56 -right-40 -z-10 size-[34rem] rounded-full bg-[radial-gradient(closest-side,var(--color-primary),transparent)] opacity-[0.07] dark:opacity-[0.09]"
       />
       <div
-        className={cn(
-          "flex w-full flex-col gap-5 py-7 sm:flex-row sm:items-end sm:justify-between lg:py-9",
-          gutter,
-        )}
+        className={cn("flex w-full flex-col gap-5 py-7 sm:flex-row sm:items-end sm:justify-between lg:py-9", gutter)}
       >
         {children}
       </div>
@@ -38,12 +35,8 @@ export function PageHeader({ title, eyebrow, description, actions }: PageHeaderP
     <PageHeaderFrame>
       <div className="min-w-0 space-y-1.5">
         {eyebrow && <div className="text-[13px] text-muted-foreground">{eyebrow}</div>}
-        <h1 className="text-balance text-2xl font-semibold tracking-tight sm:text-[1.75rem] sm:leading-9">
-          {title}
-        </h1>
-        {description && (
-          <p className="max-w-2xl text-pretty text-sm text-muted-foreground">{description}</p>
-        )}
+        <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-[1.75rem] sm:leading-9">{title}</h1>
+        {description && <p className="max-w-2xl text-sm text-pretty text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </PageHeaderFrame>
@@ -67,10 +60,5 @@ export function PageHeaderSkeleton() {
  * El padding es igual en los cuatro lados.
  */
 export function PageBody({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn("w-full space-y-6 py-4 sm:py-6 lg:py-8", gutter, className)}
-      {...props}
-    />
-  );
+  return <div className={cn("w-full space-y-6 py-4 sm:py-6 lg:py-8", gutter, className)} {...props} />;
 }

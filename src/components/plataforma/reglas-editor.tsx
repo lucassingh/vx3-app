@@ -21,11 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NativeSelect } from "@/components/ui/textarea";
 import { api } from "@/lib/api/browser";
-import {
-  describirValorRegla,
-  validarRegla,
-  valorParaCampo,
-} from "@/lib/api/contracts/plataforma";
+import { describirValorRegla, validarRegla, valorParaCampo } from "@/lib/api/contracts/plataforma";
 import type { ReglaGrupo, ReglaNegocio, ReglaValor } from "@/lib/api/types";
 import { currentUser } from "@/lib/auth";
 import { toast } from "@/lib/toast";
@@ -33,12 +29,24 @@ import { cn } from "@/lib/utils";
 import { CodeTag } from "./shared";
 
 export const GRUPOS: { id: ReglaGrupo; label: string; descripcion: string }[] = [
-  { id: "precios", label: "Productos y precios", descripcion: "El motor de precios, el control de margen y el generador de combos." },
-  { id: "pedidos", label: "Pedidos y facturación", descripcion: "Lo que validan el bot, la vidriera y la facturación por API." },
+  {
+    id: "precios",
+    label: "Productos y precios",
+    descripcion: "El motor de precios, el control de margen y el generador de combos.",
+  },
+  {
+    id: "pedidos",
+    label: "Pedidos y facturación",
+    descripcion: "Lo que validan el bot, la vidriera y la facturación por API.",
+  },
   { id: "envios", label: "Envíos", descripcion: "Tarifas, embalajes y cortes horarios del cotizador y del despacho." },
   { id: "cobros", label: "Cobros", descripcion: "Plazos de la conciliación y del corte semanal con Transtech." },
   { id: "postventa", label: "Post-venta", descripcion: "Plazos, evidencia y resoluciones de los reclamos." },
-  { id: "bot", label: "Bot y recuperación", descripcion: "La secuencia de seguimiento de los pedidos trabados y la derivación." },
+  {
+    id: "bot",
+    label: "Bot y recuperación",
+    descripcion: "La secuencia de seguimiento de los pedidos trabados y la derivación.",
+  },
   { id: "pauta", label: "Pauta", descripcion: "Conversión del gasto, semáforo de anuncios y atribución." },
 ];
 
@@ -200,12 +208,7 @@ export function ReglasEditor({
               <span className="font-medium">
                 {cambios.length} {cambios.length === 1 ? "cambio sin guardar" : "cambios sin guardar"}
               </span>
-              {conError > 0 && (
-                <span className="text-danger">
-                  {" "}
-                  · {conError} con error
-                </span>
-              )}
+              {conError > 0 && <span className="text-danger"> · {conError} con error</span>}
             </p>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={descartar}>
@@ -307,7 +310,7 @@ function ReglaRow({
           {modificada && <Badge variant="primary">Modificada</Badge>}
         </div>
         {regla.descripcion && (
-          <p id={descId} className="text-pretty text-[13px] text-muted-foreground">
+          <p id={descId} className="text-[13px] text-pretty text-muted-foreground">
             {regla.descripcion}
           </p>
         )}
@@ -325,7 +328,9 @@ function ReglaRow({
           regla={regla}
           draft={draft}
           invalid={Boolean(error)}
-          describedBy={[regla.descripcion ? descId : null, error ? errorId : null].filter(Boolean).join(" ") || undefined}
+          describedBy={
+            [regla.descripcion ? descId : null, error ? errorId : null].filter(Boolean).join(" ") || undefined
+          }
           onChange={onChange}
         />
         {error && (
@@ -389,7 +394,14 @@ function ReglaCampo({
 
   if (regla.tipo === "hora") {
     return (
-      <Input id={id} type="time" value={String(draft)} onChange={(event) => onChange(event.target.value)} className="tabular-nums" {...aria} />
+      <Input
+        id={id}
+        type="time"
+        value={String(draft)}
+        onChange={(event) => onChange(event.target.value)}
+        className="tabular-nums"
+        {...aria}
+      />
     );
   }
 
@@ -404,7 +416,10 @@ function ReglaCampo({
   return (
     <div className="relative">
       {prefix && (
-        <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground"
+        >
           {prefix}
         </span>
       )}
@@ -424,7 +439,10 @@ function ReglaCampo({
         {...aria}
       />
       {suffix && (
-        <span aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-muted-foreground"
+        >
           {suffix}
         </span>
       )}

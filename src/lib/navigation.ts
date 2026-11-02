@@ -1,11 +1,5 @@
 import type { Metadata } from "next";
-import {
-  navigation,
-  userNavigation,
-  type NavGroup,
-  type NavLink,
-  type NavSection,
-} from "@/config/navigation";
+import { navigation, userNavigation, type NavGroup, type NavLink, type NavSection } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
 
 export type RouteMatch = {

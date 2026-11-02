@@ -122,8 +122,7 @@ export type FacturaEmitida = {
 
 export function pedidosEndpoints(request: ApiRequest) {
   return {
-    list: (query: PedidosQuery = {}) =>
-      request<PedidosLista>(`/pedidos${toQueryString(query)}`),
+    list: (query: PedidosQuery = {}) => request<PedidosLista>(`/pedidos${toQueryString(query)}`),
     trabados: () => request<PedidoTrabado[]>("/pedidos/trabados"),
     facturables: () => request<PedidoFacturable[]>("/pedidos/facturables"),
     facturas: () => request<FacturaEmitida[]>("/pedidos/facturas"),

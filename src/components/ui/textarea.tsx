@@ -18,16 +18,12 @@ export function Textarea({ className, ...props }: React.ComponentProps<"textarea
 export function NativeSelect({ className, children, ...props }: React.ComponentProps<"select">) {
   return (
     <div className={cn("relative", className)}>
-      <select
-        data-slot="select"
-        className={cn(fieldClass, "h-9 cursor-pointer appearance-none pl-3 pr-9")}
-        {...props}
-      >
+      <select data-slot="select" className={cn(fieldClass, "h-9 cursor-pointer appearance-none pr-9 pl-3")} {...props}>
         {children}
       </select>
       <ChevronDown
         aria-hidden
-        className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
       />
     </div>
   );

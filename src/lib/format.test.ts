@@ -22,9 +22,7 @@ describe("formatMetric", () => {
 describe("formatDelta", () => {
   it("agrega el signo y la unidad", () => {
     const period = "vs. mes anterior";
-    expect(formatDelta({ value: 0.124, unit: "percent", period, positive: true })).toMatch(
-      /^\+12,4\s?%$/,
-    );
+    expect(formatDelta({ value: 0.124, unit: "percent", period, positive: true })).toMatch(/^\+12,4\s?%$/);
     expect(formatDelta({ value: -0.4, unit: "points", period, positive: false })).toBe("−0,4 pp");
     expect(formatDelta({ value: 18, unit: "number", period, positive: true })).toBe("+18");
   });

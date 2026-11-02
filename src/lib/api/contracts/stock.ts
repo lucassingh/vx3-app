@@ -192,10 +192,9 @@ export function stockEndpoints(request: ApiRequest) {
     margenKpis: () => request<Kpi[]>("/stock/margen/kpis"),
     margen: () => request<MargenControl>("/stock/margen"),
     corregirPrecio: (sku: string) =>
-      request<{ sku: string; codigo: string; precio: number }>(
-        `/stock/margen/${encodeURIComponent(sku)}/corregir`,
-        { method: "POST" },
-      ),
+      request<{ sku: string; codigo: string; precio: number }>(`/stock/margen/${encodeURIComponent(sku)}/corregir`, {
+        method: "POST",
+      }),
     capas: () => request<CapaCosto[]>("/stock/capas"),
     coeficientes: () => request<CoeficientesPrecio>("/stock/coeficientes"),
     etiquetas: (rubro?: string) =>

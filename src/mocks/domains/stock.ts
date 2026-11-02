@@ -95,30 +95,94 @@ function stockKpis(): Kpi[] {
   const criticos = filas.filter((fila) => fila.estado === "critico" || fila.estado === "agotado").length;
   const codigos = productos.reduce((sum, producto) => sum + presentacionesDe(producto).lista.length, 0);
   return [
-    { id: "skus", label: "Productos leídos de DUX", value: filas.length, format: "number", hint: `${codigos} códigos con sus packs` },
-    { id: "bultos", label: "Bultos disponibles", value: filas.reduce((sum, fila) => sum + fila.disponibleBultos, 0), format: "number", hint: "Real menos reservado, en bultos mayoristas" },
-    { id: "reservado", label: "Reservado sin confirmar", value: reservado, format: "number", hint: "Prendas en carritos: se liberan solas si el pedido vence" },
-    { id: "critico", label: "Stock crítico o agotado", value: criticos, format: "number", hint: "Alimenta la palanca “se está acabando” del bot" },
+    {
+      id: "skus",
+      label: "Productos leídos de DUX",
+      value: filas.length,
+      format: "number",
+      hint: `${codigos} códigos con sus packs`,
+    },
+    {
+      id: "bultos",
+      label: "Bultos disponibles",
+      value: filas.reduce((sum, fila) => sum + fila.disponibleBultos, 0),
+      format: "number",
+      hint: "Real menos reservado, en bultos mayoristas",
+    },
+    {
+      id: "reservado",
+      label: "Reservado sin confirmar",
+      value: reservado,
+      format: "number",
+      hint: "Prendas en carritos: se liberan solas si el pedido vence",
+    },
+    {
+      id: "critico",
+      label: "Stock crítico o agotado",
+      value: criticos,
+      format: "number",
+      hint: "Alimenta la palanca “se está acabando” del bot",
+    },
   ];
 }
 
 const getDiferencias = defineStore("stock-diferencias", (now): StockDiferencia[] => {
   const multiplicado = "Stock multiplicado por 6 en el cambio a stock por prenda del 10/10";
-  const d = (id: string, sku: string, duxPrendas: number, contadoPrendas: number, detectadoEn: string, haceMin: number, causa: string, estado: StockDiferencia["estado"] = "pendiente") => ({
-    id, sku, nombre: getProducto(sku).nombre, duxPrendas, contadoPrendas, detectadoEn, detectadoAt: isoAgo(haceMin, now), causa, estado,
+  const d = (
+    id: string,
+    sku: string,
+    duxPrendas: number,
+    contadoPrendas: number,
+    detectadoEn: string,
+    haceMin: number,
+    causa: string,
+    estado: StockDiferencia["estado"] = "pendiente",
+  ) => ({
+    id,
+    sku,
+    nombre: getProducto(sku).nombre,
+    duxPrendas,
+    contadoPrendas,
+    detectadoEn,
+    detectadoAt: isoAgo(haceMin, now),
+    causa,
+    estado,
   });
   return [
     d("d-5", "CAN12", 54, 9, "Armado de V-1050", 3 * HOUR, multiplicado),
     d("d-4", "VN14", 66, 11, "Armado de V-1044", DAY + 2 * HOUR, multiplicado),
     d("d-3", "HB3", 42, 7, "Armado de V-1044", DAY + 3 * HOUR, multiplicado),
-    d("d-2", "LG18", 78, 72, "Recuento de góndola", 2 * DAY, "Faltan 6 prendas: posible venta en el salón sin facturar"),
-    d("d-1", "CJATN2", 9, 3, "Armado de V-1051", 2 * DAY + 5 * HOUR, "La reserva de V-1051 no se descontó en DUX", "propuesto"),
+    d(
+      "d-2",
+      "LG18",
+      78,
+      72,
+      "Recuento de góndola",
+      2 * DAY,
+      "Faltan 6 prendas: posible venta en el salón sin facturar",
+    ),
+    d(
+      "d-1",
+      "CJATN2",
+      9,
+      3,
+      "Armado de V-1051",
+      2 * DAY + 5 * HOUR,
+      "La reserva de V-1051 no se descontó en DUX",
+      "propuesto",
+    ),
   ];
 });
 
 /* ---- Margen y precios ----------------------------------------------------- */
 
-const bajoPiso = (sku: string, proveedor: string, costoDocenaAnterior: number, costoDocenaNuevo: number, motivo: string): MargenBajoPiso => {
+const bajoPiso = (
+  sku: string,
+  proveedor: string,
+  costoDocenaAnterior: number,
+  costoDocenaNuevo: number,
+  motivo: string,
+): MargenBajoPiso => {
   const producto = getProducto(sku);
   const actual = calcularPresentaciones(producto.familia, sku, costoDocenaAnterior).find((p) => p.esBulto)!;
   const nuevo = calcularPresentaciones(producto.familia, sku, costoDocenaNuevo).find((p) => p.esBulto)!;
@@ -157,14 +221,44 @@ function margenKpis(): Kpi[] {
     return margenDe(bulto.precio, bulto.costo);
   });
   return [
-    { id: "controlados", label: "Productos controlados hoy", value: productos.length, format: "number", hint: "Todos los días a las 6:00, no solo los lunes" },
-    { id: "bajo-piso", label: "Bajo el piso", value: getMargen().bajoPiso.length, format: "number", hint: "Con precio sugerido para corregir" },
-    { id: "margen", label: "Margen promedio del bulto", value: margenes.reduce((a, b) => a + b, 0) / margenes.length, format: "percent", hint: "Con el costo vigente del stock (RN-109)" },
-    { id: "capas", label: "Capas de costo por agotarse", value: CAPAS.length, format: "number", hint: "El precio baja cuando se termina el stock viejo" },
+    {
+      id: "controlados",
+      label: "Productos controlados hoy",
+      value: productos.length,
+      format: "number",
+      hint: "Todos los días a las 6:00, no solo los lunes",
+    },
+    {
+      id: "bajo-piso",
+      label: "Bajo el piso",
+      value: getMargen().bajoPiso.length,
+      format: "number",
+      hint: "Con precio sugerido para corregir",
+    },
+    {
+      id: "margen",
+      label: "Margen promedio del bulto",
+      value: margenes.reduce((a, b) => a + b, 0) / margenes.length,
+      format: "percent",
+      hint: "Con el costo vigente del stock (RN-109)",
+    },
+    {
+      id: "capas",
+      label: "Capas de costo por agotarse",
+      value: CAPAS.length,
+      format: "number",
+      hint: "El precio baja cuando se termina el stock viejo",
+    },
   ];
 }
 
-const capa = (sku: string, costoDocenaViejo: number, costoDocenaNuevo: number, prendasIngresadas: number, prendasRestantes: number): CapaCosto => {
+const capa = (
+  sku: string,
+  costoDocenaViejo: number,
+  costoDocenaNuevo: number,
+  prendasIngresadas: number,
+  prendasRestantes: number,
+): CapaCosto => {
   const producto = getProducto(sku);
   const actual = calcularPresentaciones(producto.familia, sku, costoDocenaViejo).find((p) => p.esBulto)!;
   const nuevo = calcularPresentaciones(producto.familia, sku, costoDocenaNuevo).find((p) => p.esBulto)!;
@@ -192,25 +286,61 @@ const COEFICIENTES: CoeficientesPrecio = {
   redondeo: 100,
   lenceria: [
     { presentacion: "Prenda", formula: "Costo de la prenda × 2,21", coeficiente: 2.21, listas: "LOCAL EF/TR" },
-    { presentacion: "Media docena (-6)", formula: "Costo del combo × 1,30", coeficiente: 1.3, listas: "MAYORISTA EF/TR y LOCAL EF/TR" },
-    { presentacion: "Docena (-12)", formula: "Costo del combo × 1,1765", coeficiente: 1.1765, listas: "MAYORISTA EF/TR y LOCAL EF/TR" },
+    {
+      presentacion: "Media docena (-6)",
+      formula: "Costo del combo × 1,30",
+      coeficiente: 1.3,
+      listas: "MAYORISTA EF/TR y LOCAL EF/TR",
+    },
+    {
+      presentacion: "Docena (-12)",
+      formula: "Costo del combo × 1,1765",
+      coeficiente: 1.1765,
+      listas: "MAYORISTA EF/TR y LOCAL EF/TR",
+    },
   ],
   medias: [
     { presentacion: "Pack de 3 (-3)", formula: "Costo del combo × 2,21", coeficiente: 2.21, listas: "LOCAL EF/TR" },
     { presentacion: "Pack de 6 (-6)", formula: "Costo del combo × 1,8182", coeficiente: 1.8182, listas: "LOCAL EF/TR" },
-    { presentacion: "Docena (-12)", formula: "Costo del combo × 1,30", coeficiente: 1.3, listas: "MAYORISTA EF/TR y LOCAL EF/TR" },
-    { presentacion: "Dos docenas (-24)", formula: "Costo del combo × 1,1765", coeficiente: 1.1765, listas: "MAYORISTA EF/TR y LOCAL EF/TR" },
+    {
+      presentacion: "Docena (-12)",
+      formula: "Costo del combo × 1,30",
+      coeficiente: 1.3,
+      listas: "MAYORISTA EF/TR y LOCAL EF/TR",
+    },
+    {
+      presentacion: "Dos docenas (-24)",
+      formula: "Costo del combo × 1,1765",
+      coeficiente: 1.1765,
+      listas: "MAYORISTA EF/TR y LOCAL EF/TR",
+    },
   ],
 };
 
 /* ---- Compras -------------------------------------------------------------- */
 
-const renglon = (id: string, sku: string, boletaBultos: number, contadoBultos: number, costoDocenaNuevo: number | null = null) => {
+const renglon = (
+  id: string,
+  sku: string,
+  boletaBultos: number,
+  contadoBultos: number,
+  costoDocenaNuevo: number | null = null,
+) => {
   const producto = getProducto(sku);
   const { bulto } = presentacionesDe(producto);
   return {
-    id, codigo: bulto.codigo, sku, nombre: producto.nombre, colores: producto.colores, familia: producto.familia,
-    prendasPorBulto: bulto.prendas, boletaBultos, contadoBultos, nuevo: false, costoDocenaActual: producto.costoDocena, costoDocenaNuevo,
+    id,
+    codigo: bulto.codigo,
+    sku,
+    nombre: producto.nombre,
+    colores: producto.colores,
+    familia: producto.familia,
+    prendasPorBulto: bulto.prendas,
+    boletaBultos,
+    contadoBultos,
+    nuevo: false,
+    costoDocenaActual: producto.costoDocena,
+    costoDocenaNuevo,
   };
 };
 
@@ -223,7 +353,9 @@ const getCompras = defineStore("stock-compras", (now) => {
     boleta: "0001-00004821",
     fecha: dateAgo(0, now),
     recibidoPor: "Juan",
-    firmantes: equipo.filter((usuario) => usuario.nombre !== "Juan" && usuario.id !== "u-masuno").map((usuario) => usuario.nombre),
+    firmantes: equipo
+      .filter((usuario) => usuario.nombre !== "Juan" && usuario.id !== "u-masuno")
+      .map((usuario) => usuario.nombre),
     firmadoPor: null,
     renglones: [
       renglon("r-1", "CJATN14", 6, 6),
@@ -233,20 +365,89 @@ const getCompras = defineStore("stock-compras", (now) => {
       renglon("r-5", "BMN1", 6, 7),
       renglon("r-6", "DSN5", 2, 2),
       {
-        id: "r-7", codigo: "CJATN42-6", sku: "CJATN42", nombre: "Conjunto armado tres piezas Condeza con puntilla",
-        colores: ["Negro", "Blanco", "Rosa", "Bordó"], familia: "lenceria", prendasPorBulto: 6, boletaBultos: 4,
-        contadoBultos: 4, nuevo: true, costoDocenaActual: 58_000, costoDocenaNuevo: null,
+        id: "r-7",
+        codigo: "CJATN42-6",
+        sku: "CJATN42",
+        nombre: "Conjunto armado tres piezas Condeza con puntilla",
+        colores: ["Negro", "Blanco", "Rosa", "Bordó"],
+        familia: "lenceria",
+        prendasPorBulto: 6,
+        boletaBultos: 4,
+        contadoBultos: 4,
+        nuevo: true,
+        costoDocenaActual: 58_000,
+        costoDocenaNuevo: null,
       },
     ],
   };
 
   const historial: CompraHistorial[] = [
-    { id: "C-0142", proveedor: "Bethy", boleta: "0001-00004797", fecha: dateAgo(3, now), bultos: 41, monto: 1_420_000, faltantes: 0, estado: "cargada", firmadaPor: "Leo" },
-    { id: "C-0141", proveedor: "Ricardo Flores", boleta: "0003-00011872", fecha: dateAgo(6, now), bultos: 38, monto: 412_000, faltantes: 0, estado: "cargada", firmadaPor: "Leo" },
-    { id: "C-0140", proveedor: "Victoria Martínez", boleta: "0002-00000981", fecha: dateAgo(9, now), bultos: 22, monto: 518_000, faltantes: 2, estado: "con_faltantes", firmadaPor: "Leo" },
-    { id: "C-0139", proveedor: "Cintia", boleta: "0001-00000377", fecha: dateAgo(11, now), bultos: 14, monto: 646_000, faltantes: 0, estado: "cargada", firmadaPor: "Elías Llaury" },
-    { id: "C-0138", proveedor: "Carmen", boleta: "0001-00000212", fecha: dateAgo(14, now), bultos: 18, monto: 81_000, faltantes: 0, estado: "cargada", firmadaPor: "Leo" },
-    { id: "C-0137", proveedor: "Silvia (Cativa)", boleta: "0004-00002140", fecha: dateAgo(18, now), bultos: 12, monto: 264_000, faltantes: 1, estado: "con_faltantes", firmadaPor: "Leo" },
+    {
+      id: "C-0142",
+      proveedor: "Bethy",
+      boleta: "0001-00004797",
+      fecha: dateAgo(3, now),
+      bultos: 41,
+      monto: 1_420_000,
+      faltantes: 0,
+      estado: "cargada",
+      firmadaPor: "Leo",
+    },
+    {
+      id: "C-0141",
+      proveedor: "Ricardo Flores",
+      boleta: "0003-00011872",
+      fecha: dateAgo(6, now),
+      bultos: 38,
+      monto: 412_000,
+      faltantes: 0,
+      estado: "cargada",
+      firmadaPor: "Leo",
+    },
+    {
+      id: "C-0140",
+      proveedor: "Victoria Martínez",
+      boleta: "0002-00000981",
+      fecha: dateAgo(9, now),
+      bultos: 22,
+      monto: 518_000,
+      faltantes: 2,
+      estado: "con_faltantes",
+      firmadaPor: "Leo",
+    },
+    {
+      id: "C-0139",
+      proveedor: "Cintia",
+      boleta: "0001-00000377",
+      fecha: dateAgo(11, now),
+      bultos: 14,
+      monto: 646_000,
+      faltantes: 0,
+      estado: "cargada",
+      firmadaPor: "Elías Llaury",
+    },
+    {
+      id: "C-0138",
+      proveedor: "Carmen",
+      boleta: "0001-00000212",
+      fecha: dateAgo(14, now),
+      bultos: 18,
+      monto: 81_000,
+      faltantes: 0,
+      estado: "cargada",
+      firmadaPor: "Leo",
+    },
+    {
+      id: "C-0137",
+      proveedor: "Silvia (Cativa)",
+      boleta: "0004-00002140",
+      fecha: dateAgo(18, now),
+      bultos: 12,
+      monto: 264_000,
+      faltantes: 1,
+      estado: "con_faltantes",
+      firmadaPor: "Leo",
+    },
   ];
 
   return { recepcion, cargada: false, historial };
@@ -269,7 +470,8 @@ async function cargarRecepcion(request: Request) {
   const bultos = renglones.reduce((sum, item) => sum + item.contadoBultos, 0);
   const faltantes = renglones.reduce((sum, item) => sum + Math.max(0, item.boletaBultos - item.contadoBultos), 0);
   const monto = renglones.reduce(
-    (sum, item) => sum + ((item.costoDocenaNuevo ?? item.costoDocenaActual) * item.prendasPorBulto * item.contadoBultos) / 12,
+    (sum, item) =>
+      sum + ((item.costoDocenaNuevo ?? item.costoDocenaActual) * item.prendasPorBulto * item.contadoBultos) / 12,
     0,
   );
 
@@ -376,7 +578,9 @@ export const routes: Route[] = [
     pattern: /^\/stock\/etiquetas$/,
     handler: async ({ request }) => {
       const { rubro } = await readJson<{ rubro?: string }>(request);
-      const conStock = productos.filter((producto) => producto.stockPrendas > 0 && (!rubro || producto.rubro === rubro));
+      const conStock = productos.filter(
+        (producto) => producto.stockPrendas > 0 && (!rubro || producto.rubro === rubro),
+      );
       // RN-107: el bulto lleva una etiqueta por docena con el precio por docena; la prenda, una por unidad.
       return Response.json({
         etiquetas: conStock.length * 2,

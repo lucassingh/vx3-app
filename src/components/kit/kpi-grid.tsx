@@ -45,7 +45,7 @@ export function KpiCard({ kpi, icon: Icon = Gauge }: { kpi: Kpi; icon?: LucideIc
         <Icon aria-hidden className="size-4 shrink-0" />
         <span className="truncate">{kpi.label}</span>
       </p>
-      <p className="mt-3 text-[1.75rem] font-semibold leading-none tracking-tight tabular-nums">
+      <p className="mt-3 text-[1.75rem] leading-none font-semibold tracking-tight tabular-nums">
         {formatMetric(kpi.value, kpi.format)}
       </p>
       <p className="mt-3 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
@@ -70,13 +70,7 @@ export function KpiCard({ kpi, icon: Icon = Gauge }: { kpi: Kpi; icon?: LucideIc
   );
 }
 
-export function KpiGridSkeleton({
-  count = 4,
-  columns = 4,
-}: {
-  count?: number;
-  columns?: keyof typeof columnsClass;
-}) {
+export function KpiGridSkeleton({ count = 4, columns = 4 }: { count?: number; columns?: keyof typeof columnsClass }) {
   return (
     <>
       <LoadingLabel>Cargando indicadores…</LoadingLabel>

@@ -27,9 +27,7 @@ export type DuxProbeResult = {
   body: unknown;
 };
 
-export type DuxProbeResponse =
-  | { ok: true; result: DuxProbeResult }
-  | { ok: false; message: string };
+export type DuxProbeResponse = { ok: true; result: DuxProbeResult } | { ok: false; message: string };
 
 type Probe = { label: string; path: string; authorization: string };
 

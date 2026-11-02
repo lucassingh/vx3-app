@@ -8,10 +8,7 @@ import { findRoute, getBreadcrumbs, getRouteMetadata, isActivePath } from "./nav
 // Las expectativas salen de config/navigation.ts: siguen valiendo al rebrandear.
 const items = navigation.flatMap((section) => section.items);
 const group = items.find((item) => item.items !== undefined);
-const links: NavLink[] = [
-  ...items.flatMap((item) => (item.items ? item.items : [item])),
-  ...userNavigation,
-];
+const links: NavLink[] = [...items.flatMap((item) => (item.items ? item.items : [item])), ...userNavigation];
 
 describe("config/navigation", () => {
   it("cada href tiene su page.tsx en src/app/(dashboard)", () => {

@@ -1,12 +1,6 @@
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel } from "@/components/ui/skeleton";
 import { SkeletonText } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";

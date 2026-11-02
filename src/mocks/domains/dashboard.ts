@@ -130,7 +130,9 @@ function causas(): IndicadorCausa[] {
       label: "Cobros pendientes de más de 2 días",
       value: viejos.cantidad,
       format: "number",
-      detalle: viejos.cantidad ? `${formatCurrency(viejos.monto)} sin cargar en DUX` : "Todo cargado dentro de las 24 h",
+      detalle: viejos.cantidad
+        ? `${formatCurrency(viejos.monto)} sin cargar en DUX`
+        : "Todo cargado dentro de las 24 h",
       estado: viejos.cantidad ? "atencion" : "ok",
       href: "/cobros/conciliacion",
       accion: "Conciliar",
@@ -178,10 +180,9 @@ function causas(): IndicadorCausa[] {
 
 /** Ventas diarias de ejemplo en pesos; el último valor es lo facturado hoy hasta ahora. */
 const VENTAS_30D = [
-  1_180_000, 1_320_000, 1_090_000, 1_460_000, 1_610_000, 1_240_000, 640_000, 1_720_000,
-  1_380_000, 1_150_000, 1_490_000, 1_560_000, 1_310_000, 590_000, 1_840_000, 1_420_000,
-  1_270_000, 1_530_000, 1_690_000, 1_380_000, 710_000, 1_910_000, 1_470_000, 1_350_000,
-  1_620_000, 1_780_000, 1_440_000, 760_000, 1_960_000,
+  1_180_000, 1_320_000, 1_090_000, 1_460_000, 1_610_000, 1_240_000, 640_000, 1_720_000, 1_380_000, 1_150_000, 1_490_000,
+  1_560_000, 1_310_000, 590_000, 1_840_000, 1_420_000, 1_270_000, 1_530_000, 1_690_000, 1_380_000, 710_000, 1_910_000,
+  1_470_000, 1_350_000, 1_620_000, 1_780_000, 1_440_000, 760_000, 1_960_000,
 ];
 
 function canales(): Share[] {
@@ -218,15 +219,20 @@ function minutosAhoraBA() {
 }
 
 function operacion(): OperacionHoy {
-  const orden: EstadoPedido[] = ["armandose", "pendiente_pago", "listo_facturar", "facturado", "en_armado", "despachado"];
+  const orden: EstadoPedido[] = [
+    "armandose",
+    "pendiente_pago",
+    "listo_facturar",
+    "facturado",
+    "en_armado",
+    "despachado",
+  ];
   const porEstado = orden.map((estado) => ({
     estado,
     cantidad: hoy.filter((pedido) => pedido.estado === estado).length,
   }));
 
-  const porDespachar = hoy.filter((pedido) =>
-    ["listo_facturar", "facturado", "en_armado"].includes(pedido.estado),
-  );
+  const porDespachar = hoy.filter((pedido) => ["listo_facturar", "facturado", "en_armado"].includes(pedido.estado));
   const ahora = minutosAhoraBA();
   const corte = (id: string, label: string, hora: string, transporte: string): CorteHorario => {
     const [h, m] = hora.split(":").map(Number);

@@ -8,12 +8,10 @@ export default function NotFound() {
     <PageBody className="grid min-h-[calc(100dvh-3.5rem)] place-items-center">
       <div className="max-w-md text-center">
         <p className="font-mono text-sm text-muted-foreground">404</p>
-        <h1 className="mt-2 text-balance text-2xl font-semibold tracking-tight">
-          No encontramos esta página
-        </h1>
-        <p className="mt-2 text-pretty text-sm text-muted-foreground">
-          La ruta no existe o todavía no tiene una vista. Si es un item nuevo del menú,
-          creá su page.tsx dentro de src/app/(dashboard).
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-balance">No encontramos esta página</h1>
+        <p className="mt-2 text-sm text-pretty text-muted-foreground">
+          La ruta no existe o todavía no tiene una vista. Si es un item nuevo del menú, creá su page.tsx dentro de
+          src/app/(dashboard).
         </p>
         <Button asChild className="mt-6">
           <Link href="/">

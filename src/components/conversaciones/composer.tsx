@@ -52,7 +52,11 @@ export function Composer({
   return (
     <div className="space-y-2.5 border-t border-border bg-surface px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div role="group" aria-label="Tipo de mensaje" className="inline-flex rounded-lg border border-border bg-muted p-0.5">
+        <div
+          role="group"
+          aria-label="Tipo de mensaje"
+          className="inline-flex rounded-lg border border-border bg-muted p-0.5"
+        >
           {(
             [
               { id: "responder", label: "Responder", icon: SendHorizontal },
@@ -107,7 +111,8 @@ export function Composer({
           }}
         >
           <p className="text-[13px] text-muted-foreground">
-            Pasaron más de 24 h desde el último mensaje de {nombre}: Meta solo permite plantillas aprobadas. Las de marketing tienen costo por mensaje.
+            Pasaron más de 24 h desde el último mensaje de {nombre}: Meta solo permite plantillas aprobadas. Las de
+            marketing tienen costo por mensaje.
           </p>
           <fieldset className="grid gap-2">
             <legend className="sr-only">Plantilla aprobada</legend>
@@ -169,7 +174,9 @@ export function Composer({
                 submit();
               }
             }}
-            placeholder={modo === "nota" ? "Escribí una nota para el equipo (la clienta no la ve)…" : `Escribile a ${nombre}…`}
+            placeholder={
+              modo === "nota" ? "Escribí una nota para el equipo (la clienta no la ve)…" : `Escribile a ${nombre}…`
+            }
             className={cn("min-h-16 resize-none", modo === "nota" && "border-warning/50 bg-warning/5")}
           />
           <div className="flex items-center justify-between gap-2">
