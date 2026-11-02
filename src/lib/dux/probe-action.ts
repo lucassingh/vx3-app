@@ -12,6 +12,7 @@
 
 import { cookies } from "next/headers";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
+import { serverEnv } from "@/env";
 
 const MIN_GAP_MS = 5_500;
 const USER_AGENT = "vx3-app/0.1 (desarrollo local)";
@@ -58,11 +59,13 @@ export async function probeDux(key: DuxProbeKey): Promise<DuxProbeResponse> {
     return { ok: false, message: "La sesión venció: volvé a entrar." };
   }
 
-  const baseUrl = process.env.DUX_API_URL;
-  const token = process.env.DUX_TOKEN;
-  const idEmpresa = process.env.DUX_ID_EMPRESA;
-  const idSucursal = process.env.DUX_ID_SUCURSAL_ECOMMERCE;
-  const idDeposito = process.env.DUX_ID_DEPOSITO;
+  const {
+    DUX_API_URL: baseUrl,
+    DUX_TOKEN: token,
+    DUX_ID_EMPRESA: idEmpresa,
+    DUX_ID_SUCURSAL_ECOMMERCE: idSucursal,
+    DUX_ID_DEPOSITO: idDeposito,
+  } = serverEnv();
   if (!baseUrl || !token || !idEmpresa || !idSucursal || (key === "stock" && !idDeposito)) {
     return {
       ok: false,
@@ -73,8 +76,8 @@ export async function probeDux(key: DuxProbeKey): Promise<DuxProbeResponse> {
   const today = new Date();
   const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
   const facturas = new URLSearchParams({
-    idEmpresa,
-    idSucursal,
+    idEmpresa: String(idEmpresa),
+    idSucursal: String(idSucursal),
     fechaDesde: localDate(weekAgo),
     fechaHasta: localDate(today),
     offset: "0",
@@ -88,7 +91,7 @@ export async function probeDux(key: DuxProbeKey): Promise<DuxProbeResponse> {
     // por página y cuesta el mismo request que 3.
     stock: {
       label: "Stock (v2, depósito Temperley)",
-      path: `/v2/stock?${new URLSearchParams({ id_deposito: idDeposito ?? "", offset: "0", limit: "50" })}`,
+      path: `/v2/stock?${new URLSearchParams({ id_deposito: String(idDeposito ?? ""), offset: "0", limit: "50" })}`,
       authorization: `Bearer ${token}`,
     },
     items: {

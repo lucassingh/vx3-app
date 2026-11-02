@@ -5,6 +5,7 @@ import { handleMockRequest, MOCK_API_PREFIX } from "@/mocks/router";
 import { isMockApi } from "./config";
 import { createApi } from "./endpoints";
 import { ApiError, parseResponse, withDefaults } from "./http";
+import { serverEnv } from "@/env";
 
 /**
  * API para Server Components, Route Handlers y Server Actions.
@@ -21,7 +22,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     return parseResponse<T>(await handleMockRequest(mockRequest));
   }
 
-  const baseUrl = process.env.API_URL;
+  const baseUrl = serverEnv().API_URL;
   if (!baseUrl) {
     throw new ApiError(500, "Falta API_URL: con NEXT_PUBLIC_API_MOCK=false hay que definir la URL de la API real.");
   }

@@ -2,6 +2,7 @@ import { MOCK_API_PREFIX } from "@/mocks/constants";
 import { isMockApi } from "./config";
 import { createApi } from "./endpoints";
 import { ApiError, parseResponse, withDefaults } from "./http";
+import { clientEnv } from "@/env";
 
 /**
  * API para Client Components. Con el mock activo llama a la API simulada
@@ -9,7 +10,7 @@ import { ApiError, parseResponse, withDefaults } from "./http";
  */
 function baseUrl() {
   if (isMockApi()) return MOCK_API_PREFIX;
-  const url = process.env.NEXT_PUBLIC_API_URL;
+  const url = clientEnv().NEXT_PUBLIC_API_URL;
   if (!url) {
     throw new ApiError(
       500,

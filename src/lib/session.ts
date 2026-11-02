@@ -1,3 +1,4 @@
+import { serverEnv } from "@/env";
 /**
  * Sesión: cookie con el email y el vencimiento, firmada con HMAC-SHA256
  * (Web Crypto, anda en el proxy y en las Server Actions). No importa
@@ -15,9 +16,9 @@ export function checkCredentials(email: string, password: string) {
   return email.trim().toLowerCase() === DEMO_USER.email && password === DEMO_USER.password;
 }
 
-/** En producción AUTH_SECRET es obligatoria; el valor por defecto es solo para la demo local. */
+/** En producción AUTH_SECRET es obligatoria (src/env.ts); el valor por defecto es solo para desarrollo y tests. */
 function secret() {
-  return process.env.AUTH_SECRET || "vx3-demo-local-secret";
+  return serverEnv().AUTH_SECRET ?? "vx3-demo-local-secret";
 }
 
 const encoder = new TextEncoder();

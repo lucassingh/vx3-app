@@ -14,6 +14,7 @@ import { routes as postventa } from "./domains/postventa";
 import { routes as stock } from "./domains/stock";
 import { routes as vidriera } from "./domains/vidriera";
 import { errorResponse, routeParams, type Route } from "./http";
+import { serverEnv } from "@/env";
 
 export { MOCK_API_PREFIX };
 
@@ -44,15 +45,15 @@ const routes: Route[] = [
 ];
 
 function simulateLatency() {
-  const base = Number(process.env.MOCK_API_DELAY_MS ?? 350);
-  if (!Number.isFinite(base) || base <= 0) return Promise.resolve();
+  const base = serverEnv().MOCK_API_DELAY_MS;
+  if (base <= 0) return Promise.resolve();
   const jitter = base * 0.3 * (Math.random() * 2 - 1);
   return new Promise((resolve) => setTimeout(resolve, Math.round(base + jitter)));
 }
 
 function shouldFail() {
-  const rate = Number(process.env.MOCK_API_FAILURE_RATE ?? 0);
-  return Number.isFinite(rate) && rate > 0 && Math.random() < rate;
+  const rate = serverEnv().MOCK_API_FAILURE_RATE;
+  return rate > 0 && Math.random() < rate;
 }
 
 export async function handleMockRequest(request: Request): Promise<Response> {
