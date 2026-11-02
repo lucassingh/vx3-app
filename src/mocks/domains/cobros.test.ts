@@ -9,7 +9,7 @@ import type {
   ReclamoTranstech,
 } from "@/lib/api/types";
 import { resetDb } from "../db";
-import type { Route } from "../http";
+import { routeParams, type Route } from "../http";
 import { routes as cobros } from "./cobros";
 import { routes as postventa } from "./postventa";
 
@@ -19,7 +19,7 @@ async function call<T>(routes: Route[], method: string, path: string, body?: unk
   for (const route of routes) {
     const match = route.method === method ? url.pathname.match(route.pattern) : null;
     if (match) {
-      const response = await route.handler({ url, params: match.slice(1), request });
+      const response = await route.handler({ url, params: routeParams(match), request });
       return { status: response.status, body: (await response.json()) as T };
     }
   }

@@ -13,7 +13,7 @@ import { routes as plataforma } from "./domains/plataforma";
 import { routes as postventa } from "./domains/postventa";
 import { routes as stock } from "./domains/stock";
 import { routes as vidriera } from "./domains/vidriera";
-import { errorResponse, type Route } from "./http";
+import { errorResponse, routeParams, type Route } from "./http";
 
 export { MOCK_API_PREFIX };
 
@@ -66,7 +66,7 @@ export async function handleMockRequest(request: Request): Promise<Response> {
 
   for (const route of routes) {
     const match = route.method === request.method ? path.match(route.pattern) : null;
-    if (match) return route.handler({ url, params: match.slice(1), request });
+    if (match) return route.handler({ url, params: routeParams(match), request });
   }
   return errorResponse(404, `No existe ${request.method} ${path} en la API simulada.`);
 }

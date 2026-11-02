@@ -12,9 +12,9 @@ import type {
   ReclamoEnFicha,
   RespuestaRapida,
 } from "@/lib/api/types";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, primerNombre } from "@/lib/format";
 import { defineStore } from "../db";
-import { errorResponse, readJson, type Route } from "../http";
+import { errorResponse, readJson, type Route, type RouteParams } from "../http";
 import {
   bultosDisponibles,
   DAY,
@@ -729,7 +729,7 @@ function agregar(conversacion: Conversacion, mensaje: SinMeta<MensajeConversacio
 
 /** Acción sobre una conversación existente; 404 si no existe. */
 function accion(handler: (conversacion: Conversacion, request: Request) => Response | Promise<Response>) {
-  return async ({ params: [id], request }: { params: string[]; request: Request }) => {
+  return async ({ params: [id], request }: { params: RouteParams; request: Request }) => {
     const conversacion = find(id);
     if (!conversacion) return errorResponse(404, `No existe la conversación ${id}.`);
     return handler(conversacion, request);
@@ -799,7 +799,7 @@ export const routes: Route[] = [
       if (body.tipo === "plantilla") {
         const plantilla = plantillas.find((item) => item.id === body.plantillaId);
         if (!plantilla) return errorResponse(422, "Elegí una plantilla aprobada.");
-        const nombre = conversacion.clienta.nombre.split(" ")[0];
+        const nombre = primerNombre(conversacion.clienta.nombre);
         agregar(conversacion, {
           tipo: "texto",
           autor: "persona",

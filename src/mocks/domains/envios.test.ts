@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { CotizacionEnvio, GrupoDespacho } from "@/lib/api/types";
 import { resetDb } from "../db";
+import { routeParams } from "../http";
 import { armarCajas, routes } from "./envios";
 
 async function call<T>(method: string, path: string, body?: unknown) {
@@ -9,7 +10,7 @@ async function call<T>(method: string, path: string, body?: unknown) {
   const request = new Request(url, { method, body: body ? JSON.stringify(body) : undefined });
   for (const route of routes) {
     const match = route.method === method ? url.pathname.match(route.pattern) : null;
-    if (match) return (await (await route.handler({ url, params: match.slice(1), request })).json()) as T;
+    if (match) return (await (await route.handler({ url, params: routeParams(match), request })).json()) as T;
   }
   throw new Error(`Sin ruta para ${method} ${path}`);
 }

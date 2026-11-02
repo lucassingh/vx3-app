@@ -30,6 +30,7 @@ import { ESTADO_CONVERSACION, ETAPA_CONVERSACION, FILTROS, LINEA, type FiltroBan
 import { MessageItem } from "./message-item";
 import { TakeDialog } from "./take-dialog";
 import { toConversacionView, type ConversacionView, type MensajeView } from "./view";
+import { primerNombre } from "@/lib/format";
 
 /** Usuario que opera la bandeja (el de la sesión). */
 const YO = "Elías";
@@ -218,7 +219,7 @@ export function Inbox({ initial, respuestasRapidas, plantillas, motivosToma }: I
             tipo: "texto",
             autor: "persona",
             autorNombre: YO,
-            texto: mensaje.texto.replaceAll("{{nombre}}", selected.clienta.nombre.split(" ")[0]),
+            texto: mensaje.texto.replaceAll("{{nombre}}", primerNombre(selected.clienta.nombre)),
             plantilla:
               mensaje.tipo === "plantilla" ? plantillas.find((p) => p.id === mensaje.plantillaId)?.nombre : undefined,
             enviadoEn: new Date().toISOString(),

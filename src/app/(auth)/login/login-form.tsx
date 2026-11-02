@@ -8,6 +8,7 @@ import { Input, Label } from "@/components/ui/input";
 import { currentUser } from "@/lib/auth";
 import { signIn } from "@/lib/auth-actions";
 import { toast } from "@/lib/toast";
+import { primerNombre } from "@/lib/format";
 
 /** Precargadas mientras hay un solo usuario (ver src/lib/session.ts). */
 const DEFAULT_EMAIL = "eliasllaury@gmail.com";
@@ -30,7 +31,7 @@ export function LoginForm() {
       });
       if (result.ok) {
         toast.success("Sesión iniciada", {
-          description: `Hola de nuevo, ${currentUser.name.split(" ")[0]}.`,
+          description: `Hola de nuevo, ${primerNombre(currentUser.name)}.`,
         });
         router.replace("/");
       } else {

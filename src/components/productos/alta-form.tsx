@@ -193,7 +193,7 @@ export function AltaForm({ opciones }: { opciones: CatalogoAltaOpciones }) {
     if (errores.length > 0) {
       toast.error(
         errores.length === 1 ? "Falta 1 dato para publicar" : `Faltan ${errores.length} datos para publicar`,
-        { description: errores[0].mensaje },
+        { description: errores[0]?.mensaje },
       );
       return;
     }

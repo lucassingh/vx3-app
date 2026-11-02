@@ -7,6 +7,7 @@ import {
   formatRatio,
   formatRelativeTime,
   formatUsd,
+  primerNombre,
 } from "./format";
 
 // Estos tests asumen siteConfig.locale = "es-AR". El espacio antes de "%"
@@ -51,5 +52,13 @@ describe("formatRelativeTime", () => {
     expect(formatRelativeTime(ago(5), now)).toBe("hace 5 minutos");
     expect(formatRelativeTime(ago(180), now)).toBe("hace 3 horas");
     expect(formatRelativeTime(ago(24 * 60), now)).toBe("ayer");
+  });
+});
+
+describe("primerNombre", () => {
+  it("toma el primer nombre, aunque haya espacios de más", () => {
+    expect(primerNombre("Johana Quiroga")).toBe("Johana");
+    expect(primerNombre("  Romina  Belén Gaitán ")).toBe("Romina");
+    expect(primerNombre("Lucía")).toBe("Lucía");
   });
 });

@@ -25,12 +25,13 @@ import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { currentUser } from "@/lib/auth";
 import { getRouteMetadata } from "@/lib/navigation";
+import { primerNombre } from "@/lib/format";
 
 export const metadata = getRouteMetadata("/");
 
 /** M10 · Dashboard ejecutivo: qué pasó hoy, qué está trabado y dónde se pierde plata. */
 export default function HomePage() {
-  const firstName = currentUser.name.split(" ")[0];
+  const firstName = primerNombre(currentUser.name);
 
   return (
     <>

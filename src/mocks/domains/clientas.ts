@@ -12,7 +12,7 @@ import type {
   SegmentoResumen,
 } from "@/lib/api/types";
 import { BANCO, TRANSPORTE } from "@/lib/domain";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, primerNombre } from "@/lib/format";
 import { normalizeText } from "@/lib/utils";
 import { defineStore } from "../db";
 import { errorResponse, paginate, readJson, type Route } from "../http";
@@ -336,7 +336,7 @@ function comoSeLlama(sku: string) {
 
 /** RN-74: tono VX3, cercano y con presión sutil; nunca el mismo texto para todas. */
 function mensajeSugerido(clienta: ClientaSeed, tipo: RecompraTipo, sku: string | undefined, index: number) {
-  const nombre = clienta.nombre.split(" ")[0];
+  const nombre = primerNombre(clienta.nombre);
   const producto = sku ? comoSeLlama(sku) : "lo nuevo de la temporada";
   const despacho =
     clienta.zona === "interior"
@@ -355,8 +355,8 @@ function mensajeSugerido(clienta: ClientaSeed, tipo: RecompraTipo, sku: string |
     `¡Hola ${nombre}! ¿Cómo andás? 😊 Te escribo de VX3 porque entraron ${producto} en colores nuevos y me acordé de vos. ¿Querés que te arme un pedido? ${despacho}`,
     `¡Hola ${nombre}! Hace unas semanas que no sabemos de vos 💛 Repusimos ${producto}, que es lo que más te llevás. ¿Te paso fotos de lo que entró? ${despacho}`,
     `¡${nombre}, buen día! Tenemos ${producto} con buen stock, pero se está moviendo rápido. ¿Te guardo una media docena? ${despacho}`,
-  ];
-  return variantes[index % variantes.length];
+  ] as const;
+  return variantes[index % variantes.length] ?? variantes[0];
 }
 
 /** Las que ya figuran como contactadas hoy al arrancar la demo. */
@@ -480,7 +480,7 @@ export const routes: Route[] = [
       const index = duplicados.findIndex((item) => item.id === decodeURIComponent(id));
       if (index === -1) return errorResponse(404, `No existe el duplicado ${id}.`);
       const [fusionado] = duplicados.splice(index, 1);
-      return Response.json({ fusionados: fusionado.registros.length });
+      return Response.json({ fusionados: fusionado?.registros.length ?? 0 });
     },
   },
   {

@@ -281,7 +281,7 @@ function presupuesto(now: number): PresupuestoMes {
   const mm = String(month).padStart(2, "0");
   const gastoDiario: DailyPoint[] = Array.from({ length: day }, (_, index) => ({
     date: `${year}-${mm}-${String(index + 1).padStart(2, "0")}`,
-    value: Math.round(series.reduce((sum, { dias }) => sum + dias[index], 0) * 100) / 100,
+    value: Math.round(series.reduce((sum, { dias }) => sum + (dias[index] ?? 0), 0) * 100) / 100,
   }));
 
   return { mes, dia: day, diasDelMes, tipoCambio: state.tipoCambio.valor, campanas, gastoDiario };

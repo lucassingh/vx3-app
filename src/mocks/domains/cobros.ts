@@ -676,14 +676,19 @@ function caja(): CajaDelDia {
     reserva,
     capacidadCompra: disponible - sumar(compromisosHoy) - reserva,
     proveedores: proveedores
-      .filter((proveedor) => SALDOS_PROVEEDOR[proveedor.id])
-      .map((proveedor) => ({
-        id: proveedor.id,
-        proveedor: proveedor.nombre,
-        saldo: SALDOS_PROVEEDOR[proveedor.id],
-        condiciones: proveedor.condiciones,
-        ultimaCompraDias: proveedor.ultimaCompraDias,
-      }))
+      .flatMap((proveedor) => {
+        const saldo = SALDOS_PROVEEDOR[proveedor.id];
+        if (!saldo) return [];
+        return [
+          {
+            id: proveedor.id,
+            proveedor: proveedor.nombre,
+            saldo,
+            condiciones: proveedor.condiciones,
+            ultimaCompraDias: proveedor.ultimaCompraDias,
+          },
+        ];
+      })
       .toSorted((a, b) => b.saldo - a.saldo),
   };
 }

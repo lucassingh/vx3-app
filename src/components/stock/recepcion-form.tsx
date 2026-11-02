@@ -22,6 +22,9 @@ import { TIPO_PROVEEDOR } from "./labels";
 
 type RenglonEstado = { contado: string; cambioCosto: boolean; costoNuevo: string };
 
+/** Estado de un renglón que todavía no se tocó. */
+const SIN_CARGAR: RenglonEstado = { contado: "", cambioCosto: false, costoNuevo: "" };
+
 const CHECKS = [
   { id: "orden", label: "Se completó en el orden de la boleta", regla: "RN-30" },
   { id: "contado", label: "Se contó todo, sin confiar en la boleta", regla: "RN-31" },
@@ -82,10 +85,10 @@ export function RecepcionForm({ recepcion, fechaLabel }: { recepcion: Recepcion;
   const [cargada, setCargada] = useState(recepcion.firmadoPor !== null);
 
   const actualizar = (id: string, cambio: Partial<RenglonEstado>) =>
-    setRenglones((actual) => ({ ...actual, [id]: { ...actual[id], ...cambio } }));
+    setRenglones((actual) => ({ ...actual, [id]: { ...(actual[id] ?? SIN_CARGAR), ...cambio } }));
 
   const filas = recepcion.renglones.map((renglon) => {
-    const estado = renglones[renglon.id];
+    const estado = renglones[renglon.id] ?? SIN_CARGAR;
     const contado = Math.max(0, Math.round(toNumber(estado.contado)));
     const costoNuevo = estado.cambioCosto ? toNumber(estado.costoNuevo) : null;
     return {

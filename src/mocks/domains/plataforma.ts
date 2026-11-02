@@ -40,7 +40,12 @@ import {
 /** M0 · Plataforma: reglas, integraciones, IA, usuarios, auditoría y cuenta. */
 
 /** Usuario de la sesión (hay uno solo, ver src/lib/session.ts). */
-const YO = equipo[0];
+/** La persona que usa la demo: la primera del equipo semilla. */
+const YO = (() => {
+  const [primera] = equipo;
+  if (!primera) throw new Error("La semilla del equipo está vacía.");
+  return primera;
+})();
 const nombreDe = (usuarioId: string) => equipo.find((u) => u.id === usuarioId)?.nombre ?? "Más Uno";
 
 /* ---- Reglas ---------------------------------------------------------------- */
@@ -1496,7 +1501,7 @@ export const routes: Route[] = [
       }
       const usuario: UsuarioEquipo = {
         id: nextId("u"),
-        nombre: normalizado.split("@")[0],
+        nombre: normalizado.split("@")[0] ?? normalizado,
         email: normalizado,
         rol: rol as RolUsuario,
         puesto: "Invitación pendiente",

@@ -17,6 +17,7 @@ import { api } from "@/lib/api/browser";
 import type { ClientaParaRecompra, RecompraEstado, RecompraTipo } from "@/lib/api/types";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { primerNombre } from "@/lib/format";
 
 /** Item de la lista con los textos ya formateados en el servidor. */
 export type RecompraItemView = ClientaParaRecompra & {
@@ -50,7 +51,7 @@ export function RecompraLista({ initialItems }: { initialItems: RecompraItemView
 
   const cambiarEstado = async (item: RecompraItemView, estado: RecompraEstado, avisar = true) => {
     const anterior = item.estado;
-    const nombre = item.nombre.split(" ")[0];
+    const nombre = primerNombre(item.nombre);
     patch(item.id, { estado });
     try {
       await api.clientas.marcarRecompra(item.id, { estado, mensaje: item.mensaje });

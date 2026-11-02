@@ -2,7 +2,19 @@ import type { ApiErrorBody, Paginated } from "@/lib/api/types";
 
 /** Helpers compartidos por las rutas de cada dominio (src/mocks/domains). */
 
-export type RouteContext = { url: URL; params: string[]; request: Request };
+/**
+ * Grupos de captura del patrón, en orden. Hoy cada patrón tiene a lo sumo uno y
+ * ninguno es opcional, así que el primero está garantizado cuando el handler lo
+ * declara; cualquier otro hay que chequearlo.
+ */
+export type RouteParams = readonly [string, ...string[]];
+
+export type RouteContext = { url: URL; params: RouteParams; request: Request };
+
+/** Los parámetros de una ruta, a partir del match de su patrón. */
+export function routeParams(match: RegExpMatchArray): RouteParams {
+  return match.slice(1) as unknown as RouteParams;
+}
 
 export type Route = {
   method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";

@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { NuevoMensaje, PlantillaWhatsapp, RespuestaRapida } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import type { ConversacionView } from "./view";
+import { primerNombre } from "@/lib/format";
 
 type Modo = "responder" | "nota";
 
@@ -40,7 +41,7 @@ export function Composer({
 
   const cerrada = conversacion.estado === "cerrada";
   const soloPlantillas = modo === "responder" && !conversacion.ventana.abierta && !cerrada;
-  const nombre = conversacion.clienta.nombre.split(" ")[0];
+  const nombre = primerNombre(conversacion.clienta.nombre);
 
   const submit = () => {
     const value = texto.trim();

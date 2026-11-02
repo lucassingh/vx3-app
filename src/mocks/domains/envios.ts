@@ -116,7 +116,7 @@ function minutosAhoraBA() {
 
 function estadoCorte(hora: string | null): GrupoDespacho["corteEstado"] {
   if (!hora) return "sin_corte";
-  const [h, m] = hora.split(":").map(Number);
+  const [h = 0, m = 0] = hora.split(":").map(Number);
   const faltan = h * 60 + m - minutosAhoraBA();
   return faltan <= 0 ? "cerrado" : faltan <= 90 ? "proximo" : "a_tiempo";
 }
@@ -286,7 +286,7 @@ const VIGENCIA_HORAS = 48;
 
 /** Tabla propia por zona y peso, para cuando MiCorreo no responde. Suma un margen de seguridad. */
 function respaldoCorreo(zona: Zona, kg: number) {
-  const bandas =
+  const bandas: [number, number][] =
     zona === "interior"
       ? [
           [1, 9_800],

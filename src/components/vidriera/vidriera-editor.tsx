@@ -67,13 +67,17 @@ export function VidrieraEditor({
     if (destino < 0 || destino >= colecciones.length) return;
     const previo = colecciones;
     const nuevo = [...colecciones];
-    [nuevo[index], nuevo[destino]] = [nuevo[destino], nuevo[index]];
+    const movida = nuevo[index];
+    const desplazada = nuevo[destino];
+    if (!movida || !desplazada) return;
+    nuevo[index] = desplazada;
+    nuevo[destino] = movida;
     setColecciones(nuevo);
     run(
       () => setColecciones(previo),
       () => api.vidriera.ordenarColecciones(nuevo.map((item) => item.id)),
       "Orden actualizado",
-      `“${nuevo[destino].nombre}” quedó en el lugar ${destino + 1}.`,
+      `“${movida.nombre}” quedó en el lugar ${destino + 1}.`,
     );
   };
 

@@ -235,7 +235,7 @@ function operacion(): OperacionHoy {
   const porDespachar = hoy.filter((pedido) => ["listo_facturar", "facturado", "en_armado"].includes(pedido.estado));
   const ahora = minutosAhoraBA();
   const corte = (id: string, label: string, hora: string, transporte: string): CorteHorario => {
-    const [h, m] = hora.split(":").map(Number);
+    const [h = 0, m = 0] = hora.split(":").map(Number);
     const minutos = h * 60 + m;
     return {
       id,

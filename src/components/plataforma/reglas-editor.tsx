@@ -95,8 +95,9 @@ export function ReglasEditor({
   const cambios = useMemo(
     () =>
       reglas.flatMap((regla) => {
-        if (!(regla.id in drafts)) return [];
-        const valor = parse(regla, drafts[regla.id]);
+        const draft = drafts[regla.id];
+        if (draft === undefined) return [];
+        const valor = parse(regla, draft);
         const antes = describirValorRegla(regla, regla.valor);
         const despues = describirValorRegla(regla, valor);
         if (antes === despues) return [];
@@ -172,7 +173,7 @@ export function ReglasEditor({
                 {reglas
                   .filter((regla) => regla.grupo === grupo.id)
                   .map((regla) => {
-                    const draft = regla.id in drafts ? drafts[regla.id] : draftDe(regla);
+                    const draft = drafts[regla.id] ?? draftDe(regla);
                     const cambio = cambios.find((item) => item.regla.id === regla.id);
                     return (
                       <ReglaRow

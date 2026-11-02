@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { FacturaEmitida, PedidoFacturable, PedidosLista, PedidoTrabado } from "@/lib/api/types";
 import { resetDb } from "../db";
-import type { Route } from "../http";
+import { routeParams, type Route } from "../http";
 import { routes as envios } from "./envios";
 import { routes as pedidos } from "./pedidos";
 
@@ -11,7 +11,7 @@ async function call<T>(routes: Route[], method: string, path: string, body?: unk
   const request = new Request(url, { method, body: body ? JSON.stringify(body) : undefined });
   for (const route of routes) {
     const match = route.method === method ? url.pathname.match(route.pattern) : null;
-    if (match) return (await (await route.handler({ url, params: match.slice(1), request })).json()) as T;
+    if (match) return (await (await route.handler({ url, params: routeParams(match), request })).json()) as T;
   }
   throw new Error(`Sin ruta para ${method} ${path}`);
 }

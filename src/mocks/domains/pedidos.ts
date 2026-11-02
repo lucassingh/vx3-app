@@ -9,7 +9,7 @@ import type {
   PedidoTrabado,
   PedidosLista,
 } from "@/lib/api/types";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, primerNombre } from "@/lib/format";
 import { BANCO, ESTADO_PEDIDO, ZONA } from "@/lib/domain";
 import { normalizeText } from "@/lib/utils";
 import { defineStore } from "../db";
@@ -176,7 +176,7 @@ function trabados(): PedidoTrabado[] {
     .toSorted((a, b) => a.creadoAt.localeCompare(b.creadoAt))
     .map((pedido): PedidoTrabado => {
       const minutos = Math.round((now - Date.parse(pedido.creadoAt)) / 60_000);
-      const nombre = pedido.clienta.nombre.split(" ")[0];
+      const nombre = primerNombre(pedido.clienta.nombre);
 
       if (pedido.faltaParaMinimo > 0) {
         const sugerido = presentacionesDe(getProducto("CJALN1")).bulto;
@@ -203,11 +203,12 @@ function trabados(): PedidoTrabado[] {
         };
       }
 
-      const disponibles = bultosDisponibles(getProducto(pedido.lineas[0].codigo.replace(/-\d+$/, "")));
+      const [primera] = pedido.lineas;
+      const disponibles = primera ? bultosDisponibles(getProducto(primera.codigo.replace(/-\d+$/, ""))) : 0;
       return {
         pedido,
         motivo: "sin_respuesta",
-        palanca: `Se está acabando: quedan ${disponibles} bultos de ${pedido.lineas[0].codigo}`,
+        palanca: `Se está acabando: quedan ${disponibles} bultos de ${primera?.codigo ?? "tu pedido"}`,
         ultimoMensaje: `¡Hola ${nombre}! Te sigo guardando el pedido 😊 El conjunto se está moviendo mucho y quedan pocas medias docenas en tus colores. ¿Te lo confirmo así sale mañana temprano?`,
         pasos: [
           { id: "30m", label: "A los 30 minutos · primer mensaje", estado: "hecho", at: isoAgo(minutos - 30, now) },

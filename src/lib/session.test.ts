@@ -22,7 +22,7 @@ describe("sesión", () => {
     const [body, signature] = token.split(".");
     const forged = `${btoa(JSON.stringify({ email: "x@y.com", exp: Date.now() + 1e9 }))}.${signature}`;
 
-    expect(await verifySessionToken(`${body}.${signature.slice(0, -2)}xx`)).toBeNull();
+    expect(await verifySessionToken(`${body}.${signature!.slice(0, -2)}xx`)).toBeNull();
     expect(await verifySessionToken(forged)).toBeNull();
     expect(await verifySessionToken(token, Date.now() + 8 * 24 * 60 * 60 * 1000)).toBeNull();
     expect(await verifySessionToken(undefined)).toBeNull();

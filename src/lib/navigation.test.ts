@@ -43,7 +43,7 @@ describe("isActivePath", () => {
 describe("findRoute y getBreadcrumbs", () => {
   it("resuelve un subitem con su grupo y su sección", () => {
     if (!group) return;
-    const child = group.items[0];
+    const child = group.items[0]!;
     const match = findRoute(child.href);
 
     expect(match?.link.title).toBe(child.title);
@@ -56,7 +56,7 @@ describe("findRoute y getBreadcrumbs", () => {
   });
 
   it("incluye los links del menú de usuario", () => {
-    const [link] = userNavigation;
+    const link = userNavigation[0]!;
     expect(findRoute(link.href)?.link.title).toBe(link.title);
   });
 
@@ -66,7 +66,7 @@ describe("findRoute y getBreadcrumbs", () => {
   });
 
   it("toma el título de la pantalla para la metadata", () => {
-    const [first] = links;
+    const first = links[0]!;
     expect(getRouteMetadata(first.href).title).toBe(first.title);
   });
 });

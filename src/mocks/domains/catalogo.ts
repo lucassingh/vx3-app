@@ -482,8 +482,8 @@ function combos(url: URL): CatalogoCombosResultado {
   const resultado: CatalogoCombo[] = [];
 
   for (let intento = 0; intento < resto.length && resultado.length < 6; intento++) {
-    const ancla = anclas.length > 0 ? [anclas[intento % anclas.length]] : [];
-    const elegidos = [...fijos, ...ancla];
+    const ancla = anclas[intento % anclas.length];
+    const elegidos = ancla ? [...fijos, ancla] : [...fijos];
     let total = elegidos.reduce((sum, c) => sum + c.bulto.precio, 0);
     // El relleno va del más barato al más caro para que entre en el rango.
     const relleno = anclas.length > 0 ? resto.toSorted((a, b) => a.bulto.precio - b.bulto.precio) : resto;

@@ -7,6 +7,11 @@ const MINUS = "−";
 /** Usa el signo menos tipográfico (−) en lugar del guion. */
 const withMinus = (value: string) => value.replace("-", MINUS);
 
+/** Primer nombre para saludar: "Johana Quiroga" → "Johana". */
+export function primerNombre(nombreCompleto: string) {
+  return nombreCompleto.trim().split(/\s+/)[0] ?? nombreCompleto;
+}
+
 export function formatNumber(value: number, options?: Intl.NumberFormatOptions) {
   return new Intl.NumberFormat(locale, options).format(value);
 }

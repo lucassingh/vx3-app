@@ -10,6 +10,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { TRANSPORTE, ZONA } from "@/lib/domain";
 import { toast } from "@/lib/toast";
 import type { ConversacionView } from "./view";
+import { primerNombre } from "@/lib/format";
 
 const ORIGEN_CLIENTA = {
   anuncio: "Anuncio",
@@ -42,7 +43,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 /** Ficha de la clienta al costado del chat (RF-M11-02) y acciones desde el chat (RF-M11-06). */
 export function FichaPanel({ conversacion }: { conversacion: ConversacionView }) {
   const { clienta, ficha, fichaLabels } = conversacion;
-  const nombre = clienta.nombre.split(" ")[0];
+  const nombre = primerNombre(clienta.nombre);
   const desde = ficha.clientaDesdeDias === 0 ? "Primera compra hoy" : `Clienta hace ${ficha.clientaDesdeDias} días`;
 
   return (

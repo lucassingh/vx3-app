@@ -44,7 +44,7 @@ describe("api (servidor)", () => {
 
     await api.dashboard.ventas(7);
 
-    const [url, init] = fetchSpy.mock.calls[0];
+    const [url, init] = fetchSpy.mock.calls[0]!;
     expect(url).toBe("https://api.example.com/v1/dashboard/ventas?days=7");
     expect(new Headers(init?.headers).get("Accept")).toBe("application/json");
   });

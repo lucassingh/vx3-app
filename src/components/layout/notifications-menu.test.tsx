@@ -56,7 +56,7 @@ describe("NotificationsMenu", () => {
     await openAndMarkAllRead();
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
-    const [, options] = toast.error.mock.calls[0];
+    const [, options] = toast.error.mock.calls[0]!;
     expect(options.action.label).toBe("Reintentar");
     await waitFor(() => expect(bell("Notificaciones, 2 sin leer")).toBeInTheDocument());
   });

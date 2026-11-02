@@ -42,13 +42,15 @@ export function ColumnChart({ bars, max, ticks, description }: ColumnChartProps)
       Home: 0,
       End: last,
     };
-    if (!(event.key in targets)) return;
+    const target = targets[event.key];
+    if (target === undefined) return;
     event.preventDefault();
-    const next = Math.min(last, Math.max(0, targets[event.key]));
+    const next = Math.min(last, Math.max(0, target));
     barRefs.current[next]?.focus();
   };
 
-  const active = activeIndex === null ? null : { index: activeIndex, ...bars[activeIndex] };
+  const activeBar = activeIndex === null ? undefined : bars[activeIndex];
+  const active = activeIndex === null || !activeBar ? null : { index: activeIndex, ...activeBar };
   const align =
     active === null || (active.index >= 3 && active.index <= last - 3)
       ? "-translate-x-1/2"

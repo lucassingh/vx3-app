@@ -226,7 +226,7 @@ export function ProbarTodas({ integraciones }: { integraciones: Pick<Integracion
   const onClick = () => {
     startTransition(async () => {
       const results = await Promise.allSettled(integraciones.map((integracion) => probar(integracion)));
-      const fallidas = integraciones.filter((_, index) => results[index].status === "rejected");
+      const fallidas = integraciones.filter((_, index) => results[index]?.status === "rejected");
       if (fallidas.length === 0) {
         toast.success(`Las ${integraciones.length} conexiones respondieron`);
       } else {
