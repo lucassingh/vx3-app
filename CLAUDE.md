@@ -1,10 +1,10 @@
 @AGENTS.md
 
-# Dashboard starter
+# VX3 app
 
-Plantilla base de dashboard reutilizable (Next 16 · React 19 · Tailwind 4 · TypeScript).
-El objetivo es adaptar marca y navegación en minutos y dedicar el tiempo al
-contenido del negocio.
+App de gestión de VX3, construida sobre el starter de dashboard de Más Uno
+(Next 16 · React 19 · Tailwind 4 · TypeScript). Marca y navegación viven en
+`src/config/`; el resto es contenido del negocio, un dominio por módulo.
 
 ## Adaptar a un cliente nuevo
 
@@ -145,7 +145,6 @@ Las cards son blancas con borde fino (`Card`, `CardHeader`, `CardTitle`,
   `action: { label: "Reintentar", onClick }`; operaciones async con
   `toast.promise(promesa, { loading, success, error })`; acciones reversibles
   con `action: { label: "Deshacer", … }`.
-- Ejemplos en vivo en Ajustes (`components/views/toast-showcase.tsx`).
 - En tests, mockear `@/lib/toast` y verificar las llamadas
   (ver `notifications-menu.test.tsx`).
 
