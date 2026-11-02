@@ -1,0 +1,88 @@
+/* =============================================================================
+   THEME · el único archivo que tocás para adaptar el dashboard a una marca.
+
+   1. MARCA        primary / secondary / accent (+ el color del texto encima).
+   2. SUPERFICIES  fondo del área de pantallas, cards, bordes y textos.
+   3. ESTADOS      éxito / advertencia / error.
+   4. FORMA        radio de bordes y sombras.
+
+   Cada bloque tiene su versión clara (:root) y oscura ([data-theme="dark"]).
+   El atributo también se puede usar en un elemento para forzar un tema solo
+   en ese bloque (ej. las previews de Ajustes).
+   Los tonos suaves (hover, fondos activos, badges) se derivan solos con
+   opacidad (`bg-primary/10`), así que no hace falta definirlos.
+
+   Contraste: cada `*-foreground` tiene que leerse sobre su color con un
+   ratio ≥ 4.5:1. En modo oscuro conviene una versión más clara del color
+   de marca con texto oscuro encima.
+   ========================================================================== */
+
+:root,
+[data-theme="light"] {
+  /* ---- 1. MARCA ---------------------------------------------------------- */
+  /* Ventas por Tres (VX3). Colores del logo: marrón #be884c, ocre #cba06f,
+     negro #010101. El marrón original no llega a 4.5:1 con texto blanco
+     (3.08), así que el primario es el mismo tono oscurecido un 31 %. */
+  --primary: #906637;
+  --primary-foreground: #ffffff;
+
+  --secondary: #cba06f;
+  --secondary-foreground: #1f1408;
+
+  --accent: #1c1611;
+  --accent-foreground: #cba06f;
+
+  /* ---- 2. SUPERFICIES ---------------------------------------------------- */
+  --canvas: #f3f3f5; /* área donde se renderizan las pantallas */
+  --surface: #ffffff; /* aside, navbar y cards */
+  --popover: #ffffff; /* menús desplegables */
+  --foreground: #18181b; /* texto principal */
+  --muted: #f4f4f6; /* hover y fondos sutiles */
+  --muted-foreground: #6a6a74; /* texto secundario */
+  --border: #e6e6ea; /* líneas delicadas */
+  --border-strong: #d4d4da; /* inputs y botones outline */
+  --ring: var(--primary); /* foco de teclado */
+
+  /* ---- 3. ESTADOS -------------------------------------------------------- */
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #dc2626;
+
+  /* ---- 4. FORMA ---------------------------------------------------------- */
+  --radius: 0.75rem; /* radio de las cards; botones e inputs derivan de este */
+  --card-shadow: 0 1px 2px 0 rgb(24 24 27 / 0.04);
+  --popover-shadow:
+    0 12px 32px -8px rgb(24 24 27 / 0.14), 0 2px 6px -2px rgb(24 24 27 / 0.06);
+}
+
+[data-theme="dark"] {
+  /* ---- 1. MARCA ---------------------------------------------------------- */
+  /* En oscuro el ocre de marca pasa a primario, con texto oscuro encima. */
+  --primary: #cba06f;
+  --primary-foreground: #1f1408;
+
+  --secondary: #be884c;
+  --secondary-foreground: #1f1408;
+
+  --accent: #efe4d4;
+  --accent-foreground: #1f1408;
+
+  /* ---- 2. SUPERFICIES ---------------------------------------------------- */
+  --canvas: #09090b;
+  --surface: #111113;
+  --popover: #18181b;
+  --foreground: #ededef;
+  --muted: #1c1c20;
+  --muted-foreground: #a1a1aa;
+  --border: #242428;
+  --border-strong: #34343a;
+
+  /* ---- 3. ESTADOS -------------------------------------------------------- */
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+
+  /* ---- 4. FORMA ---------------------------------------------------------- */
+  --card-shadow: 0 0 0 0 transparent;
+  --popover-shadow: 0 16px 40px -8px rgb(0 0 0 / 0.7);
+}

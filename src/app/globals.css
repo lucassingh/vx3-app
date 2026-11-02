@@ -1,0 +1,206 @@
+@import "tailwindcss";
+@import "../config/theme.css";
+
+/* Tema oscuro: lo activa el atributo data-theme en <html> (ver lib/preferences). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Aside colapsado en desktop: lo activa data-sidebar="collapsed" en <html>. */
+@custom-variant sidebar-collapsed {
+  @media (width >= 64rem) {
+    &:where([data-sidebar="collapsed"], [data-sidebar="collapsed"] *) {
+      @slot;
+    }
+  }
+}
+
+/* Puente entre los tokens de config/theme.css y las utilidades de Tailwind. */
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-popover: var(--popover);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-ring: var(--ring);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --radius-sm: max(0px, calc(var(--radius) - 6px));
+  --radius-md: max(0px, calc(var(--radius) - 4px));
+  --radius-lg: max(0px, calc(var(--radius) - 2px));
+  --radius-xl: var(--radius);
+  --radius-2xl: calc(var(--radius) + 4px);
+
+  --shadow-card: var(--card-shadow);
+  --shadow-popover: var(--popover-shadow);
+
+  --font-sans: var(--font-brand-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-brand-mono), ui-monospace, monospace;
+}
+
+@theme {
+  /* Curva de salida marcada: rápida al inicio, suave al final. */
+  --ease-snappy: cubic-bezier(0.23, 1, 0.32, 1);
+
+  --animate-pop-in: pop-in 160ms var(--ease-snappy);
+  --animate-pop-out: pop-out 110ms ease-in forwards;
+  --animate-fade-in: fade-in 140ms var(--ease-snappy);
+  --animate-page-enter: page-enter 260ms var(--ease-snappy) backwards;
+  --animate-bar-grow: bar-grow 480ms var(--ease-snappy) backwards;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+  @keyframes pop-out {
+    to {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+  @keyframes bar-grow {
+    from {
+      transform: scaleY(0);
+    }
+  }
+  @keyframes shimmer {
+    from {
+      translate: -100% 0;
+    }
+    to {
+      translate: 100% 0;
+    }
+  }
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--color-canvas);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--primary) 22%, transparent);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/*
+ * Toasts (Sonner). Los colores salen de los tokens vía variables en <Toaster>;
+ * acá se ajustan tipografía, espaciado y botones. El prefijo `html` gana en
+ * especificidad a los estilos que Sonner inyecta en tiempo de ejecución.
+ */
+html [data-sonner-toaster] {
+  font-family: var(--font-sans);
+}
+
+html [data-sonner-toast][data-styled="true"] {
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  font-size: 13px;
+  box-shadow: var(--shadow-popover);
+}
+
+html [data-sonner-toast]:focus-visible {
+  box-shadow:
+    var(--shadow-popover),
+    0 0 0 2px var(--color-ring);
+}
+
+html [data-sonner-toast][data-styled="true"] [data-icon] {
+  margin-top: 2px;
+}
+
+html [data-sonner-toaster] [data-sonner-toast] [data-title] {
+  font-weight: 500;
+  color: var(--color-foreground);
+}
+
+html [data-sonner-toaster] [data-sonner-toast] [data-description] {
+  color: var(--color-muted-foreground);
+}
+
+html [data-sonner-toast][data-styled="true"] [data-button] {
+  align-self: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-foreground);
+  color: var(--color-surface);
+}
+
+html [data-sonner-toast][data-styled="true"] [data-button]:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-ring);
+}
+
+html [data-sonner-toast][data-styled="true"] [data-cancel] {
+  background: var(--color-muted);
+  color: var(--color-foreground);
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
