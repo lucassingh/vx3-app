@@ -62,6 +62,8 @@ const esquemaServidor = z.object({
   BETTER_AUTH_URL: opcional(z.url("tiene que ser una URL, como http://localhost:3000")),
   /** La pone Vercel en cada deploy: el host del deploy, sin https://. */
   VERCEL_URL: opcional(z.string()),
+  /** Vercel Cron lo manda en cada llamada a /api/cron/*. Sin él, esas rutas responden 401. */
+  CRON_SECRET: opcional(z.string().min(32, "tiene que tener al menos 32 caracteres")),
   DATABASE_URL: opcional(conexionNeon(true)),
   DATABASE_URL_UNPOOLED: opcional(conexionNeon(false)),
   NEON_API_KEY: opcional(z.string()),

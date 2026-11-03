@@ -2,6 +2,7 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { NextConfig } from "next";
+import { withWorkflow } from "workflow/next";
 
 const { version } = JSON.parse(readFileSync(path.join(__dirname, "package.json"), "utf8")) as { version: string };
 
@@ -33,7 +34,8 @@ const nextConfig: NextConfig = {
 // traen SENTRY_AUTH_TOKEN, y después se borran: no quedan públicos.
 const subirSourceMaps = Boolean(process.env.SENTRY_AUTH_TOKEN);
 
-export default withSentryConfig(nextConfig, {
+// withWorkflow habilita "use workflow" y "use step" (src/workflows/). Sentry va por fuera.
+export default withSentryConfig(withWorkflow(nextConfig), {
   org: process.env.SENTRY_ORG,
   project: "cli-vx3",
   authToken: process.env.SENTRY_AUTH_TOKEN,

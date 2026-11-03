@@ -75,7 +75,7 @@ export default defineConfig({
         branches: 28,
         functions: 30,
         lines: 34,
-        "src/{env.ts,lib/{errors,result,money,dates,logger,action,sentry}.ts,lib/api/dispatch.ts,modules/platform/{permissions,access,health}.ts}":
+        "src/{env.ts,lib/{errors,result,money,dates,logger,action,sentry,cron}.ts,lib/api/dispatch.ts,modules/platform/{permissions,access,health}.ts}":
           {
             statements: 95,
             branches: 90,
