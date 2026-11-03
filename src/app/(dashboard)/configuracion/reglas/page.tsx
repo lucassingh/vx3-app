@@ -11,13 +11,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/configuracion/reglas";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** RF-M0-02 · Editor de reglas de negocio: las ⚙️ del catálogo (solucion_doc/02). */
-export default function ReglasPage() {
+export default async function ReglasPage() {
+  await requirePageAccess("/configuracion/reglas");
   const { link } = findRoute(HREF)!;
 
   return (

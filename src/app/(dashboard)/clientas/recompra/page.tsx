@@ -11,13 +11,15 @@ import { PageBody, PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/clientas/recompra";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M12 · Lista diaria de clientas para reactivar con el mensaje sugerido (RF-M12-04 y 05). */
-export default function Page() {
+export default async function Page() {
+  await requirePageAccess("/clientas/recompra");
   const header = routeHeader(HREF);
 
   return (

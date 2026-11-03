@@ -6,13 +6,15 @@ import { RouteHeader } from "@/components/pedidos/route-header";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/envios/despacho";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M6 · Despacho del día por transportista, con los cortes horarios (RN-80). */
-export default function Page() {
+export default async function Page() {
+  await requirePageAccess("/envios/despacho");
   return (
     <>
       <RouteHeader

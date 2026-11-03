@@ -14,13 +14,15 @@ import {
 } from "@/components/vidriera/widgets";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/vidriera";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M4 · Vidriera propia: reemplaza el catálogo de DUX. */
-export default function VidrieraPage() {
+export default async function VidrieraPage() {
+  await requirePageAccess("/vidriera");
   const route = findRoute(HREF);
 
   return (

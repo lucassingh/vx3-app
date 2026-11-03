@@ -14,13 +14,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/productos/catalogo";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M1 · Catálogo maestro (PIM): la fuente única del producto. */
-export default function CatalogoPage({ searchParams }: PageProps<"/productos/catalogo">) {
+export default async function CatalogoPage({ searchParams }: PageProps<"/productos/catalogo">) {
+  await requirePageAccess("/productos/catalogo");
   const route = findRoute(HREF);
 
   return (

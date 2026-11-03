@@ -16,13 +16,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/stock/espejo";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M2 · Espejo del stock y los precios de DUX (RF-M2-01, RF-M2-09, RF-M2-12). */
-export default function StockPage({ searchParams }: PageProps<"/stock/espejo">) {
+export default async function StockPage({ searchParams }: PageProps<"/stock/espejo">) {
+  await requirePageAccess("/stock/espejo");
   const route = findRoute(HREF);
 
   return (

@@ -10,13 +10,15 @@ import {
 } from "@/components/plataforma/usuarios";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/configuracion/usuarios";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** RF-M0-01 y RF-M0-03 · Usuarios, roles (06 §4) y registro de auditoría. */
-export default function UsuariosPage() {
+export default async function UsuariosPage() {
+  await requirePageAccess("/configuracion/usuarios");
   const { link } = findRoute(HREF)!;
 
   return (

@@ -17,6 +17,14 @@ describe("/api/v1", () => {
     expect(response.status).toBe(401);
   });
 
+  it("con sesión pero sin permiso para el área responde 403", async () => {
+    sesion.user = usuarioDePrueba("postventa");
+
+    const response = await GET(new Request("http://app.local/api/v1/pauta/anuncios"));
+
+    expect(response.status).toBe(403);
+  });
+
   it("con sesión atiende el pedido", async () => {
     sesion.user = usuarioDePrueba("admin");
 

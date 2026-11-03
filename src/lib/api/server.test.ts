@@ -6,6 +6,11 @@ import { api } from "./server";
 // connection() solo existe dentro de un request de Next.
 vi.mock("next/server", () => ({ connection: vi.fn(async () => {}) }));
 
+vi.mock("@/modules/platform/auth/session", async () => {
+  const { usuarioDePrueba } = await import("@/test/users");
+  return { getSessionUser: async () => usuarioDePrueba("admin") };
+});
+
 // Un dominio real de prueba: el dashboard, con una sola ruta.
 vi.mock("./real-routes", () => ({
   realRoutes: {

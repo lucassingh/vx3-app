@@ -2,7 +2,9 @@ import "server-only";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { isRole, type Role } from "../permissions";
+import { ForbiddenError, UnauthenticatedError } from "@/lib/errors";
+import { puedeVerPagina } from "../access";
+import { can, isRole, type Permission, type Role } from "../permissions";
 import { getAuth } from "./auth";
 
 /** Lo que la app sabe del usuario de la sesión. */
@@ -46,5 +48,24 @@ export async function requireUser(): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user) redirect("/login");
   if (user.mustChangePassword) redirect("/cambiar-contrasena");
+  return user;
+}
+
+/**
+ * Primera línea de cada pantalla del dashboard: sin sesión, al login; si el rol
+ * no puede ver el área de esa ruta (access.ts), a "Sin permiso". Un test
+ * verifica que ninguna pantalla se la olvide.
+ */
+export async function requirePageAccess(href: string): Promise<SessionUser> {
+  const user = await requireUser();
+  if (!puedeVerPagina(user.role, href)) redirect("/sin-permiso");
+  return user;
+}
+
+/** Para Server Actions y servicios: el usuario, si tiene el permiso; si no, un error de dominio. */
+export async function requirePermission(permission: Permission): Promise<SessionUser> {
+  const user = await getSessionUser();
+  if (!user) throw new UnauthenticatedError();
+  if (!can(user.role, permission)) throw new ForbiddenError();
   return user;
 }

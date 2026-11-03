@@ -11,13 +11,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/stock/proveedores";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M2 · Ficha de proveedores (RF-M2-11): el conocimiento de compras, registrado. */
-export default function ProveedoresPage() {
+export default async function ProveedoresPage() {
+  await requirePageAccess("/stock/proveedores");
   const route = findRoute(HREF);
 
   return (
