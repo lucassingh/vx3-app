@@ -1,6 +1,6 @@
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
@@ -16,6 +16,8 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
+    // Los de integración usan una base real: corren aparte (npm run test:int).
+    exclude: [...configDefaults.exclude, "src/**/*.int.test.ts"],
     css: false,
   },
 });

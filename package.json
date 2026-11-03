@@ -13,9 +13,18 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:dump": "node scripts/db-dump.mjs",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@prisma/adapter-neon": "7.10.1",
+    "@prisma/client": "7.10.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.61.0",
@@ -27,6 +36,7 @@
     "server-only": "^0.0.1",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.7.0",
+    "uuid": "14.0.3",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -49,7 +59,9 @@
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "prisma": "7.10.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"

@@ -23,15 +23,20 @@ npm run dev
 Con la API simulada no hace falta ninguna credencial. El login usa el usuario
 fijo de `src/lib/session.ts` hasta que entre la auth propia (fase 1.2).
 
-| Script               | Qué hace                                                            |
-| -------------------- | ------------------------------------------------------------------- |
-| `npm run dev`        | Servidor de desarrollo                                              |
-| `npm run build`      | Build de producción (valida tipos y las reglas de Cache Components) |
-| `npm run lint`       | ESLint                                                              |
-| `npm run typecheck`  | TypeScript sin emitir                                               |
-| `npm run format`     | Prettier sobre todo el repo (`format:check` solo verifica)          |
-| `npm test`           | Tests una vez (lo mismo que corre la CI)                            |
-| `npm run test:watch` | Tests en modo watch                                                 |
+| Script                   | Qué hace                                                                          |
+| ------------------------ | --------------------------------------------------------------------------------- |
+| `npm run dev`            | Servidor de desarrollo                                                            |
+| `npm run build`          | Build de producción (valida tipos y las reglas de Cache Components)               |
+| `npm run lint`           | ESLint                                                                            |
+| `npm run typecheck`      | TypeScript sin emitir                                                             |
+| `npm run format`         | Prettier sobre todo el repo (`format:check` solo verifica)                        |
+| `npm test`               | Tests una vez (lo mismo que corre la CI)                                          |
+| `npm run test:watch`     | Tests en modo watch                                                               |
+| `npm run db:migrate:dev` | Crea y aplica una migración en la branch `develop` de Neon (`-- --name <nombre>`) |
+| `npm run db:migrate`     | Aplica las migraciones pendientes (lo que corre la CI; nunca genera nada)         |
+| `npm run db:seed`        | Datos de referencia, idempotentes                                                 |
+| `npm run db:studio`      | Prisma Studio                                                                     |
+| `npm run db:dump`        | Copia local de la base con `pg_dump` (en `backups/`)                              |
 
 ## Datos: API simulada y real
 
@@ -52,6 +57,14 @@ La API simulada vive en `src/mocks/`: `seed/` es la semilla compartida (SKUs
 reales, clientas, pedidos y anuncios coherentes entre pantallas), `domains/`
 arma las respuestas de cada módulo y `db.ts` guarda el estado en memoria hasta
 reiniciar el servidor.
+
+## Base de datos
+
+PostgreSQL en Neon (proyecto `cli-vx3`), con Prisma 7 fijado en la 7.10.1. La app usa
+la conexión con pooler (`DATABASE_URL`, en `src/db/client.ts`) y las migraciones la
+directa (`DATABASE_URL_UNPOOLED`, en `prisma.config.ts`). El esquema está en
+`prisma/schema.prisma`; el cliente se genera solo al instalar (`src/generated/`, fuera de
+git). Los IDs son uuid v7 generados en la app (`newId()` de `src/db/ids.ts`).
 
 ## Estructura
 

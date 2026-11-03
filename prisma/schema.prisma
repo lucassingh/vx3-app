@@ -1,0 +1,31 @@
+// Esquema de la base (Neon, proyecto cli-vx3). Convenciones en tecnica_doc/tecnica.md §5:
+// tablas y columnas en inglés, snake_case y en plural; IDs uuid v7 generados en la app
+// (src/db/ids.ts); fechas en timestamptz; montos en centavos (bigint).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Registro de acciones sensibles: quién hizo qué, sobre qué y cuándo (RF-M0-03).
+/// El actor puede ser una persona, el bot o un proceso, por eso no apunta a usuarios.
+model AuditLog {
+  id         String   @id @db.Uuid
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  actorId    String?  @map("actor_id") @db.Uuid
+  actorLabel String   @map("actor_label")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  before     Json?
+  after      Json?
+  requestId  String?  @map("request_id")
+
+  @@index([entityType, entityId])
+  @@index([occurredAt])
+  @@map("audit_logs")
+}

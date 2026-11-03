@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
   },
   // Los únicos que hablan con sonner directo: el contenedor y el wrapper.
   { files: ["src/lib/toast.ts", "src/components/ui/toaster.tsx"], rules: { "no-restricted-imports": "off" } },
+  // Los scripts de línea de comandos escriben en la consola a propósito.
+  { files: ["prisma/**", "scripts/**"], rules: { "no-console": "off" } },
   // Prettier formatea; ESLint no opina de formato.
   prettier,
   // Override default ignores of eslint-config-next.
@@ -28,6 +30,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Cliente de Prisma generado.
+    "src/generated/**",
   ]),
 ]);
 
