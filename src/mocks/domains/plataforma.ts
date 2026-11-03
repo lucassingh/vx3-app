@@ -10,7 +10,6 @@ import {
   type IaConsumo,
   type Integracion,
   type InvitacionInput,
-  type MatrizPermisos,
   type ReglaGrupo,
   type ReglaNegocio,
   type ReglaTipo,
@@ -21,6 +20,7 @@ import {
   type SyncLogEntry,
   type UsuarioEquipo,
 } from "@/lib/api/contracts/plataforma";
+import { isRole, ROLE_INFO } from "@/modules/platform/permissions";
 import { defineStore } from "../db";
 import { errorResponse, readJson, type Route } from "../http";
 import {
@@ -930,39 +930,7 @@ function consumoIa(now: number): IaConsumo {
 
 /* ---- Usuarios y auditoría -------------------------------------------------- */
 
-const ROLES: MatrizPermisos["roles"] = [
-  { id: "admin", nombre: "Administración", quien: "Socios y Más Uno" },
-  { id: "operaciones", nombre: "Operaciones", quien: "Leo" },
-  { id: "postventa", nombre: "Post-venta", quien: "Lucía" },
-  { id: "compras", nombre: "Compras", quien: "Juan" },
-  { id: "marketing", nombre: "Marketing", quien: "A definir" },
-  { id: "solo_lectura", nombre: "Solo lectura", quien: "Contador, mensajería" },
-];
-
-const permisos = (admin: string, ops: string, pv: string, compras: string, mkt: string, lectura: string) => {
-  const nivel = (code: string) => (code === "E" ? "edita" : code === "V" ? "ve" : "no") as "edita" | "ve" | "no";
-  return {
-    admin: nivel(admin),
-    operaciones: nivel(ops),
-    postventa: nivel(pv),
-    compras: nivel(compras),
-    marketing: nivel(mkt),
-    solo_lectura: nivel(lectura),
-  };
-};
-
-const AREAS: MatrizPermisos["areas"] = [
-  { id: "conversaciones", nombre: "Conversaciones y clientas", permisos: permisos("E", "E", "E", "-", "V", "-") },
-  { id: "pedidos", nombre: "Pedidos y facturación", permisos: permisos("E", "E", "V", "-", "-", "V") },
-  { id: "cobros", nombre: "Cobros y conciliación", permisos: permisos("E", "E", "-", "-", "-", "V") },
-  { id: "envios", nombre: "Envíos y etiquetas", permisos: permisos("E", "E", "E", "-", "-", "V") },
-  { id: "reclamos", nombre: "Reclamos y notas de crédito", permisos: permisos("E", "V", "E", "-", "-", "-") },
-  { id: "catalogo", nombre: "Catálogo y altas", permisos: permisos("E", "E", "V", "E", "V", "-") },
-  { id: "compras", nombre: "Compras, costos y precios", permisos: permisos("E", "E", "-", "E", "-", "V") },
-  { id: "pauta", nombre: "Pauta y presupuestos", permisos: permisos("E", "-", "-", "-", "E", "V") },
-  { id: "bot", nombre: "Bot y reglas de negocio", permisos: permisos("E", "V", "V", "-", "V", "-") },
-  { id: "plataforma", nombre: "Integraciones, IA y usuarios", permisos: permisos("E", "-", "-", "-", "-", "-") },
-];
+// Los roles y la matriz de permisos son reales: src/modules/platform/permissions.ts.
 
 const accesosSeed: Record<string, { haceMin: number | null; dosFactores: boolean }> = {
   "u-elias": { haceMin: 0, dosFactores: false },
@@ -1302,7 +1270,6 @@ const LATENCIA: Record<string, number> = {
   correo: 3_900,
   anthropic: 260,
 };
-const ROLES_VALIDOS = ROLES.map((rol) => rol.id);
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /* ---- Rutas ----------------------------------------------------------------- */
@@ -1483,18 +1450,13 @@ export const routes: Route[] = [
   },
   { method: "GET", pattern: /^\/plataforma\/usuarios$/, handler: () => Response.json(getState().usuarios) },
   {
-    method: "GET",
-    pattern: /^\/plataforma\/roles$/,
-    handler: () => Response.json({ roles: ROLES, areas: AREAS } satisfies MatrizPermisos),
-  },
-  {
     method: "POST",
     pattern: /^\/plataforma\/usuarios\/invitar$/,
     handler: async ({ request }) => {
       const { email = "", rol } = await readJson<InvitacionInput>(request);
       const normalizado = email.trim().toLowerCase();
       if (!EMAIL.test(normalizado)) return errorResponse(422, "Revisá el email.");
-      if (!rol || !ROLES_VALIDOS.includes(rol as RolUsuario)) return errorResponse(422, "Elegí un rol.");
+      if (!rol || !isRole(rol)) return errorResponse(422, "Elegí un rol.");
       const state = getState();
       if (state.usuarios.some((usuario) => usuario.email === normalizado)) {
         return errorResponse(409, "Esa persona ya tiene acceso a la app.");
@@ -1510,7 +1472,7 @@ export const routes: Route[] = [
         estado: "invitado",
       };
       state.usuarios.push(usuario);
-      const rolNombre = ROLES.find((item) => item.id === rol)?.nombre;
+      const rolNombre = ROLE_INFO[rol].nombre;
       auditar("accesos", `Invitó a ${normalizado} con el rol ${rolNombre}`);
       return Response.json(usuario);
     },

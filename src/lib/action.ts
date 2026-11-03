@@ -5,7 +5,7 @@ import { newId } from "@/db/ids";
 import { ForbiddenError, isAppError, UnauthenticatedError, ValidationError } from "./errors";
 import { type Logger, logger } from "./logger";
 import { getSessionUser, type SessionUser } from "@/modules/platform/auth/session";
-import { hasPermission, type Permission } from "./permissions";
+import { can, type Permission } from "@/modules/platform/permissions";
 import { fail, ok, type Result, toActionError } from "./result";
 
 /**
@@ -21,7 +21,7 @@ import { fail, ok, type Result, toActionError } from "./result";
  *   export const archivarProducto = defineAction({
  *     name: "catalogo.archivar",
  *     input: z.object({ sku: z.string() }),
- *     permission: "catalog.write",
+ *     permission: "catalogo.editar",
  *     handler: async ({ sku }, { user }) => catalogo.archivar(sku, user),
  *   });
  */
@@ -52,7 +52,7 @@ export function defineAction<Schema extends z.ZodType, Output>({
     try {
       const user = await getSessionUser();
       if (!user) throw new UnauthenticatedError();
-      if (permission && !hasPermission(user, permission)) throw new ForbiddenError();
+      if (permission && !can(user.role, permission)) throw new ForbiddenError();
 
       const parsed = input.safeParse(raw);
       if (!parsed.success) {

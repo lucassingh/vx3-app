@@ -16,7 +16,7 @@ const handler = vi.fn(async ({ sku, cantidad }: { sku: string; cantidad: number 
 const reservar = defineAction({
   name: "stock.reservar",
   input: z.object({ sku: z.string().trim().toUpperCase(), cantidad: z.coerce.number().int().positive() }),
-  permission: "settings.credentials",
+  permission: "plataforma.editar",
   handler,
 });
 

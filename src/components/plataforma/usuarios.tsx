@@ -8,6 +8,7 @@ import { SkeletonText, TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import type { AuditoriaEntry, NivelPermiso } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { matrizDePermisos } from "@/modules/platform/permissions";
 import { AuditoriaList, type AuditoriaRow } from "./auditoria-list";
 import { cuando, ROL } from "./shared";
 
@@ -147,8 +148,8 @@ function RolesFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-export async function RolesCard() {
-  const { roles, areas } = await api.plataforma.usuarios.roles();
+export function RolesCard() {
+  const { roles, areas } = matrizDePermisos();
 
   return (
     <RolesFrame>

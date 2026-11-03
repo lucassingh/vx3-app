@@ -55,7 +55,7 @@ function throttled<T>(task: () => Promise<T>): Promise<T> {
 export const probeDux = defineAction({
   name: "dux.probe",
   input: z.enum(DUX_PROBE_KEYS),
-  permission: "settings.credentials",
+  permission: "plataforma.editar",
   handler: async (key, { log }) => {
     if (process.env.NODE_ENV !== "development") {
       throw new ForbiddenError("La prueba de DUX solo anda en desarrollo local.");

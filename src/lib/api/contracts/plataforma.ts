@@ -1,4 +1,5 @@
 import { toQueryString, type ApiRequest } from "../http";
+import type { Nivel, Role } from "@/modules/platform/permissions";
 import type { DailyPoint, Share } from "../types";
 
 /**
@@ -134,7 +135,8 @@ export type IaConsumo = {
 
 /* ---- Usuarios, roles y auditoría (RF-M0-01, RF-M0-03, `06` §4) ------------- */
 
-export type RolUsuario = "admin" | "operaciones" | "postventa" | "compras" | "marketing" | "solo_lectura";
+/** Los roles y la matriz viven en src/modules/platform/permissions.ts. */
+export type RolUsuario = Role;
 
 export type UsuarioEquipo = {
   id: string;
@@ -148,7 +150,7 @@ export type UsuarioEquipo = {
   estado: "activo" | "invitado";
 };
 
-export type NivelPermiso = "edita" | "ve" | "no";
+export type NivelPermiso = Nivel;
 
 export type MatrizPermisos = {
   roles: { id: RolUsuario; nombre: string; quien: string }[];
@@ -315,7 +317,6 @@ export function plataformaEndpoints(request: ApiRequest) {
     },
     usuarios: {
       list: () => request<UsuarioEquipo[]>("/plataforma/usuarios"),
-      roles: () => request<MatrizPermisos>("/plataforma/roles"),
       invitar: (input: InvitacionInput) => request<UsuarioEquipo>("/plataforma/usuarios/invitar", json("POST", input)),
     },
     auditoria: {

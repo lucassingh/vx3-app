@@ -1,6 +1,7 @@
 import type { RolUsuario } from "@/lib/api/types";
 import { formatRelativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { ROLE_INFO, ROLES } from "@/modules/platform/permissions";
 
 /** Piezas compartidas por las pantallas de Configuración, Ajustes y Perfil. */
 
@@ -12,14 +13,11 @@ export function cuando(iso: string) {
   return Date.now() - new Date(iso).getTime() < 60_000 ? "recién" : formatRelativeTime(iso);
 }
 
-export const ROL: Record<RolUsuario, string> = {
-  admin: "Administración",
-  operaciones: "Operaciones",
-  postventa: "Post-venta",
-  compras: "Compras",
-  marketing: "Marketing",
-  solo_lectura: "Solo lectura",
-};
+/** Nombre de cada rol para mostrar (src/modules/platform/permissions.ts). */
+export const ROL = Object.fromEntries(ROLES.map((role) => [role, ROLE_INFO[role].nombre])) as Record<
+  RolUsuario,
+  string
+>;
 
 /** ID del catálogo de reglas o del requerimiento ("RN-11"), en mono chico. */
 export function CodeTag({ children, className }: { children: React.ReactNode; className?: string }) {
