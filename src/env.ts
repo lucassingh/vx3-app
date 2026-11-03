@@ -59,6 +59,8 @@ const esquemaServidor = z.object({
   ),
   /** URL pública de la app, para Better Auth. En local, http://localhost:3000. */
   BETTER_AUTH_URL: opcional(z.url("tiene que ser una URL, como http://localhost:3000")),
+  /** La pone Vercel en cada deploy: el host del deploy, sin https://. */
+  VERCEL_URL: opcional(z.string()),
   DATABASE_URL: opcional(conexionNeon(true)),
   DATABASE_URL_UNPOOLED: opcional(conexionNeon(false)),
   NEON_API_KEY: opcional(z.string()),
