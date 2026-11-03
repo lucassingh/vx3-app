@@ -1,5 +1,5 @@
 import { PageBody, PageHeader } from "@/components/layout/page-header";
-import { InvitarUsuario } from "@/components/plataforma/invitar-usuario";
+import { CrearUsuario } from "@/components/plataforma/crear-usuario";
 import {
   AuditoriaCard,
   AuditoriaSkeleton,
@@ -27,7 +27,7 @@ export default async function UsuariosPage() {
         eyebrow="Configuración"
         title={link.title}
         description={link.description}
-        actions={<InvitarUsuario />}
+        actions={<CrearUsuario />}
       />
       <PageBody>
         <AsyncWidget title="el equipo" fallback={<EquipoSkeleton />}>

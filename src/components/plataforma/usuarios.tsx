@@ -1,4 +1,4 @@
-import { Check, Eye, Minus, ShieldCheck, ShieldOff } from "lucide-react";
+import { Check, Eye, Minus } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,9 +8,12 @@ import { SkeletonText, TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import type { AuditoriaEntry, NivelPermiso } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { requireUser } from "@/modules/platform/auth/session";
 import { matrizDePermisos } from "@/modules/platform/permissions";
+import { type EstadoUsuario, listarUsuarios } from "@/modules/platform/users/service";
 import { AuditoriaList, type AuditoriaRow } from "./auditoria-list";
 import { cuando, ROL } from "./shared";
+import { UsuarioAcciones } from "./usuario-acciones";
 
 /** Filas del registro con la fecha formateada en el servidor. */
 export function toAuditoriaRows(entries: AuditoriaEntry[]): AuditoriaRow[] {
@@ -19,7 +22,7 @@ export function toAuditoriaRows(entries: AuditoriaEntry[]): AuditoriaRow[] {
 
 /* ---- Equipo ----------------------------------------------------------------- */
 
-const EQUIPO_COLUMNS = ["Persona", "Rol", "Último acceso", "Verificación en dos pasos"];
+const EQUIPO_COLUMNS = ["Persona", "Rol", "Último acceso", "Estado"];
 
 function EquipoFrame({ children }: { children: React.ReactNode }) {
   return (
@@ -35,8 +38,14 @@ function EquipoFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
+const ESTADO: Record<EstadoUsuario, { label: string; variant: "success" | "warning" | "neutral" }> = {
+  activo: { label: "Activo", variant: "success" },
+  pendiente: { label: "Falta su primer ingreso", variant: "warning" },
+  desactivado: { label: "Desactivado", variant: "neutral" },
+};
+
 export async function EquipoCard() {
-  const usuarios = await api.plataforma.usuarios.list();
+  const [usuarios, yo] = await Promise.all([listarUsuarios(), requireUser()]);
 
   return (
     <EquipoFrame>
@@ -46,55 +55,52 @@ export async function EquipoCard() {
             {EQUIPO_COLUMNS.map((column) => (
               <TableHead key={column}>{column}</TableHead>
             ))}
+            <TableHead>
+              <span className="sr-only">Acciones</span>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {usuarios.map((usuario) => (
-            <TableRow key={usuario.id}>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <Avatar name={usuario.nombre} />
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-2 truncate font-medium">
-                      {usuario.nombre}
-                      {usuario.estado === "invitado" && (
-                        <Badge variant="warning" dot>
-                          Invitación pendiente
-                        </Badge>
-                      )}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {usuario.puesto}
-                      {usuario.email && ` · ${usuario.email}`}
-                    </p>
+          {usuarios.map((usuario) => {
+            const esVos = usuario.id === yo.id;
+            const estado = ESTADO[usuario.estado];
+            return (
+              <TableRow key={usuario.id} className={cn(usuario.estado === "desactivado" && "text-muted-foreground")}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar name={usuario.nombre} />
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-2 truncate font-medium">
+                        {usuario.nombre}
+                        {esVos && <Badge variant="primary">Vos</Badge>}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {[usuario.puesto, usuario.email, usuario.usuario && `usuario ${usuario.usuario}`]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge variant={usuario.rol === "admin" ? "primary" : "outline"}>{ROL[usuario.rol]}</Badge>
-              </TableCell>
-              <TableCell className="text-muted-foreground first-letter:uppercase">
-                {usuario.ultimoAcceso ? (
-                  <time dateTime={usuario.ultimoAcceso}>{cuando(usuario.ultimoAcceso)}</time>
-                ) : (
-                  "Nunca"
-                )}
-              </TableCell>
-              <TableCell>
-                {usuario.dosFactores ? (
-                  <span className="inline-flex items-center gap-1.5 text-sm text-success">
-                    <ShieldCheck aria-hidden className="size-4" />
-                    Activada
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <ShieldOff aria-hidden className="size-4" />
-                    Sin activar
-                  </span>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={usuario.rol === "admin" ? "primary" : "outline"}>{ROL[usuario.rol]}</Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground first-letter:uppercase">
+                  {usuario.ultimoAcceso ? (
+                    <time dateTime={usuario.ultimoAcceso}>{cuando(usuario.ultimoAcceso)}</time>
+                  ) : (
+                    "Nunca"
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={estado.variant} dot>
+                    {estado.label}
+                  </Badge>
+                </TableCell>
+                <TableCell className="w-12 text-right">{!esVos && <UsuarioAcciones usuario={usuario} />}</TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </EquipoFrame>

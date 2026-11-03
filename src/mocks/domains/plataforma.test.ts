@@ -49,11 +49,3 @@ describe("reglas de negocio", () => {
     expect(describirValorRegla({ tipo: "moneda" }, null)).toBe("Sin definir");
   });
 });
-
-describe("usuarios", () => {
-  it("invita con un rol y no deja repetir el email", async () => {
-    const init = { method: "POST", body: JSON.stringify({ email: "contador@estudio.com", rol: "solo_lectura" }) };
-    expect((await call("/plataforma/usuarios/invitar", init)).status).toBe(200);
-    expect((await call("/plataforma/usuarios/invitar", init)).status).toBe(409);
-  });
-});

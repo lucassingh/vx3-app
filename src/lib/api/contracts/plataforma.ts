@@ -171,8 +171,6 @@ export type AuditoriaEntry = {
   en: string;
 };
 
-export type InvitacionInput = { email: string; rol: RolUsuario };
-
 /* ---- Preferencias de alertas y cuenta ------------------------------------- */
 
 export type CanalAlerta = "app" | "whatsapp" | "mail";
@@ -314,10 +312,6 @@ export function plataformaEndpoints(request: ApiRequest) {
         request<IaConfig>("/plataforma/ia", json("PATCH", cambios)),
       cargarKey: (input: { tipo: "api" | "admin"; key: string }) =>
         request<CredencialEnmascarada>("/plataforma/ia/keys", json("POST", input)),
-    },
-    usuarios: {
-      list: () => request<UsuarioEquipo[]>("/plataforma/usuarios"),
-      invitar: (input: InvitacionInput) => request<UsuarioEquipo>("/plataforma/usuarios/invitar", json("POST", input)),
     },
     auditoria: {
       list: (query: { usuario?: string } = {}) =>

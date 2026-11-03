@@ -9,18 +9,15 @@ import {
   type IaConfig,
   type IaConsumo,
   type Integracion,
-  type InvitacionInput,
   type ReglaGrupo,
   type ReglaNegocio,
   type ReglaTipo,
   type ReglaValor,
-  type RolUsuario,
   type SeguridadCuenta,
   type SesionAbierta,
   type SyncLogEntry,
   type UsuarioEquipo,
 } from "@/lib/api/contracts/plataforma";
-import { isRole, ROLE_INFO } from "@/modules/platform/permissions";
 import { defineStore } from "../db";
 import { errorResponse, readJson, type Route } from "../http";
 import {
@@ -1270,7 +1267,6 @@ const LATENCIA: Record<string, number> = {
   correo: 3_900,
   anthropic: 260,
 };
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /* ---- Rutas ----------------------------------------------------------------- */
 
@@ -1446,35 +1442,6 @@ export const routes: Route[] = [
         credencial.mascara,
       );
       return Response.json(credencial);
-    },
-  },
-  { method: "GET", pattern: /^\/plataforma\/usuarios$/, handler: () => Response.json(getState().usuarios) },
-  {
-    method: "POST",
-    pattern: /^\/plataforma\/usuarios\/invitar$/,
-    handler: async ({ request }) => {
-      const { email = "", rol } = await readJson<InvitacionInput>(request);
-      const normalizado = email.trim().toLowerCase();
-      if (!EMAIL.test(normalizado)) return errorResponse(422, "Revisá el email.");
-      if (!rol || !isRole(rol)) return errorResponse(422, "Elegí un rol.");
-      const state = getState();
-      if (state.usuarios.some((usuario) => usuario.email === normalizado)) {
-        return errorResponse(409, "Esa persona ya tiene acceso a la app.");
-      }
-      const usuario: UsuarioEquipo = {
-        id: nextId("u"),
-        nombre: normalizado.split("@")[0] ?? normalizado,
-        email: normalizado,
-        rol: rol as RolUsuario,
-        puesto: "Invitación pendiente",
-        ultimoAcceso: null,
-        dosFactores: false,
-        estado: "invitado",
-      };
-      state.usuarios.push(usuario);
-      const rolNombre = ROLE_INFO[rol].nombre;
-      auditar("accesos", `Invitó a ${normalizado} con el rol ${rolNombre}`);
-      return Response.json(usuario);
     },
   },
   {
