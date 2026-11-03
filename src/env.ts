@@ -12,7 +12,8 @@ import { API_DOMAINS } from "@/lib/api/domains";
  *
  * Qué es obligatorio depende del modo:
  * - **desarrollo:** las conexiones a Neon.
- * - **producción** (al arrancar el servidor): además, `AUTH_SECRET`.
+ * - **producción** (al arrancar el servidor): la conexión con pooler y
+ *   `AUTH_SECRET`. La directa no: es del dueño del esquema y solo migra.
  * - **test, build o `SKIP_ENV_VALIDATION=1`:** nada obligatorio; solo se valida
  *   el formato de lo que esté cargado. `next build` corre con NODE_ENV=production
  *   y en la CI no tiene secretos.
@@ -102,7 +103,8 @@ const esquemaServidor = z.object({
 
 const OBLIGATORIAS: Record<Modo, (keyof z.infer<typeof esquemaServidor>)[]> = {
   desarrollo: ["DATABASE_URL", "DATABASE_URL_UNPOOLED"],
-  produccion: ["DATABASE_URL", "DATABASE_URL_UNPOOLED", "AUTH_SECRET"],
+  // La conexión directa es del dueño del esquema y solo la usan las migraciones: no va en Vercel.
+  produccion: ["DATABASE_URL", "AUTH_SECRET"],
   relajado: [],
 };
 

@@ -22,6 +22,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:dump": "node scripts/db-dump.mjs",
+    "db:roles": "tsx scripts/db-roles.ts",
     "db:studio": "prisma studio",
     "auth:create-admin": "tsx --conditions=react-server scripts/create-admin.ts"
   },
@@ -47,6 +48,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
+    "@neondatabase/serverless": "1.2.0",
     "@tailwindcss/turbopack": "^4",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",

@@ -42,6 +42,7 @@ roles. Con la API simulada no hace falta ninguna otra credencial.
 | `npm run db:seed`           | Datos de referencia, idempotentes                                                 |
 | `npm run db:studio`         | Prisma Studio                                                                     |
 | `npm run db:dump`           | Copia local de la base con `pg_dump` (en `backups/`)                              |
+| `npm run db:roles`          | Usuarios `app` y `readonly` de una branch (`-- --branch develop`), idempotente    |
 | `npm run auth:create-admin` | Crea un admin con contraseña temporal (el primero de cada base)                   |
 
 ## Datos: API simulada y real
@@ -90,6 +91,11 @@ la conexión con pooler (`DATABASE_URL`, en `src/db/client.ts`) y las migracione
 directa (`DATABASE_URL_UNPOOLED`, en `prisma.config.ts`). El esquema está en
 `prisma/schema.prisma`; el cliente se genera solo al instalar (`src/generated/`, fuera de
 git). Los IDs son uuid v7 generados en la app (`newId()` de `src/db/ids.ts`).
+
+Tres usuarios por branch (`src/db/roles.ts`): el dueño (`neondb_owner`) migra; `app`, el
+de la app en Vercel, lee y escribe datos pero no toca el esquema ni cambia la auditoría;
+`readonly` es para soporte y los backups. `npm run db:roles` los crea y deja las
+conexiones en `.secrets/neon-<branch>.env`, fuera de git.
 
 ## Estructura
 

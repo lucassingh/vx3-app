@@ -46,3 +46,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# conexiones de los usuarios de base (npm run db:roles)
+/.secrets/
