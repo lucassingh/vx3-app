@@ -51,7 +51,7 @@ const MATRIZ: Record<Area, string> = {
   catalogo: "EEVEV-",
   compras: "EE-E-V",
   pauta: "E---EV",
-  bot: "EVV-V-",
+  bot: "EV--V-",
   plataforma: "E-----",
 };
 

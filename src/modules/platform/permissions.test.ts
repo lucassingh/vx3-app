@@ -13,7 +13,7 @@ const ESPERADO: Record<Role, { edita: Area[]; ve: Area[] }> = {
     edita: ["conversaciones", "pedidos", "cobros", "envios", "catalogo", "compras"],
     ve: ["reclamos", "bot"],
   },
-  postventa: { edita: ["conversaciones", "envios", "reclamos"], ve: ["pedidos", "catalogo", "bot"] },
+  postventa: { edita: ["conversaciones", "envios", "reclamos"], ve: ["pedidos", "catalogo"] },
   compras: { edita: ["catalogo", "compras"], ve: [] },
   marketing: { edita: ["pauta"], ve: ["conversaciones", "catalogo", "bot"] },
   solo_lectura: { edita: [], ve: ["pedidos", "cobros", "envios", "compras", "pauta"] },
