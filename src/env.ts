@@ -57,6 +57,8 @@ const esquemaServidor = z.object({
         "tiene que tener al menos 32 caracteres. Generá una con: node -e \"console.log(require('crypto').randomBytes(32).toString('base64url'))\"",
       ),
   ),
+  /** URL pública de la app, para Better Auth. En local, http://localhost:3000. */
+  BETTER_AUTH_URL: opcional(z.url("tiene que ser una URL, como http://localhost:3000")),
   DATABASE_URL: opcional(conexionNeon(true)),
   DATABASE_URL_UNPOOLED: opcional(conexionNeon(false)),
   NEON_API_KEY: opcional(z.string()),
