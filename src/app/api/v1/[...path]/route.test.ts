@@ -1,15 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createSessionToken, SESSION_COOKIE } from "@/lib/session";
+import type { SessionUser } from "@/modules/platform/auth/session";
+import { usuarioDePrueba } from "@/test/users";
 import { GET } from "./route";
 
-const cookie = vi.hoisted(() => ({ value: undefined as string | undefined }));
+const sesion = vi.hoisted(() => ({ user: null as SessionUser | null }));
 
-vi.mock("next/headers", () => ({
-  cookies: async () => ({ get: (name: string) => (name === "vx3_session" ? { value: cookie.value } : undefined) }),
-}));
+vi.mock("@/modules/platform/auth/session", () => ({ getSessionUser: async () => sesion.user }));
 
 beforeEach(() => {
-  cookie.value = undefined;
+  sesion.user = null;
 });
 
 describe("/api/v1", () => {
@@ -18,9 +17,16 @@ describe("/api/v1", () => {
     expect(response.status).toBe(401);
   });
 
+  it("con sesión pero sin permiso para el área responde 403", async () => {
+    sesion.user = usuarioDePrueba("postventa");
+
+    const response = await GET(new Request("http://app.local/api/v1/pauta/anuncios"));
+
+    expect(response.status).toBe(403);
+  });
+
   it("con sesión atiende el pedido", async () => {
-    expect(SESSION_COOKIE).toBe("vx3_session");
-    cookie.value = await createSessionToken("eliasllaury@gmail.com");
+    sesion.user = usuarioDePrueba("admin");
 
     const response = await GET(new Request("http://app.local/api/v1/cobros/caja"));
 

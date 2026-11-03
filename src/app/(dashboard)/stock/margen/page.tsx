@@ -16,13 +16,15 @@ import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { CardSkeleton } from "@/components/views/skeletons";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/stock/margen";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M2 · Control de margen diario, capas de costo y etiquetas (RF-M2-04 a RF-M2-07). */
-export default function MargenPage() {
+export default async function MargenPage() {
+  await requirePageAccess("/stock/margen");
   const route = findRoute(HREF);
 
   return (

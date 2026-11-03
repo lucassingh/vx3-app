@@ -17,26 +17,32 @@ Tailwind CSS 4 · Radix UI · Motion · Lucide · Vitest + Testing Library.
 ```bash
 npm install
 cp .env.example .env.local   # completar los valores: cada variable dice de dónde sale
+npm run db:migrate            # aplica las migraciones en tu base
+npm run auth:create-admin     # tu usuario admin, con una contraseña temporal
 npm run dev
 ```
 
-Con la API simulada no hace falta ninguna credencial. El login usa el usuario
-fijo de `src/lib/session.ts` hasta que entre la auth propia (fase 1.2).
+No hay registro público: el primer admin de cada base se crea con
+`npm run auth:create-admin` y los demás usuarios, desde Configuración → Usuarios y
+roles. Con la API simulada no hace falta ninguna otra credencial.
 
-| Script                   | Qué hace                                                                          |
-| ------------------------ | --------------------------------------------------------------------------------- |
-| `npm run dev`            | Servidor de desarrollo                                                            |
-| `npm run build`          | Build de producción (valida tipos y las reglas de Cache Components)               |
-| `npm run lint`           | ESLint                                                                            |
-| `npm run typecheck`      | TypeScript sin emitir                                                             |
-| `npm run format`         | Prettier sobre todo el repo (`format:check` solo verifica)                        |
-| `npm test`               | Tests una vez (lo mismo que corre la CI)                                          |
-| `npm run test:watch`     | Tests en modo watch                                                               |
-| `npm run db:migrate:dev` | Crea y aplica una migración en la branch `develop` de Neon (`-- --name <nombre>`) |
-| `npm run db:migrate`     | Aplica las migraciones pendientes (lo que corre la CI; nunca genera nada)         |
-| `npm run db:seed`        | Datos de referencia, idempotentes                                                 |
-| `npm run db:studio`      | Prisma Studio                                                                     |
-| `npm run db:dump`        | Copia local de la base con `pg_dump` (en `backups/`)                              |
+| Script                      | Qué hace                                                                          |
+| --------------------------- | --------------------------------------------------------------------------------- |
+| `npm run dev`               | Servidor de desarrollo                                                            |
+| `npm run build`             | Build de producción (valida tipos y las reglas de Cache Components)               |
+| `npm run lint`              | ESLint                                                                            |
+| `npm run typecheck`         | TypeScript sin emitir                                                             |
+| `npm run format`            | Prettier sobre todo el repo (`format:check` solo verifica)                        |
+| `npm test`                  | Tests unitarios y de componentes, una vez                                         |
+| `npm run test:watch`        | Los mismos, en modo watch                                                         |
+| `npm run test:coverage`     | Los mismos, con cobertura y sus umbrales (`vitest.config.mts`)                    |
+| `npm run test:int`          | Tests de integración en una branch efímera de Neon que se crea y se borra         |
+| `npm run db:migrate:dev`    | Crea y aplica una migración en la branch `develop` de Neon (`-- --name <nombre>`) |
+| `npm run db:migrate`        | Aplica las migraciones pendientes (lo que corre la CI; nunca genera nada)         |
+| `npm run db:seed`           | Datos de referencia, idempotentes                                                 |
+| `npm run db:studio`         | Prisma Studio                                                                     |
+| `npm run db:dump`           | Copia local de la base con `pg_dump` (en `backups/`)                              |
+| `npm run auth:create-admin` | Crea un admin con contraseña temporal (el primero de cada base)                   |
 
 ## Datos: API simulada y real
 
@@ -59,6 +65,24 @@ reales, clientas, pedidos y anuncios coherentes entre pantallas), `domains/`
 arma las respuestas de cada módulo y `db.ts` guarda el estado en memoria hasta
 reiniciar el servidor.
 
+## Usuarios, sesiones y permisos
+
+Auth propia con Better Auth (fijado en la 1.7.12), con los usuarios en nuestra base
+(`src/modules/platform/auth/`). Se entra con email o usuario; sesión de 7 días que se
+renueva con el uso; quien entra con una contraseña temporal la cambia antes de seguir.
+Cinco intentos fallidos bloquean al usuario (veinte, a la IP) con una espera que crece.
+Better Auth no tiene ruta HTTP: todo pasa por nuestras Server Actions.
+
+- **Roles y matriz:** `src/modules/platform/permissions.ts` es la fuente de verdad. Cada
+  área tiene permiso de ver y de editar (`pedidos.ver`, `pedidos.editar`).
+- **Qué área es cada pantalla y cada ruta de la API:** `src/modules/platform/access.ts`.
+- **Dónde se verifica:** el proxy solo mira que haya cookie. La verificación real está en
+  `requirePageAccess(href)`, primera línea de cada pantalla (un test lo exige); en el
+  despachador de la API (401 sin sesión, 403 sin permiso), y en cada Server Action vía
+  `defineAction({ permission })`.
+- **Auditoría:** el `audit()` que `defineAction` le da a cada acción escribe en
+  `audit_logs` quién hizo qué, con el antes y el después, sin contraseñas ni tokens.
+
 ## Base de datos
 
 PostgreSQL en Neon (proyecto `cli-vx3`), con Prisma 7 fijado en la 7.10.1. La app usa
@@ -78,7 +102,9 @@ src/
 │  ├─ ui/             primitivas (Button, Card, Table, Badge, Input…)
 │  └─ layout/         aside, navbar, breadcrumb, PageHeader/PageBody
 ├─ config/            marca y navegación
+├─ lib/               piezas base (errores, Money, fechas, logger, defineAction)
 ├─ lib/api/           contratos, endpoints y clientes (server / browser)
+├─ modules/           lógica real por módulo (platform: auth, permisos, usuarios, auditoría)
 └─ mocks/             semilla, base en memoria y rutas de la API simulada
 ```
 

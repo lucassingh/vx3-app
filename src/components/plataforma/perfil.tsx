@@ -4,20 +4,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LoadingLabel } from "@/components/ui/skeleton";
 import { SkeletonText } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
-import { currentUser } from "@/lib/auth";
+import { requireUser } from "@/modules/platform/auth/session";
 import { DatosForm, SeguridadForm, SesionesList } from "./perfil-forms";
-import { cuando } from "./shared";
+import { cuando, ROL } from "./shared";
 
-export function DatosCard() {
+export async function DatosCard() {
+  const currentUser = await requireUser();
+
   return (
     <Card>
       <CardHeader>
         <div className="flex min-w-0 items-center gap-4">
-          <Avatar name={currentUser.name} src={currentUser.avatarUrl} className="size-14 text-base" />
+          <Avatar name={currentUser.name} className="size-14 text-base" />
           <div className="min-w-0 space-y-1">
             <CardTitle className="truncate">{currentUser.name}</CardTitle>
             <CardDescription className="truncate">{currentUser.email}</CardDescription>
-            <Badge variant="primary">{currentUser.role}</Badge>
+            <Badge variant="primary">{ROL[currentUser.role]}</Badge>
           </div>
         </div>
       </CardHeader>

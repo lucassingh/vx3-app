@@ -4,7 +4,7 @@ import { ChevronDown, LogOut } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useId, useState } from "react";
+import { Suspense, useId, useMemo, useState } from "react";
 import { Logo } from "@/components/brand/logo";
 import { useSidebar } from "@/components/layout/sidebar-provider";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { navigation, type NavGroup, type NavLink, type NavSection } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
 import { useSignOut } from "@/hooks/use-sign-out";
+import { useCurrentUser } from "@/lib/auth";
 import { isActivePath } from "@/lib/navigation";
+import { navegacionPara } from "@/modules/platform/access";
 import { cn } from "@/lib/utils";
 import { useDemoData } from "./demo-data";
 
@@ -99,9 +101,13 @@ function ActiveNavSections(props: Omit<ItemProps, "pathname">) {
 }
 
 function NavSections(props: ItemProps) {
+  // El menú muestra solo lo que el rol puede ver (la protección real está en cada página y en la API).
+  const { role } = useCurrentUser();
+  const sections = useMemo(() => navegacionPara(role, navigation), [role]);
+
   return (
     <div className="flex flex-col gap-5">
-      {navigation.map((section) => (
+      {sections.map((section) => (
         <NavSectionBlock key={section.label} section={section} {...props} />
       ))}
     </div>

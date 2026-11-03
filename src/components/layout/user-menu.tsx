@@ -20,7 +20,7 @@ import {
 import { userNavigation } from "@/config/navigation";
 import { useSignOut } from "@/hooks/use-sign-out";
 import { useTheme } from "@/hooks/use-theme";
-import { currentUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/auth";
 import type { ThemePreference } from "@/lib/preferences";
 
 const themeOptions = [
@@ -32,6 +32,7 @@ const themeOptions = [
 export function UserMenu() {
   const { theme, setTheme } = useTheme();
   const { signOut } = useSignOut();
+  const currentUser = useCurrentUser();
 
   return (
     <DropdownMenu>

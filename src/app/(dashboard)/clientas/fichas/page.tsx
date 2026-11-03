@@ -9,13 +9,15 @@ import { PageBody, PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/clientas/fichas";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M12 · Ficha única de clienta por teléfono normalizado (RF-M12-01 a 03). */
-export default function Page({ searchParams }: { searchParams: Promise<SearchParams> }) {
+export default async function Page({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  await requirePageAccess("/clientas/fichas");
   const header = routeHeader(HREF);
 
   return (

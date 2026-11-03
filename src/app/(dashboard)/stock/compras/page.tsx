@@ -10,13 +10,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/stock/compras";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M2 · Recepción de compra digital y carga en DUX por API (RF-M2-02, RF-M2-03, RF-M2-08). */
-export default function ComprasPage() {
+export default async function ComprasPage() {
+  await requirePageAccess("/stock/compras");
   const route = findRoute(HREF);
 
   return (

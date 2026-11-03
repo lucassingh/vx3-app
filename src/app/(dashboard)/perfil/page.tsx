@@ -9,13 +9,15 @@ import {
 import { ActividadCard, AuditoriaSkeleton } from "@/components/plataforma/usuarios";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/perfil";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** Mi perfil: datos, acceso, sesiones y actividad del usuario. */
-export default function PerfilPage() {
+export default async function PerfilPage() {
+  await requirePageAccess("/perfil");
   const { link } = findRoute(HREF)!;
 
   return (
@@ -33,7 +35,7 @@ export default function PerfilPage() {
             <SesionesCard />
           </AsyncWidget>
           <AsyncWidget title="tu actividad" fallback={<AuditoriaSkeleton title="Tu actividad reciente" />}>
-            <ActividadCard usuarioId="u-elias" />
+            <ActividadCard />
           </AsyncWidget>
         </div>
       </PageBody>

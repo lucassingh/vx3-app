@@ -17,13 +17,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/configuracion/ia";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** RF-M0-07 · Configuración de la IA y su consumo (rol admin). */
-export default function IaPage() {
+export default async function IaPage() {
+  await requirePageAccess("/configuracion/ia");
   const { link } = findRoute(HREF)!;
 
   return (

@@ -13,6 +13,8 @@ const buttonVariants = cva(
         accent: "bg-accent text-accent-foreground hover:bg-accent/90",
         outline: "border border-border-strong bg-surface text-foreground shadow-card hover:bg-muted",
         ghost: "text-muted-foreground hover:bg-muted hover:text-foreground",
+        // Acciones que no se deshacen solas (desactivar, resetear). Rojo sobre la superficie: AA en los dos temas.
+        danger: "border border-danger/40 bg-surface text-danger shadow-card hover:bg-danger/10",
       },
       size: {
         sm: "h-8 px-3 text-[13px]",

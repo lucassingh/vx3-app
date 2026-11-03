@@ -65,20 +65,23 @@ export default defineConfig({
       ],
       reporter: ["text-summary", "html"],
       // La meta (tecnica_doc §8) es 80 % global y 95 % en los servicios. El global
-      // es el piso medido el 03/11/2026 (fase 1.1.7), cuando casi todo es la maqueta
-      // de la UI: sirve para que no baje y se sube a medida que entra el código real.
-      // Las piezas base y lo transversal ya están en la meta.
+      // es el piso medido (03/11/2026, fase 1.2), cuando casi todo es la maqueta de
+      // la UI: sirve para que no baje y se sube a medida que entra el código real.
+      // Las piezas base y el control de acceso ya están en la meta. La auth y la
+      // gestión de usuarios se prueban con la base real (npm run test:int), que no
+      // suma a este reporte.
       thresholds: {
-        statements: 34,
-        branches: 26,
-        functions: 29,
-        lines: 33,
-        "src/{env.ts,lib/{errors,result,money,dates,logger,action,permissions,session}.ts,lib/api/dispatch.ts}": {
-          statements: 95,
-          branches: 90,
-          functions: 95,
-          lines: 95,
-        },
+        statements: 35,
+        branches: 28,
+        functions: 30,
+        lines: 34,
+        "src/{env.ts,lib/{errors,result,money,dates,logger,action}.ts,lib/api/dispatch.ts,modules/platform/{permissions,access}.ts}":
+          {
+            statements: 95,
+            branches: 90,
+            functions: 95,
+            lines: 95,
+          },
       },
     },
   },

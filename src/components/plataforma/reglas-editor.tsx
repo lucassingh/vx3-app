@@ -23,7 +23,7 @@ import { NativeSelect } from "@/components/ui/textarea";
 import { api } from "@/lib/api/browser";
 import { describirValorRegla, validarRegla, valorParaCampo } from "@/lib/api/contracts/plataforma";
 import type { ReglaGrupo, ReglaNegocio, ReglaValor } from "@/lib/api/types";
-import { currentUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/auth";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { CodeTag } from "./shared";
@@ -86,6 +86,7 @@ export function ReglasEditor({
   initialLabels: ReglaLabels;
 }) {
   const router = useRouter();
+  const currentUser = useCurrentUser();
   const [reglas, setReglas] = useState(initialReglas);
   const [labels, setLabels] = useState(initialLabels);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});

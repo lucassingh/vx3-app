@@ -13,13 +13,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/configuracion/integraciones";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** RF-M0-04 y RF-M0-06 · Panel de integraciones y credenciales de las cuentas de VX3. */
-export default function IntegracionesPage() {
+export default async function IntegracionesPage() {
+  await requirePageAccess("/configuracion/integraciones");
   const { link } = findRoute(HREF)!;
 
   return (

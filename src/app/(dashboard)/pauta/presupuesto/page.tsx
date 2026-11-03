@@ -13,13 +13,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/pauta/presupuesto";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M9 · Presupuesto planificado por campaña y desvío contra el gasto real (RF-M9-02). */
-export default function Page() {
+export default async function Page() {
+  await requirePageAccess("/pauta/presupuesto");
   const header = routeHeader(HREF);
 
   return (

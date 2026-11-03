@@ -2,20 +2,16 @@ import {
   describirValorRegla,
   validarRegla,
   type AlertaPreferencia,
-  type AuditoriaEntry,
   type CambioRegla,
   type CambioReglaInput,
   type CanalAlerta,
   type IaConfig,
   type IaConsumo,
   type Integracion,
-  type InvitacionInput,
-  type MatrizPermisos,
   type ReglaGrupo,
   type ReglaNegocio,
   type ReglaTipo,
   type ReglaValor,
-  type RolUsuario,
   type SeguridadCuenta,
   type SesionAbierta,
   type SyncLogEntry,
@@ -930,39 +926,7 @@ function consumoIa(now: number): IaConsumo {
 
 /* ---- Usuarios y auditoría -------------------------------------------------- */
 
-const ROLES: MatrizPermisos["roles"] = [
-  { id: "admin", nombre: "Administración", quien: "Socios y Más Uno" },
-  { id: "operaciones", nombre: "Operaciones", quien: "Leo" },
-  { id: "postventa", nombre: "Post-venta", quien: "Lucía" },
-  { id: "compras", nombre: "Compras", quien: "Juan" },
-  { id: "marketing", nombre: "Marketing", quien: "A definir" },
-  { id: "solo_lectura", nombre: "Solo lectura", quien: "Contador, mensajería" },
-];
-
-const permisos = (admin: string, ops: string, pv: string, compras: string, mkt: string, lectura: string) => {
-  const nivel = (code: string) => (code === "E" ? "edita" : code === "V" ? "ve" : "no") as "edita" | "ve" | "no";
-  return {
-    admin: nivel(admin),
-    operaciones: nivel(ops),
-    postventa: nivel(pv),
-    compras: nivel(compras),
-    marketing: nivel(mkt),
-    solo_lectura: nivel(lectura),
-  };
-};
-
-const AREAS: MatrizPermisos["areas"] = [
-  { id: "conversaciones", nombre: "Conversaciones y clientas", permisos: permisos("E", "E", "E", "-", "V", "-") },
-  { id: "pedidos", nombre: "Pedidos y facturación", permisos: permisos("E", "E", "V", "-", "-", "V") },
-  { id: "cobros", nombre: "Cobros y conciliación", permisos: permisos("E", "E", "-", "-", "-", "V") },
-  { id: "envios", nombre: "Envíos y etiquetas", permisos: permisos("E", "E", "E", "-", "-", "V") },
-  { id: "reclamos", nombre: "Reclamos y notas de crédito", permisos: permisos("E", "V", "E", "-", "-", "-") },
-  { id: "catalogo", nombre: "Catálogo y altas", permisos: permisos("E", "E", "V", "E", "V", "-") },
-  { id: "compras", nombre: "Compras, costos y precios", permisos: permisos("E", "E", "-", "E", "-", "V") },
-  { id: "pauta", nombre: "Pauta y presupuestos", permisos: permisos("E", "-", "-", "-", "E", "V") },
-  { id: "bot", nombre: "Bot y reglas de negocio", permisos: permisos("E", "V", "V", "-", "V", "-") },
-  { id: "plataforma", nombre: "Integraciones, IA y usuarios", permisos: permisos("E", "-", "-", "-", "-", "-") },
-];
+// Los roles y la matriz de permisos son reales: src/modules/platform/permissions.ts.
 
 const accesosSeed: Record<string, { haceMin: number | null; dosFactores: boolean }> = {
   "u-elias": { haceMin: 0, dosFactores: false },
@@ -971,126 +935,6 @@ const accesosSeed: Record<string, { haceMin: number | null; dosFactores: boolean
   "u-juan": { haceMin: 3 * HOUR + 10, dosFactores: false },
   "u-masuno": { haceMin: 2 * DAY, dosFactores: true },
 };
-
-const auditoriaSeed: (Omit<AuditoriaEntry, "en" | "usuario"> & { haceMin: number })[] = [
-  {
-    id: "au-14",
-    usuarioId: "u-leo",
-    categoria: "precios",
-    accion: "Corrigió el precio de CAN12-6 después del aviso de margen bajo",
-    antes: "$ 11.500",
-    despues: "$ 12.300",
-    haceMin: 38,
-  },
-  {
-    id: "au-13",
-    usuarioId: "u-lucia",
-    categoria: "plata",
-    accion: "Aprobó un reintegro por falta de mercadería en V-1042 (Brenda Ojeda)",
-    despues: "$ 3.350",
-    haceMin: 2 * HOUR + 40,
-  },
-  {
-    id: "au-12",
-    usuarioId: "u-leo",
-    categoria: "plata",
-    accion: "Confirmó en lote 4 cruces de transferencias con puntaje alto",
-    despues: "$ 312.800",
-    haceMin: 4 * HOUR,
-  },
-  {
-    id: "au-11",
-    usuarioId: "u-leo",
-    categoria: "plata",
-    accion: "Confirmó el cobro de V-1045 (Johana Quiroga) en Supervielle",
-    despues: "$ 141.600",
-    haceMin: DAY,
-  },
-  {
-    id: "au-10",
-    usuarioId: "u-leo",
-    categoria: "stock",
-    accion: "Ajustó el stock de LN177 por un faltante en góndola",
-    antes: "14 prendas",
-    despues: "8 prendas",
-    haceMin: DAY + 2 * HOUR,
-  },
-  {
-    id: "au-9",
-    usuarioId: "u-elias",
-    categoria: "reglas",
-    accion: "Cambió el tipo de cambio del gasto de Meta (RN-111)",
-    antes: "$ 1.420",
-    despues: "$ 1.450",
-    haceMin: 2 * DAY,
-  },
-  {
-    id: "au-8",
-    usuarioId: "u-elias",
-    categoria: "reglas",
-    accion: "Cambió la ventana del corte semanal de contraentrega (RN-45)",
-    antes: "Sábado a sábado",
-    despues: "Lunes a sábado",
-    haceMin: 2 * DAY + 3 * HOUR,
-  },
-  {
-    id: "au-7",
-    usuarioId: "u-juan",
-    categoria: "stock",
-    accion: "Cargó en DUX la compra de Bethy desde la recepción digital",
-    despues: "38 bultos · $ 1.240.000",
-    haceMin: 3 * DAY,
-  },
-  {
-    id: "au-6",
-    usuarioId: "u-juan",
-    categoria: "precios",
-    accion: "Actualizó el costo de CJATN14 al cerrar la compra",
-    antes: "$ 43.000 la docena",
-    despues: "$ 45.000 la docena",
-    haceMin: 3 * DAY + 20,
-  },
-  {
-    id: "au-5",
-    usuarioId: "u-masuno",
-    categoria: "reglas",
-    accion: "Cambió cuándo se anula un pedido sin respuesta (RN-73)",
-    antes: "18 horas",
-    despues: "24 horas",
-    haceMin: 3 * DAY + 2 * HOUR,
-  },
-  {
-    id: "au-4",
-    usuarioId: "u-elias",
-    categoria: "accesos",
-    accion: "Cargó la API key de Anthropic de VX3",
-    despues: "sk-ant-••••Hq4w",
-    haceMin: 5 * DAY,
-  },
-  {
-    id: "au-3",
-    usuarioId: "u-elias",
-    categoria: "accesos",
-    accion: "Eligió el modelo del bot",
-    despues: "Claude Haiku 5.5",
-    haceMin: 5 * DAY + 10,
-  },
-  {
-    id: "au-2",
-    usuarioId: "u-masuno",
-    categoria: "accesos",
-    accion: "Cargó el token de API de DUX desde la bóveda de 1Password",
-    despues: "••••7c1e",
-    haceMin: 6 * DAY,
-  },
-  {
-    id: "au-1",
-    usuarioId: "u-masuno",
-    categoria: "accesos",
-    accion: "Invitó a Leo con el rol Operaciones",
-    haceMin: 7 * DAY,
-  },
-];
 
 /* ---- Preferencias y cuenta ------------------------------------------------- */
 
@@ -1242,11 +1086,6 @@ const getState = defineStore("plataforma", (now) => {
     ia,
     consumo: consumoIa(now),
     usuarios,
-    auditoria: auditoriaSeed.map(({ haceMin, ...entrada }) => ({
-      ...entrada,
-      usuario: nombreDe(entrada.usuarioId),
-      en: isoAgo(haceMin, now),
-    })) as AuditoriaEntry[],
     preferencias: structuredClone(preferenciasSeed),
     sesiones,
     seguridad,
@@ -1258,19 +1097,6 @@ function nextId(prefix: string) {
   const state = getState();
   state.secuencia += 1;
   return `${prefix}-${state.secuencia}`;
-}
-
-function auditar(categoria: AuditoriaEntry["categoria"], accion: string, antes?: string, despues?: string) {
-  getState().auditoria.unshift({
-    id: nextId("au"),
-    usuarioId: YO.id,
-    usuario: YO.nombre,
-    categoria,
-    accion,
-    antes,
-    despues,
-    en: new Date().toISOString(),
-  });
 }
 
 function registrarSync(
@@ -1302,8 +1128,6 @@ const LATENCIA: Record<string, number> = {
   correo: 3_900,
   anthropic: 260,
 };
-const ROLES_VALIDOS = ROLES.map((rol) => rol.id);
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /* ---- Rutas ----------------------------------------------------------------- */
 
@@ -1352,7 +1176,6 @@ export const routes: Route[] = [
         };
         state.historial.unshift(registro);
         nuevos.push(registro);
-        auditar("reglas", `Cambió “${regla.nombre}” (${regla.codigo})`, antes, despues);
       }
       return Response.json({ reglas: state.reglas, cambios: nuevos });
     },
@@ -1438,9 +1261,7 @@ export const routes: Route[] = [
         const modelo = ia.modelos.find((item) => item.id === body.modelo);
         if (!modelo) return errorResponse(422, "Ese modelo no está disponible.");
         if (modelo.id !== ia.modelo) {
-          const antes = ia.modelos.find((item) => item.id === ia.modelo)?.nombre;
           ia.modelo = modelo.id;
-          auditar("accesos", "Cambió el modelo del bot", antes, modelo.nombre);
         }
       }
       if (body.topeMensualUsd !== undefined) {
@@ -1472,56 +1293,7 @@ export const routes: Route[] = [
       const { ia } = getState();
       if (tipo === "admin") ia.adminKey = credencial;
       else ia.apiKey = credencial;
-      auditar(
-        "accesos",
-        tipo === "admin" ? "Cargó la Admin API key de Anthropic" : "Reemplazó la API key de Anthropic",
-        undefined,
-        credencial.mascara,
-      );
       return Response.json(credencial);
-    },
-  },
-  { method: "GET", pattern: /^\/plataforma\/usuarios$/, handler: () => Response.json(getState().usuarios) },
-  {
-    method: "GET",
-    pattern: /^\/plataforma\/roles$/,
-    handler: () => Response.json({ roles: ROLES, areas: AREAS } satisfies MatrizPermisos),
-  },
-  {
-    method: "POST",
-    pattern: /^\/plataforma\/usuarios\/invitar$/,
-    handler: async ({ request }) => {
-      const { email = "", rol } = await readJson<InvitacionInput>(request);
-      const normalizado = email.trim().toLowerCase();
-      if (!EMAIL.test(normalizado)) return errorResponse(422, "Revisá el email.");
-      if (!rol || !ROLES_VALIDOS.includes(rol as RolUsuario)) return errorResponse(422, "Elegí un rol.");
-      const state = getState();
-      if (state.usuarios.some((usuario) => usuario.email === normalizado)) {
-        return errorResponse(409, "Esa persona ya tiene acceso a la app.");
-      }
-      const usuario: UsuarioEquipo = {
-        id: nextId("u"),
-        nombre: normalizado.split("@")[0] ?? normalizado,
-        email: normalizado,
-        rol: rol as RolUsuario,
-        puesto: "Invitación pendiente",
-        ultimoAcceso: null,
-        dosFactores: false,
-        estado: "invitado",
-      };
-      state.usuarios.push(usuario);
-      const rolNombre = ROLES.find((item) => item.id === rol)?.nombre;
-      auditar("accesos", `Invitó a ${normalizado} con el rol ${rolNombre}`);
-      return Response.json(usuario);
-    },
-  },
-  {
-    method: "GET",
-    pattern: /^\/plataforma\/auditoria$/,
-    handler: ({ url }) => {
-      const usuario = url.searchParams.get("usuario");
-      const rows = getState().auditoria.filter((entrada) => (usuario ? entrada.usuarioId === usuario : true));
-      return Response.json(byNewest(rows));
     },
   },
   { method: "GET", pattern: /^\/plataforma\/preferencias$/, handler: () => Response.json(getState().preferencias) },
@@ -1556,7 +1328,6 @@ export const routes: Route[] = [
       if (!sesion) return errorResponse(404, "Esa sesión ya no está abierta.");
       if (sesion.actual) return errorResponse(400, "Para cerrar esta sesión usá “Cerrar sesión”.");
       state.sesiones = state.sesiones.filter((item) => item.id !== sesion.id);
-      auditar("accesos", `Cerró la sesión abierta en ${sesion.dispositivo}`);
       return Response.json({ ok: true });
     },
   },
@@ -1569,7 +1340,6 @@ export const routes: Route[] = [
       state.seguridad.dosFactores = Boolean(activado);
       const yo = state.usuarios.find((usuario) => usuario.id === YO.id);
       if (yo) yo.dosFactores = Boolean(activado);
-      auditar("accesos", activado ? "Activó la verificación en dos pasos" : "Desactivó la verificación en dos pasos");
       return Response.json(state.seguridad);
     },
   },
@@ -1585,7 +1355,6 @@ export const routes: Route[] = [
       if (nueva === actual) return errorResponse(422, "La nueva contraseña tiene que ser distinta de la actual.");
       const state = getState();
       state.seguridad.passwordActualizada = new Date().toISOString();
-      auditar("accesos", "Cambió su contraseña");
       return Response.json(state.seguridad);
     },
   },
