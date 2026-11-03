@@ -24,7 +24,10 @@ export type SessionUser = {
  * Se resuelve una vez por request aunque lo pidan varios componentes.
  */
 export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
-  const session = await getAuth().api.getSession({ headers: await headers() });
+  // Los headers van primero: en el prerender, headers() difiere la página antes de
+  // crear el cliente de auth (y el de la base, que en el build no está configurada).
+  const requestHeaders = await headers();
+  const session = await getAuth().api.getSession({ headers: requestHeaders });
   if (!session || session.user.banned) return null;
 
   const { user } = session;
