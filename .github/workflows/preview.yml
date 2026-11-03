@@ -1,0 +1,82 @@
+# Cada PR: la CI y, si la PR va a develop, un preview en Vercel con la URL
+# comentada en la PR. El preview usa la base develop, así que antes de
+# publicarlo migra develop (infraestructura.md §4.2: por eso las migraciones son
+# compatibles hacia atrás). Prisma toma un lock al migrar: dos deploys a la vez
+# no migran a la vez.
+
+name: Preview
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+    concurrency:
+      group: ci-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+
+  preview:
+    name: Preview en Vercel
+    needs: ci
+    if: github.base_ref == 'develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Uno por PR, y sin cortar uno que ya está migrando.
+    concurrency:
+      group: preview-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      NEXT_TELEMETRY_DISABLED: "1"
+      HUSKY: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: deploy
+        uses: ./.github/actions/deploy
+        with:
+          target: preview
+          app-env: preview
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          database-url-unpooled: ${{ secrets.QA_DATABASE_URL_UNPOOLED }}
+
+      - name: Prueba de salud
+        run: node scripts/smoke.mjs "${{ steps.deploy.outputs.url }}"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: URL en la PR
+        uses: actions/github-script@v7
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        with:
+          script: |
+            const marca = "<!-- preview-vercel -->";
+            const commit = context.payload.pull_request.head.sha.slice(0, 7);
+            const body = [
+              marca,
+              `**Preview:** ${process.env.URL}`,
+              "",
+              `Commit ${commit}. Usa la base \`develop\` y está detrás de la protección de Vercel: se entra con la cuenta del Team.`,
+            ].join("\n");
+            const { data: comentarios } = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const previo = comentarios.find((comentario) => comentario.body?.includes(marca));
+            if (previo) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: previo.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }

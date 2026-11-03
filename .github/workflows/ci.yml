@@ -1,4 +1,6 @@
-# CI de cada PR y de cada push a develop y main.
+# CI reutilizable: la llaman preview.yml (cada PR), deploy-qa.yml (cada push a
+# develop) y deploy-prod.yml (cada tag de versión), antes de desplegar. Se
+# puede correr sola a mano desde Actions.
 #
 #   checks       typecheck, lint, formato, tests unitarios y de componentes con
 #                cobertura, y build. Sin secretos.
@@ -10,13 +12,8 @@
 name: CI
 
 on:
-  pull_request:
-  push:
-    branches: [develop, main]
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_call:
+  workflow_dispatch:
 
 permissions:
   contents: read

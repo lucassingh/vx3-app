@@ -1,0 +1,76 @@
+# Deploy a Vercel, común a preview.yml, deploy-qa.yml y deploy-prod.yml.
+#
+# Arma el build en el runner (vercel build) para que las migraciones corran
+# entre el build y la publicación: si el build falla no se migra, y si la
+# migración falla no se publica. Después sube lo armado (deploy --prebuilt).
+#
+# El job que la usa define VERCEL_ORG_ID y VERCEL_PROJECT_ID en su env.
+
+name: Deploy a Vercel
+description: Build, migraciones y deploy prebuilt. Devuelve la URL del deploy.
+
+inputs:
+  target:
+    description: Ambiente de Vercel, preview o production
+    required: true
+  app-env:
+    description: El APP_ENV del build (qa, preview o production)
+    required: true
+  vercel-token:
+    description: Token de Vercel con alcance al Team
+    required: true
+  database-url-unpooled:
+    description: Conexión directa del dueño de la branch de Neon que se migra
+    required: true
+
+outputs:
+  url:
+    description: URL del deploy
+    value: ${{ steps.deploy.outputs.url }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+        cache: npm
+
+    # El postinstall corre prisma generate.
+    - name: Dependencias
+      shell: bash
+      run: npm ci
+
+    - name: CLI de Vercel
+      shell: bash
+      run: npm install --global vercel@64.7.0
+
+    - name: Variables del ambiente
+      shell: bash
+      run: vercel pull --yes --environment=${{ inputs.target }} --token=${{ inputs.vercel-token }}
+
+    - name: Build
+      shell: bash
+      env:
+        APP_ENV: ${{ inputs.app-env }}
+      run: vercel build ${{ inputs.target == 'production' && '--prod' || '' }} --token=${{ inputs.vercel-token }}
+
+    # Si una migración sale mal, la base se puede restaurar a este momento
+    # (docs/operacion.md). Lo escrito entre este momento y la restauración se pierde.
+    - name: Momento previo a migrar
+      shell: bash
+      run: echo "Momento previo a migrar (UTC) $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Migraciones
+      shell: bash
+      env:
+        DATABASE_URL_UNPOOLED: ${{ inputs.database-url-unpooled }}
+      run: npm run db:migrate
+
+    - name: Deploy
+      id: deploy
+      shell: bash
+      run: |
+        url=$(vercel deploy --prebuilt ${{ inputs.target == 'production' && '--prod' || '' }} --token=${{ inputs.vercel-token }})
+        echo "url=$url" >> "$GITHUB_OUTPUT"
+        echo "Deploy: $url" >> "$GITHUB_STEP_SUMMARY"
