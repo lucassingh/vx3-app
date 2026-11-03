@@ -32,6 +32,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Cliente de Prisma generado.
     "src/generated/**",
+    "coverage/**",
   ]),
 ]);
 

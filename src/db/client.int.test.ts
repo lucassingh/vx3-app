@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { afterAll, describe, expect, it } from "vitest";
 import { getDb } from "./client";
 import { newId } from "./ids";

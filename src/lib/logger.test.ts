@@ -1,6 +1,5 @@
-// @vitest-environment node
 import { Writable } from "node:stream";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createLogger } from "./logger";
 
 function capture() {
@@ -44,6 +43,19 @@ describe("logger", () => {
       headers: { authorization: "[oculto]" },
       token: "[oculto]",
     });
+  });
+
+  it("el nivel por defecto depende del entorno, y LOG_LEVEL lo pisa", () => {
+    vi.stubEnv("SKIP_ENV_VALIDATION", "1");
+    vi.stubEnv("LOG_LEVEL", "");
+    expect(createLogger().level).toBe("silent");
+    vi.stubEnv("NODE_ENV", "development");
+    expect(createLogger().level).toBe("debug");
+    vi.stubEnv("NODE_ENV", "production");
+    expect(createLogger().level).toBe("info");
+    vi.stubEnv("LOG_LEVEL", "warn");
+    expect(createLogger().level).toBe("warn");
+    vi.unstubAllEnvs();
   });
 
   it("respeta el nivel", () => {

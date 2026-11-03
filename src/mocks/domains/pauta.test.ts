@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { beforeEach, describe, expect, it } from "vitest";
 import type { AnuncioFila, ApiErrorBody, AtribucionEstado, Kpi } from "@/lib/api/types";
 import { resetDb } from "../db";

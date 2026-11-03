@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetDb } from "@/mocks/db";
 import { toQueryString } from "./http";

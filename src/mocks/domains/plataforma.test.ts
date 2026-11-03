@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { beforeEach, describe, expect, it } from "vitest";
 import { describirValorRegla } from "@/lib/api/contracts/plataforma";
 import type { ApiErrorBody, AuditoriaEntry, CambioRegla, ReglaNegocio } from "@/lib/api/types";

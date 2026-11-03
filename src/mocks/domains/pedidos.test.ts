@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { beforeEach, describe, expect, it } from "vitest";
 import type { FacturaEmitida, PedidoFacturable, PedidosLista, PedidoTrabado } from "@/lib/api/types";
 import { resetDb } from "../db";

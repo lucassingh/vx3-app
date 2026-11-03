@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { mockRoutes } from "@/mocks/router";
 import { dispatchApiRequest } from "./dispatch";

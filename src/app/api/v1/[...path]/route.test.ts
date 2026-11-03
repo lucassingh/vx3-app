@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSessionToken, SESSION_COOKIE } from "@/lib/session";
 import { GET } from "./route";

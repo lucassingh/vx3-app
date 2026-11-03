@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { calcularPresentaciones, ceilTo, precioBulto } from "./motor-precios";
 

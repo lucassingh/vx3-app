@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiErrorBody, DailyPoint, IndicadorCausa, Kpi, Notification, OperacionHoy } from "@/lib/api/types";
 import { resetDb } from "./db";
