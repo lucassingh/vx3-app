@@ -11,6 +11,9 @@ const sesion = vi.hoisted(() => ({ user: null as SessionUser | null }));
 
 vi.mock("@/modules/platform/auth/session", () => ({ getSessionUser: async () => sesion.user }));
 
+const { record } = vi.hoisted(() => ({ record: vi.fn(async () => {}) }));
+vi.mock("@/modules/platform/audit/service", () => ({ record }));
+
 const handler = vi.fn(async ({ sku, cantidad }: { sku: string; cantidad: number }) => `${sku} × ${cantidad}`);
 
 const reservar = defineAction({
@@ -109,5 +112,26 @@ describe("defineAction", () => {
     handler.mockImplementationOnce(async () => redirect("/login"));
 
     await expect(reservar({ sku: "MSU2", cantidad: 6 })).rejects.toThrow("NEXT_REDIRECT");
+  });
+
+  it("audit() registra a nombre del usuario y con el ID del request", async () => {
+    const archivar = defineAction({
+      name: "catalogo.archivar",
+      input: z.object({ sku: z.string() }),
+      permission: "catalogo.editar",
+      handler: async ({ sku }, { audit }) => {
+        await audit({ action: "producto.archivado", entityType: "producto", entityId: sku });
+        return sku;
+      },
+    });
+
+    expect(await archivar({ sku: "MSU2" })).toEqual({ ok: true, data: "MSU2" });
+    expect(record).toHaveBeenCalledWith({
+      action: "producto.archivado",
+      entityType: "producto",
+      entityId: "MSU2",
+      actor: { id: "usuario-admin", label: "Elías Llaury" },
+      requestId: expect.any(String),
+    });
   });
 });
