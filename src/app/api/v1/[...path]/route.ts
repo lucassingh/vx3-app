@@ -1,7 +1,6 @@
-import { cookies } from "next/headers";
 import { dispatchApiRequest } from "@/lib/api/dispatch";
 import { errorResponse } from "@/lib/api/route";
-import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
+import { getSessionUser } from "@/modules/platform/auth/session";
 
 /**
  * API de la app para el navegador: /api/v1/*. Pide sesión, porque el proxy no
@@ -9,8 +8,7 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
  * implementación simulada o real.
  */
 async function handler(request: Request) {
-  const cookieStore = await cookies();
-  if (!(await verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value))) {
+  if (!(await getSessionUser())) {
     return errorResponse(401, "La sesión venció: volvé a entrar.");
   }
   return dispatchApiRequest(request);

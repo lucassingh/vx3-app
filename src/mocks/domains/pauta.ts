@@ -8,7 +8,6 @@ import type {
   PeriodoPauta,
   PresupuestoMes,
 } from "@/lib/api/types";
-import { currentUser } from "@/lib/auth";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { defineStore } from "../db";
 import { errorResponse, readJson, type Route } from "../http";
@@ -18,6 +17,9 @@ import { anuncios, DAY, getProducto, HOUR, isoAgo, TIPO_CAMBIO_USD, type Anuncio
  * M9 · Pauta en Meta. Gasto en USD (RN-111), ventas verificadas y margen real
  * línea por línea (RN-92), atribución con el criterio de Elías (RN-110).
  */
+
+// La API simulada no sabe quién está logueado: los cambios quedan a nombre de Elías.
+const QUIEN_EDITA = "Elías Llaury";
 
 /** Meta permite 4 cambios por hora por conjunto de anuncios (RF-M9-07). */
 const CAMBIOS_POR_HORA = 4;
@@ -344,9 +346,9 @@ export const routes: Route[] = [
       const el = new Date().toISOString();
       state.tipoCambio = {
         valor,
-        actualizadoPor: currentUser.name,
+        actualizadoPor: QUIEN_EDITA,
         actualizadoEl: el,
-        historial: [{ valor, por: currentUser.name, el }, ...state.tipoCambio.historial].slice(0, 5),
+        historial: [{ valor, por: QUIEN_EDITA, el }, ...state.tipoCambio.historial].slice(0, 5),
       };
       return Response.json(state.tipoCambio);
     },

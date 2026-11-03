@@ -4,13 +4,12 @@ import { z } from "zod";
 import { defineAction } from "./action";
 import { ConflictError } from "./errors";
 import { logger } from "./logger";
-import { createSessionToken } from "./session";
+import { usuarioDePrueba } from "@/test/users";
+import type { SessionUser } from "@/modules/platform/auth/session";
 
-const cookie = vi.hoisted(() => ({ value: undefined as string | undefined }));
+const sesion = vi.hoisted(() => ({ user: null as SessionUser | null }));
 
-vi.mock("next/headers", () => ({
-  cookies: async () => ({ get: (name: string) => (name === "vx3_session" ? { value: cookie.value } : undefined) }),
-}));
+vi.mock("@/modules/platform/auth/session", () => ({ getSessionUser: async () => sesion.user }));
 
 const handler = vi.fn(async ({ sku, cantidad }: { sku: string; cantidad: number }) => `${sku} × ${cantidad}`);
 
@@ -21,9 +20,9 @@ const reservar = defineAction({
   handler,
 });
 
-beforeEach(async () => {
+beforeEach(() => {
   handler.mockClear();
-  cookie.value = await createSessionToken("eliasllaury@gmail.com");
+  sesion.user = usuarioDePrueba("admin");
 });
 
 describe("defineAction", () => {
@@ -34,14 +33,14 @@ describe("defineAction", () => {
     expect(handler).toHaveBeenCalledWith(
       { sku: "MSU2", cantidad: 6 },
       expect.objectContaining({
-        user: { email: "eliasllaury@gmail.com", role: "admin" },
+        user: usuarioDePrueba("admin"),
         requestId: expect.any(String),
       }),
     );
   });
 
   it("sin sesión no ejecuta nada", async () => {
-    cookie.value = undefined;
+    sesion.user = null;
 
     const result = await reservar({ sku: "MSU2", cantidad: 6 });
 
@@ -50,6 +49,22 @@ describe("defineAction", () => {
       error: { code: "UNAUTHENTICATED", message: "La sesión venció: volvé a entrar." },
     });
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("sin el permiso no ejecuta nada", async () => {
+    sesion.user = usuarioDePrueba("postventa");
+
+    const result = await reservar({ sku: "MSU2", cantidad: 6 });
+
+    expect(result).toMatchObject({ ok: false, error: { code: "FORBIDDEN" } });
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("con permission null alcanza con tener sesión", async () => {
+    sesion.user = usuarioDePrueba("solo_lectura");
+    const propia = defineAction({ name: "perfil.ver", input: z.null(), permission: null, handler: async () => "ok" });
+
+    expect(await propia(null)).toEqual({ ok: true, data: "ok" });
   });
 
   it("con datos inválidos devuelve el error de cada campo", async () => {

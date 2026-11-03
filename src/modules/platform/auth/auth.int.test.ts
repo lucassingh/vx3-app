@@ -54,6 +54,32 @@ describe("Better Auth con Prisma", () => {
     });
   });
 
+  it("cambiar la contraseña cierra las otras sesiones y la vieja deja de andar", async () => {
+    const auth = getAuth();
+    const email = emailDePrueba("cambio");
+    const vieja = "la contraseña temporal";
+    const nueva = "la contraseña nueva y mía";
+    await auth.api.createUser({ body: { email, name: "Prueba Cambio", password: vieja } });
+
+    const enLaCompu = cookieDeSesion(
+      (await auth.api.signInEmail({ body: { email, password: vieja }, returnHeaders: true })).headers,
+    );
+    const enElCelular = cookieDeSesion(
+      (await auth.api.signInEmail({ body: { email, password: vieja }, returnHeaders: true })).headers,
+    );
+
+    await auth.api.changePassword({
+      body: { currentPassword: vieja, newPassword: nueva, revokeOtherSessions: true },
+      headers: enLaCompu,
+    });
+
+    expect(await auth.api.getSession({ headers: enElCelular })).toBeNull();
+    await expect(auth.api.signInEmail({ body: { email, password: vieja } })).rejects.toMatchObject({
+      statusCode: 401,
+    });
+    await expect(auth.api.signInEmail({ body: { email, password: nueva } })).resolves.toHaveProperty("user");
+  });
+
   it("npm run auth:create-admin crea un admin con una contraseña temporal que hay que cambiar", async () => {
     const email = emailDePrueba("admin");
     const resultado = spawnSync(

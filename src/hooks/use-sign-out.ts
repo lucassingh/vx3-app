@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useTransition } from "react";
-import { signOut } from "@/lib/auth-actions";
+import { signOut } from "@/modules/platform/auth/actions";
 import { toast } from "@/lib/toast";
 
 export function useSignOut() {

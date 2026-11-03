@@ -1,13 +1,12 @@
 import "server-only";
-import { cookies } from "next/headers";
 import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 import { newId } from "@/db/ids";
 import { ForbiddenError, isAppError, UnauthenticatedError, ValidationError } from "./errors";
 import { type Logger, logger } from "./logger";
-import { hasPermission, type Permission, type SessionUser } from "./permissions";
+import { getSessionUser, type SessionUser } from "@/modules/platform/auth/session";
+import { hasPermission, type Permission } from "./permissions";
 import { fail, ok, type Result, toActionError } from "./result";
-import { SESSION_COOKIE, verifySessionToken } from "./session";
 
 /**
  * Toda Server Action pasa por acá. Una Server Action es un endpoint público:
@@ -33,7 +32,8 @@ export type ActionDefinition<Schema extends z.ZodType, Output> = {
   /** Para los logs: "dominio.accion". */
   name: string;
   input: Schema;
-  permission: Permission;
+  /** null: cualquier usuario con sesión (cambiar su contraseña, sus preferencias). */
+  permission: Permission | null;
   handler: (input: z.output<Schema>, context: ActionContext) => Promise<Output>;
 };
 
@@ -50,9 +50,9 @@ export function defineAction<Schema extends z.ZodType, Output>({
     const ms = () => Math.round(performance.now() - startedAt);
 
     try {
-      const user = await sessionUser();
+      const user = await getSessionUser();
       if (!user) throw new UnauthenticatedError();
-      if (!hasPermission(user, permission)) throw new ForbiddenError();
+      if (permission && !hasPermission(user, permission)) throw new ForbiddenError();
 
       const parsed = input.safeParse(raw);
       if (!parsed.success) {
@@ -80,11 +80,4 @@ export function defineAction<Schema extends z.ZodType, Output>({
       });
     }
   };
-}
-
-/** Mientras no hay usuarios en la base (fase 1.2), la sesión válida es la del admin. */
-async function sessionUser(): Promise<SessionUser | null> {
-  const cookieStore = await cookies();
-  const session = await verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value);
-  return session ? { email: session.email, role: "admin" } : null;
 }

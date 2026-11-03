@@ -1,7 +1,7 @@
 /**
  * Permisos finos (tecnica_doc §6.3). Se agregan a medida que entra cada
- * acción. La matriz rol × permiso llega con la auth real (fase 1.2); hasta
- * entonces hay un solo usuario, admin, que tiene todos.
+ * acción. La matriz rol × permiso llega en el ítem 1.2.3; hasta entonces solo
+ * el admin los tiene.
  */
 
 export const PERMISSIONS = [
@@ -11,10 +11,6 @@ export const PERMISSIONS = [
 
 export type Permission = (typeof PERMISSIONS)[number];
 
-export type Role = "admin";
-
-export type SessionUser = { email: string; role: Role };
-
-export function hasPermission(user: SessionUser, permission: Permission) {
+export function hasPermission(user: { role: string }, permission: Permission) {
   return user.role === "admin" && PERMISSIONS.includes(permission);
 }
