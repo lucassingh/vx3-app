@@ -10,14 +10,18 @@
  * y el Hub.
  */
 
-import { cookies } from "next/headers";
-import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
+import { z } from "zod";
 import { serverEnv } from "@/env";
+import { defineAction } from "@/lib/action";
+import { businessTime } from "@/lib/dates";
+import { ExternalServiceError, ForbiddenError } from "@/lib/errors";
 
 const MIN_GAP_MS = 5_500;
 const USER_AGENT = "vx3-app/0.1 (desarrollo local)";
 
-export type DuxProbeKey = "stock" | "items" | "facturas";
+const DUX_PROBE_KEYS = ["stock", "items", "facturas"] as const;
+
+export type DuxProbeKey = (typeof DUX_PROBE_KEYS)[number];
 
 export type DuxProbeResult = {
   label: string;
@@ -27,8 +31,6 @@ export type DuxProbeResult = {
   ms: number;
   body: unknown;
 };
-
-export type DuxProbeResponse = { ok: true; result: DuxProbeResult } | { ok: false; message: string };
 
 type Probe = { label: string; path: string; authorization: string };
 
@@ -50,67 +52,68 @@ function throttled<T>(task: () => Promise<T>): Promise<T> {
   return run;
 }
 
-export async function probeDux(key: DuxProbeKey): Promise<DuxProbeResponse> {
-  if (process.env.NODE_ENV !== "development") {
-    return { ok: false, message: "La prueba de DUX solo anda en desarrollo local." };
-  }
-  const cookieStore = await cookies();
-  if (!(await verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value))) {
-    return { ok: false, message: "La sesión venció: volvé a entrar." };
-  }
+export const probeDux = defineAction({
+  name: "dux.probe",
+  input: z.enum(DUX_PROBE_KEYS),
+  permission: "settings.credentials",
+  handler: async (key, { log }) => {
+    if (process.env.NODE_ENV !== "development") {
+      throw new ForbiddenError("La prueba de DUX solo anda en desarrollo local.");
+    }
 
-  const {
-    DUX_API_URL: baseUrl,
-    DUX_TOKEN: token,
-    DUX_ID_EMPRESA: idEmpresa,
-    DUX_ID_SUCURSAL_ECOMMERCE: idSucursal,
-    DUX_ID_DEPOSITO: idDeposito,
-  } = serverEnv();
-  if (!baseUrl || !token || !idEmpresa || !idSucursal || (key === "stock" && !idDeposito)) {
-    return {
-      ok: false,
-      message: "Faltan variables DUX_* en .env.local. Después de cargarlas, reiniciá npm run dev.",
+    const {
+      DUX_API_URL: baseUrl,
+      DUX_TOKEN: token,
+      DUX_ID_EMPRESA: idEmpresa,
+      DUX_ID_SUCURSAL_ECOMMERCE: idSucursal,
+      DUX_ID_DEPOSITO: idDeposito,
+    } = serverEnv();
+    if (!baseUrl || !token || !idEmpresa || !idSucursal || (key === "stock" && !idDeposito)) {
+      throw new ExternalServiceError(
+        "DUX",
+        "Faltan variables DUX_* en .env.local. Después de cargarlas, reiniciá npm run dev.",
+      );
+    }
+
+    // Las fechas de DUX son de acá: con la del servidor (UTC), de noche pediría las de mañana.
+    const today = businessTime.today();
+    const facturas = new URLSearchParams({
+      idEmpresa: String(idEmpresa),
+      idSucursal: String(idSucursal),
+      fechaDesde: businessTime.addDays(today, -7),
+      fechaHasta: today,
+      offset: "0",
+      limit: "3",
+    });
+
+    // Solo estas consultas: el cliente elige una clave, nunca la ruta.
+    const probes: Record<DuxProbeKey, Probe> = {
+      // La v2 es la que va a usar la app (solucion_doc/04 §1.1), con "Bearer".
+      // Pide id_deposito o cod_item (sin ninguno responde 400). 50 es el máximo
+      // por página y cuesta el mismo request que 3.
+      stock: {
+        label: "Stock (v2, depósito Temperley)",
+        path: `/v2/stock?${new URLSearchParams({ id_deposito: String(idDeposito ?? ""), offset: "0", limit: "50" })}`,
+        authorization: `Bearer ${token}`,
+      },
+      items: {
+        label: "Items (v2)",
+        path: "/v2/items?offset=0&limit=3",
+        authorization: `Bearer ${token}`,
+      },
+      // La v1 es la que usa el Hub, con el token sin "Bearer".
+      facturas: {
+        label: "Facturas de los últimos 7 días (v1, sucursal ecommerce)",
+        path: `/facturas?${facturas}`,
+        authorization: token,
+      },
     };
-  }
 
-  const today = new Date();
-  const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const facturas = new URLSearchParams({
-    idEmpresa: String(idEmpresa),
-    idSucursal: String(idSucursal),
-    fechaDesde: localDate(weekAgo),
-    fechaHasta: localDate(today),
-    offset: "0",
-    limit: "3",
-  });
-
-  // Solo estas consultas: el cliente elige una clave, nunca la ruta.
-  const probes: Record<DuxProbeKey, Probe> = {
-    // La v2 es la que va a usar la app (solucion_doc/04 §1.1), con "Bearer".
-    // Pide id_deposito o cod_item (sin ninguno responde 400). 50 es el máximo
-    // por página y cuesta el mismo request que 3.
-    stock: {
-      label: "Stock (v2, depósito Temperley)",
-      path: `/v2/stock?${new URLSearchParams({ id_deposito: String(idDeposito ?? ""), offset: "0", limit: "50" })}`,
-      authorization: `Bearer ${token}`,
-    },
-    items: {
-      label: "Items (v2)",
-      path: "/v2/items?offset=0&limit=3",
-      authorization: `Bearer ${token}`,
-    },
-    // La v1 es la que usa el Hub, con el token sin "Bearer".
-    facturas: {
-      label: "Facturas de los últimos 7 días (v1, sucursal ecommerce)",
-      path: `/facturas?${facturas}`,
-      authorization: token,
-    },
-  };
-
-  const probe = probes[key];
-  if (!probe) return { ok: false, message: `Consulta desconocida: ${key}` };
-  return { ok: true, result: await throttled(() => runProbe(baseUrl, probe)) };
-}
+    const result = await throttled(() => runProbe(baseUrl, probes[key]));
+    log.info({ consulta: key, status: result.status, ms: result.ms }, "consulta a DUX");
+    return result;
+  },
+});
 
 async function runProbe(baseUrl: string, { label, path, authorization }: Probe): Promise<DuxProbeResult> {
   const startedAt = Date.now();
@@ -141,11 +144,4 @@ async function runProbe(baseUrl: string, { label, path, authorization }: Probe):
       body: error instanceof Error ? `${error.name}: ${error.message}` : String(error),
     };
   }
-}
-
-/** YYYY-MM-DD en hora local (toISOString pasaría a UTC y de noche daría mañana). */
-function localDate(date: Date) {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
 }

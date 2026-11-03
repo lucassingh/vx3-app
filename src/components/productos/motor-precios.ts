@@ -4,6 +4,8 @@
  * API; lo comparten el alta, la recepción de compras y el control de margen.
  */
 
+import { Money } from "@/lib/money";
+
 export type Familia = "lenceria" | "medias";
 
 export type PresentacionCalculada = {
@@ -19,7 +21,12 @@ export type PresentacionCalculada = {
   esBulto: boolean;
 };
 
-export const ceilTo = (value: number, step: number) => Math.ceil(value / step) * step;
+/** Hacia arriba al múltiplo de `step` pesos, sin errores de coma flotante (RN-13, RN-96). */
+export const ceilTo = (value: number, step: number) => Money.fromPesos(value).roundUpTo(step).toPesos();
+
+/** Costo × coeficiente, hacia arriba a $100 (RN-13). Con number, 200.000 × 1,1765 daba 235.400. */
+const precioPiso = (costo: number, coeficiente: number) =>
+  Money.fromPesos(costo).times(coeficiente).roundUpTo(100).toPesos();
 
 const MAYORISTA = "MAYORISTA EF/TR";
 const LOCAL = "LOCAL EF/TR";
@@ -36,7 +43,7 @@ export function calcularPresentaciones(familia: Familia, sku: string, costoDocen
         terminacion: "PACK DE 3",
         prendas: 3,
         coeficiente: 2.21,
-        precio: ceilTo((cd / 4) * 2.21, 100),
+        precio: precioPiso(cd / 4, 2.21),
         costo: cd / 4,
         listas: [LOCAL],
         esBulto: false,
@@ -47,7 +54,7 @@ export function calcularPresentaciones(familia: Familia, sku: string, costoDocen
         terminacion: "PACK DE 6",
         prendas: 6,
         coeficiente: 1.8182,
-        precio: ceilTo((cd / 2) * 1.8182, 100),
+        precio: precioPiso(cd / 2, 1.8182),
         costo: cd / 2,
         listas: [LOCAL],
         esBulto: false,
@@ -58,7 +65,7 @@ export function calcularPresentaciones(familia: Familia, sku: string, costoDocen
         terminacion: "DOCENA",
         prendas: 12,
         coeficiente: 1.3,
-        precio: ceilTo(cd * 1.3, 100),
+        precio: precioPiso(cd, 1.3),
         costo: cd,
         listas: [MAYORISTA, LOCAL],
         esBulto: true,
@@ -73,7 +80,7 @@ export function calcularPresentaciones(familia: Familia, sku: string, costoDocen
       terminacion: "UNIDAD",
       prendas: 1,
       coeficiente: 2.21,
-      precio: ceilTo((cd / 12) * 2.21, 100),
+      precio: precioPiso(cd / 12, 2.21),
       costo: cd / 12,
       listas: [LOCAL],
       esBulto: false,
@@ -84,7 +91,7 @@ export function calcularPresentaciones(familia: Familia, sku: string, costoDocen
       terminacion: "MEDIA DOCENA",
       prendas: 6,
       coeficiente: 1.3,
-      precio: ceilTo((cd / 2) * 1.3, 100),
+      precio: precioPiso(cd / 2, 1.3),
       costo: cd / 2,
       listas: [MAYORISTA, LOCAL],
       esBulto: true,
@@ -95,7 +102,7 @@ export function calcularPresentaciones(familia: Familia, sku: string, costoDocen
       terminacion: "DOCENA",
       prendas: 12,
       coeficiente: 1.1765,
-      precio: ceilTo(cd * 1.1765, 100),
+      precio: precioPiso(cd, 1.1765),
       costo: cd,
       listas: [MAYORISTA, LOCAL],
       esBulto: false,

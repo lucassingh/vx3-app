@@ -81,6 +81,13 @@ const esquemaServidor = z.object({
       .min(0, "es una probabilidad: va de 0 a 1")
       .max(1, "es una probabilidad: va de 0 a 1"),
   ).default(0),
+  /** Vacía: debug en desarrollo, info en producción y nada en los tests. */
+  LOG_LEVEL: opcional(
+    z.enum(
+      ["fatal", "error", "warn", "info", "debug", "trace", "silent"],
+      "fatal, error, warn, info, debug, trace o silent",
+    ),
+  ),
   DUX_API_URL: opcional(z.url("tiene que ser una URL")),
   DUX_TOKEN: opcional(z.string()),
   DUX_ID_EMPRESA: opcional(enteroPositivo),

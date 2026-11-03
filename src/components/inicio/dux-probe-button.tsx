@@ -44,11 +44,11 @@ export function DuxProbeButton() {
       try {
         const response = await probeDux(key);
         if (!response.ok) {
-          toast.error(response.message, { id });
+          toast.error(response.error.message, { id });
           return;
         }
 
-        const { result } = response;
+        const result = response.data;
         console.group(`[DUX] ${result.label} · HTTP ${result.status ?? "sin respuesta"} · ${result.ms} ms`);
         console.log("GET", result.request);
         console.log(result.body);
