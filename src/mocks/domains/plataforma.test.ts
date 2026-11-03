@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { describirValorRegla } from "@/lib/api/contracts/plataforma";
-import type { ApiErrorBody, AuditoriaEntry, CambioRegla, ReglaNegocio } from "@/lib/api/types";
+import type { ApiErrorBody, CambioRegla, ReglaNegocio } from "@/lib/api/types";
 import { resetDb } from "../db";
 import { handleMockRequest, MOCK_API_PREFIX } from "../router";
 
@@ -38,8 +38,6 @@ describe("reglas de negocio", () => {
 
     const historial = await call<CambioRegla[]>("/plataforma/reglas/historial");
     expect(historial.body[0]).toMatchObject({ reglaId: "minimo", por: "Elías Llaury" });
-    const auditoria = await call<AuditoriaEntry[]>("/plataforma/auditoria?usuario=u-elias");
-    expect(auditoria.body[0]).toMatchObject({ categoria: "reglas", antes: "$ 45.000", despues: "$ 50.000" });
   });
 
   it("describe los valores igual en el servidor y en el navegador", () => {

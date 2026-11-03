@@ -1,4 +1,4 @@
-import { toQueryString, type ApiRequest } from "../http";
+import type { ApiRequest } from "../http";
 import type { Nivel, Role } from "@/modules/platform/permissions";
 import type { DailyPoint, Share } from "../types";
 
@@ -312,10 +312,6 @@ export function plataformaEndpoints(request: ApiRequest) {
         request<IaConfig>("/plataforma/ia", json("PATCH", cambios)),
       cargarKey: (input: { tipo: "api" | "admin"; key: string }) =>
         request<CredencialEnmascarada>("/plataforma/ia/keys", json("POST", input)),
-    },
-    auditoria: {
-      list: (query: { usuario?: string } = {}) =>
-        request<AuditoriaEntry[]>(`/plataforma/auditoria${toQueryString(query)}`),
     },
     preferencias: {
       get: () => request<AlertaPreferencia[]>("/plataforma/preferencias"),

@@ -14,6 +14,7 @@ import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { getDb } from "@/db/client";
+import { record } from "@/modules/platform/audit/service";
 import { getAuth } from "@/modules/platform/auth/auth";
 import { temporaryPassword } from "@/modules/platform/users/temporary-password";
 
@@ -67,6 +68,14 @@ async function main() {
         ...(datos.usuario ? { username: datos.usuario, displayUsername: datos.usuario } : {}),
       },
     },
+  });
+
+  await record({
+    actor: { id: null, label: "npm run auth:create-admin" },
+    action: "usuario.creado",
+    entityType: "user",
+    entityId: user.id,
+    after: { nombre: datos.nombre, email: datos.email, usuario: datos.usuario || null, rol: "admin" },
   });
 
   console.log(`\nListo: ${user.name} es admin.`);

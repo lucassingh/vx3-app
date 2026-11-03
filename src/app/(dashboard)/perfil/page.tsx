@@ -35,7 +35,7 @@ export default async function PerfilPage() {
             <SesionesCard />
           </AsyncWidget>
           <AsyncWidget title="tu actividad" fallback={<AuditoriaSkeleton title="Tu actividad reciente" />}>
-            <ActividadCard usuarioId="u-elias" />
+            <ActividadCard />
           </AsyncWidget>
         </div>
       </PageBody>

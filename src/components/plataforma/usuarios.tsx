@@ -5,9 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LoadingLabel } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SkeletonText, TableSkeleton } from "@/components/views/skeletons";
-import { api } from "@/lib/api/server";
 import type { AuditoriaEntry, NivelPermiso } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { listar as listarAuditoria } from "@/modules/platform/audit/service";
 import { requireUser } from "@/modules/platform/auth/session";
 import { matrizDePermisos } from "@/modules/platform/permissions";
 import { type EstadoUsuario, listarUsuarios } from "@/modules/platform/users/service";
@@ -228,7 +228,7 @@ function AuditoriaFrame({
 }
 
 export async function AuditoriaCard() {
-  const entries = await api.plataforma.auditoria.list();
+  const entries = await listarAuditoria();
   return (
     <AuditoriaFrame
       title="Registro de auditoría"
@@ -249,14 +249,15 @@ export function AuditoriaSkeleton({ title = "Registro de auditoría" }: { title?
 }
 
 /** Actividad de un usuario (la usa Mi perfil). */
-export async function ActividadCard({ usuarioId }: { usuarioId: string }) {
-  const entries = await api.plataforma.auditoria.list({ usuario: usuarioId });
+export async function ActividadCard() {
+  const { id } = await requireUser();
+  const entries = await listarAuditoria({ actorId: id, limite: 6 });
   return (
     <AuditoriaFrame
       title="Tu actividad reciente"
       description="Lo último que hiciste en la app, tal como queda en el registro"
     >
-      <AuditoriaList rows={toAuditoriaRows(entries.slice(0, 6))} filtros={false} />
+      <AuditoriaList rows={toAuditoriaRows(entries)} filtros={false} />
     </AuditoriaFrame>
   );
 }

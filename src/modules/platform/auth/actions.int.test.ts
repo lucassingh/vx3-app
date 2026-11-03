@@ -43,6 +43,12 @@ describe("límite de intentos en el login", () => {
       ok: false,
       error: { code: "TOO_MANY_REQUESTS" },
     });
+
+    const registro = await db.auditLog.findMany({
+      where: { entityType: "login", after: { path: ["identificador"], equals: email } },
+      orderBy: { occurredAt: "asc" },
+    });
+    expect(registro.map((fila) => fila.action)).toEqual([...Array(4).fill("acceso.fallido"), "acceso.bloqueo"]);
   });
 
   it("pasada la espera vuelve a dejar entrar, y entrar limpia el contador", async () => {
@@ -53,6 +59,8 @@ describe("límite de intentos en el login", () => {
 
     expect(await signIn({ identifier: email, password })).toMatchObject({ ok: true, data: { name: "Prueba Límite" } });
     expect(await db.loginThrottle.findUnique({ where: { key: `user:${email}` } })).toBeNull();
-    expect((await db.user.findUnique({ where: { email } }))?.lastLoginAt).toBeInstanceOf(Date);
+    const usuario = await db.user.findUnique({ where: { email } });
+    expect(usuario?.lastLoginAt).toBeInstanceOf(Date);
+    expect(await db.auditLog.findFirst({ where: { action: "acceso.entrada", actorId: usuario?.id } })).not.toBeNull();
   });
 });

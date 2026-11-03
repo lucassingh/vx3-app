@@ -64,6 +64,14 @@ describe("gestión de usuarios", () => {
 
     expect(await cambiarRol({ userId: id, rol: "compras" })).toEqual({ ok: true, data: null });
     expect((await db.user.findUnique({ where: { id } }))?.role).toBe("compras");
+    // Queda en el registro, a nombre del admin, con el antes y el después.
+    expect(await db.auditLog.findFirst({ where: { action: "usuario.rol", entityId: id } })).toMatchObject({
+      actorId: adminId,
+      actorLabel: "Admin Prueba",
+      before: { nombre: "Prueba lucia", rol: "postventa" },
+      after: { nombre: "Prueba lucia", rol: "compras" },
+      requestId: expect.any(String),
+    });
     expect(await cambiarRol({ userId: adminId, rol: "solo_lectura" })).toMatchObject({
       ok: false,
       error: { code: "CONFLICT" },
@@ -107,6 +115,11 @@ describe("gestión de usuarios", () => {
       body: { email: email("sofi"), password: result.data.passwordTemporal },
     });
     expect(user).toMatchObject({ mustChangePassword: true });
+
+    // El registro nunca guarda la contraseña temporal.
+    const registro = await db.auditLog.findFirst({ where: { action: "usuario.password_reseteada", entityId: id } });
+    expect(registro?.after).toEqual({ nombre: "Prueba sofi" });
+    expect(JSON.stringify(registro)).not.toContain(result.data.passwordTemporal);
   });
 
   it("alguien que no es admin no puede hacer nada de esto", async () => {

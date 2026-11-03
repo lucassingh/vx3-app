@@ -21,7 +21,10 @@ const PERMISO = "plataforma.editar";
 const usuarioId = z.object({ userId: z.uuid("Usuario inválido.") });
 
 async function existente(userId: string) {
-  const usuario = await getDb().user.findUnique({ where: { id: userId }, select: { id: true, name: true } });
+  const usuario = await getDb().user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, role: true },
+  });
   if (!usuario) throw new NotFoundError("Ese usuario ya no existe. Recargá la página.");
   return usuario;
 }
@@ -46,7 +49,7 @@ export const crearUsuario = defineAction({
     puesto: z.string().trim().max(60).optional(),
   }),
   permission: PERMISO,
-  handler: async ({ nombre, email, usuario, rol, puesto }) => {
+  handler: async ({ nombre, email, usuario, rol, puesto }, { audit }) => {
     const db = getDb();
     if (await db.user.findUnique({ where: { email }, select: { id: true } })) {
       throw new ConflictError("Ya hay un usuario con ese email.");
@@ -70,6 +73,12 @@ export const crearUsuario = defineAction({
       },
       headers: await headers(),
     });
+    await audit({
+      action: "usuario.creado",
+      entityType: "user",
+      entityId: user.id,
+      after: { nombre, email, usuario: usuario ?? null, rol, puesto: puesto ?? null },
+    });
     return { id: user.id, nombre: user.name, passwordTemporal };
   },
 });
@@ -78,10 +87,17 @@ export const cambiarRol = defineAction({
   name: "usuarios.cambiar_rol",
   input: usuarioId.extend({ rol: z.enum(ROLES, "Elegí un rol.") }),
   permission: PERMISO,
-  handler: async ({ userId, rol }, { user }) => {
+  handler: async ({ userId, rol }, { user, audit }) => {
     noAVosMismo(userId, user.id, "No podés cambiar tu propio rol: pedíselo a otro admin.");
-    await existente(userId);
+    const previo = await existente(userId);
     await getAuth().api.setRole({ body: { userId, role: rol }, headers: await headers() });
+    await audit({
+      action: "usuario.rol",
+      entityType: "user",
+      entityId: userId,
+      before: { nombre: previo.name, rol: previo.role },
+      after: { nombre: previo.name, rol },
+    });
     return null;
   },
 });
@@ -90,14 +106,15 @@ export const desactivarUsuario = defineAction({
   name: "usuarios.desactivar",
   input: usuarioId,
   permission: PERMISO,
-  handler: async ({ userId }, { user }) => {
+  handler: async ({ userId }, { user, audit }) => {
     noAVosMismo(userId, user.id, "No podés desactivar tu propio usuario.");
-    await existente(userId);
+    const { name } = await existente(userId);
     // Además de bloquear el ingreso, cierra todas sus sesiones.
     await getAuth().api.banUser({
       body: { userId, banReason: `Desactivado por ${user.name}` },
       headers: await headers(),
     });
+    await audit({ action: "usuario.desactivado", entityType: "user", entityId: userId, after: { nombre: name } });
     return null;
   },
 });
@@ -106,9 +123,10 @@ export const reactivarUsuario = defineAction({
   name: "usuarios.reactivar",
   input: usuarioId,
   permission: PERMISO,
-  handler: async ({ userId }) => {
-    await existente(userId);
+  handler: async ({ userId }, { audit }) => {
+    const { name } = await existente(userId);
     await getAuth().api.unbanUser({ body: { userId }, headers: await headers() });
+    await audit({ action: "usuario.reactivado", entityType: "user", entityId: userId, after: { nombre: name } });
     return null;
   },
 });
@@ -117,10 +135,16 @@ export const cerrarSesiones = defineAction({
   name: "usuarios.cerrar_sesiones",
   input: usuarioId,
   permission: PERMISO,
-  handler: async ({ userId }, { user }) => {
+  handler: async ({ userId }, { user, audit }) => {
     noAVosMismo(userId, user.id, "Para cerrar tu sesión usá Salir, en tu menú.");
-    await existente(userId);
+    const { name } = await existente(userId);
     await getAuth().api.revokeUserSessions({ body: { userId }, headers: await headers() });
+    await audit({
+      action: "usuario.sesiones_cerradas",
+      entityType: "user",
+      entityId: userId,
+      after: { nombre: name },
+    });
     return null;
   },
 });
@@ -129,9 +153,9 @@ export const resetearPassword = defineAction({
   name: "usuarios.resetear_password",
   input: usuarioId,
   permission: PERMISO,
-  handler: async ({ userId }, { user }) => {
+  handler: async ({ userId }, { user, audit }) => {
     noAVosMismo(userId, user.id, "Tu contraseña la cambiás desde Mi perfil.");
-    await existente(userId);
+    const { name } = await existente(userId);
     const auth = getAuth();
     const requestHeaders = await headers();
     const passwordTemporal = temporaryPassword();
@@ -144,6 +168,13 @@ export const resetearPassword = defineAction({
     }
     await auth.api.revokeUserSessions({ body: { userId }, headers: requestHeaders });
     await getDb().user.update({ where: { id: userId }, data: { mustChangePassword: true } });
+    // La contraseña temporal nunca va al registro.
+    await audit({
+      action: "usuario.password_reseteada",
+      entityType: "user",
+      entityId: userId,
+      after: { nombre: name },
+    });
     return { passwordTemporal };
   },
 });

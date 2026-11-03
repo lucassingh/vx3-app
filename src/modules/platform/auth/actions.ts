@@ -8,7 +8,9 @@ import { defineAction } from "@/lib/action";
 import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
+import { record } from "../audit/service";
 import { getAuth, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "./auth";
+import { getSessionUser } from "./session";
 import {
   bloqueadoHasta,
   clavesDeIntento,
@@ -47,7 +49,8 @@ export async function signIn(raw: z.input<typeof signInInput>): Promise<Result<S
   const { identifier, password } = parsed.data;
 
   const requestHeaders = await headers();
-  const claves = clavesDeIntento(identifier, ipDelCliente(requestHeaders));
+  const ip = ipDelCliente(requestHeaders);
+  const claves = clavesDeIntento(identifier, ip);
   // Bloqueado se rechaza antes de mirar la contraseña, aunque sea la correcta.
   const bloqueo = await bloqueadoHasta([claves.user, claves.ip]);
   if (bloqueo) return demasiadosIntentos(bloqueo);
@@ -64,6 +67,13 @@ export async function signIn(raw: z.input<typeof signInInput>): Promise<Result<S
       data: { lastLoginAt: new Date() },
       select: { name: true, mustChangePassword: true },
     });
+    await record({
+      actor: { id: user.id, label: user.name },
+      action: "acceso.entrada",
+      entityType: "user",
+      entityId: user.id,
+      after: { ip },
+    });
     return ok(actualizado);
   } catch (error) {
     if (error instanceof APIError) {
@@ -75,6 +85,13 @@ export async function signIn(raw: z.input<typeof signInInput>): Promise<Result<S
         registrarFallo(claves.ip, LIMITE.ip),
       ]);
       const recienBloqueado = porUsuario ?? porIp;
+      // Quien intenta no está identificado: queda lo que escribió y desde dónde.
+      await record({
+        actor: { id: null, label: "Sin identificar" },
+        action: recienBloqueado ? "acceso.bloqueo" : "acceso.fallido",
+        entityType: "login",
+        after: { identificador: identifier, ip, ...(recienBloqueado ? { hasta: recienBloqueado.toISOString() } : {}) },
+      });
       if (recienBloqueado) return demasiadosIntentos(recienBloqueado);
       return fail({ code: "UNAUTHENTICATED", message: INVALID_CREDENTIALS });
     }
@@ -85,7 +102,16 @@ export async function signIn(raw: z.input<typeof signInInput>): Promise<Result<S
 
 export async function signOut(): Promise<Result<null>> {
   try {
+    const user = await getSessionUser();
     await getAuth().api.signOut({ headers: await headers() });
+    if (user) {
+      await record({
+        actor: { id: user.id, label: user.name },
+        action: "acceso.salida",
+        entityType: "user",
+        entityId: user.id,
+      });
+    }
   } catch (error) {
     // Sin sesión no hay nada que cerrar; la cookie, si quedó, ya no sirve.
     if (!(error instanceof APIError)) logger.error({ err: error }, "error inesperado al salir");
@@ -115,7 +141,7 @@ export const changePassword = defineAction({
       message: "Tiene que ser distinta de la actual.",
     }),
   permission: null,
-  handler: async ({ actual, nueva }, { user }) => {
+  handler: async ({ actual, nueva }, { user, audit }) => {
     try {
       // Cierra las otras sesiones y deja abierta solo esta, con una cookie nueva.
       await getAuth().api.changePassword({
@@ -131,6 +157,7 @@ export const changePassword = defineAction({
       throw error;
     }
     await getDb().user.update({ where: { id: user.id }, data: { mustChangePassword: false } });
+    await audit({ action: "password.cambio", entityType: "user", entityId: user.id });
     return null;
   },
 });
