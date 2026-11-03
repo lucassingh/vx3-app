@@ -4,7 +4,9 @@
  *
  *   1. Crea una branch efímera de Neon a partir de develop (copia instantánea,
  *      con los datos y el esquema de develop).
- *   2. Aplica las migraciones pendientes (prisma migrate deploy).
+ *   2. Aplica las migraciones pendientes (prisma migrate deploy) y verifica que
+ *      la base quede igual a schema.prisma (prisma migrate diff): si alguien
+ *      cambió el esquema sin crear la migración, falla acá.
  *   3. Corre el proyecto "integration" de Vitest apuntando a esa branch.
  *   4. Borra la branch, aunque los tests fallen. Si el proceso muere antes,
  *      Neon la borra sola a las 2 horas (expires_at).
@@ -100,6 +102,27 @@ try {
     ["node_modules/prisma/build/index.js", "migrate", "deploy"],
     env,
   );
+  if (exitCode === 0) {
+    // Con las migraciones aplicadas, la base tiene que quedar igual a schema.prisma.
+    exitCode = run(
+      "Esquema y migraciones en sincronía (prisma migrate diff)",
+      [
+        "node_modules/prisma/build/index.js",
+        "migrate",
+        "diff",
+        "--from-config-datasource",
+        "--to-schema",
+        "prisma/schema.prisma",
+        "--exit-code",
+      ],
+      env,
+    );
+    if (exitCode === 2) {
+      console.error(
+        "\nschema.prisma tiene cambios que ninguna migración aplica. Creala con: npm run db:migrate:dev -- --name <cambio>",
+      );
+    }
+  }
   if (exitCode === 0) {
     exitCode = run(
       "Tests de integración",
