@@ -8,7 +8,14 @@
  */
 
 export type AppErrorCode =
-  "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "VALIDATION" | "CONFLICT" | "EXTERNAL_SERVICE" | "INTERNAL";
+  | "UNAUTHENTICATED"
+  | "FORBIDDEN"
+  | "NOT_FOUND"
+  | "VALIDATION"
+  | "CONFLICT"
+  | "TOO_MANY_REQUESTS"
+  | "EXTERNAL_SERVICE"
+  | "INTERNAL";
 
 /** Código HTTP de cada error, para las rutas de la API. */
 export const HTTP_STATUS: Record<AppErrorCode, number> = {
@@ -17,6 +24,7 @@ export const HTTP_STATUS: Record<AppErrorCode, number> = {
   NOT_FOUND: 404,
   VALIDATION: 422,
   CONFLICT: 409,
+  TOO_MANY_REQUESTS: 429,
   EXTERNAL_SERVICE: 502,
   INTERNAL: 500,
 };

@@ -9,6 +9,15 @@ import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
 import { getAuth, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "./auth";
+import {
+  bloqueadoHasta,
+  clavesDeIntento,
+  esperaLegible,
+  ipDelCliente,
+  LIMITE,
+  registrarExito,
+  registrarFallo,
+} from "./throttle";
 
 /**
  * Entrar, salir y cambiar la contraseña. Entrar es la única acción pública:
@@ -25,18 +34,31 @@ const signInInput = z.object({
 
 export type SignInData = { name: string; mustChangePassword: boolean };
 
+function demasiadosIntentos(hasta: Date): Result<never> {
+  return fail({
+    code: "TOO_MANY_REQUESTS",
+    message: `Demasiados intentos fallidos. Por seguridad, esperá ${esperaLegible(hasta)} y probá de nuevo.`,
+  });
+}
+
 export async function signIn(raw: z.input<typeof signInInput>): Promise<Result<SignInData>> {
   const parsed = signInInput.safeParse(raw);
   if (!parsed.success) return fail({ code: "VALIDATION", message: "Completá el email o usuario y la contraseña." });
   const { identifier, password } = parsed.data;
 
+  const requestHeaders = await headers();
+  const claves = clavesDeIntento(identifier, ipDelCliente(requestHeaders));
+  // Bloqueado se rechaza antes de mirar la contraseña, aunque sea la correcta.
+  const bloqueo = await bloqueadoHasta([claves.user, claves.ip]);
+  if (bloqueo) return demasiadosIntentos(bloqueo);
+
   try {
     const auth = getAuth();
-    const requestHeaders = await headers();
     const { user } = identifier.includes("@")
       ? await auth.api.signInEmail({ body: { email: identifier, password }, headers: requestHeaders })
       : await auth.api.signInUsername({ body: { username: identifier, password }, headers: requestHeaders });
 
+    await registrarExito(claves.user);
     const actualizado = await getDb().user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
@@ -47,6 +69,13 @@ export async function signIn(raw: z.input<typeof signInInput>): Promise<Result<S
     if (error instanceof APIError) {
       // Desactivado por un admin: el mensaje lo arma el plugin admin (auth.ts).
       if (error.statusCode === 403) return fail({ code: "FORBIDDEN", message: error.message });
+
+      const [porUsuario, porIp] = await Promise.all([
+        registrarFallo(claves.user, LIMITE.user),
+        registrarFallo(claves.ip, LIMITE.ip),
+      ]);
+      const recienBloqueado = porUsuario ?? porIp;
+      if (recienBloqueado) return demasiadosIntentos(recienBloqueado);
       return fail({ code: "UNAUTHENTICATED", message: INVALID_CREDENTIALS });
     }
     logger.error({ err: error }, "error inesperado al entrar");
