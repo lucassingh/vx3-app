@@ -122,5 +122,20 @@ src/
 - **PR:** de la fase hacia `develop`, con la descripción en español y la CI en
   verde. Merge commit, sin squash.
 
+## Ambientes y despliegue
+
+Todo lo despliega GitHub Actions, que migra la base antes de publicar:
+
+- **Preview:** cada PR a `develop`, con la URL comentada en la PR (`preview.yml`).
+- **QA:** cada push a `develop`, en `cli-vx3-qa.vercel.app` (`deploy-qa.yml`).
+- **Producción:** un tag `vX.Y.Z` sobre un commit de `main` que coincida con la versión
+  de `package.json` (`deploy-prod.yml`). Mergear a `main` no despliega nada: el tag es la
+  aprobación.
+
+Backup semanal cifrado (`backup.yml`), prueba de restauración (`restore-test.yml`),
+errores en Sentry y mantenimiento diario con Vercel Cron y un Workflow
+(`src/workflows/`). Qué hacer cuando algo se rompe, cómo volver atrás y cómo rotar
+un secreto: [`docs/operacion.md`](docs/operacion.md).
+
 Las convenciones de código (tokens de color, skeletons, toasts, tests) están en
 `CLAUDE.md`.
