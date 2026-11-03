@@ -19,9 +19,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { navigation, type NavGroup, type NavLink, type NavSection } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
 import { useSignOut } from "@/hooks/use-sign-out";
-import { isMockApi } from "@/lib/api/config";
 import { isActivePath } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+import { useDemoData } from "./demo-data";
 
 const itemClass =
   "group/item relative flex h-9 w-full min-w-0 items-center gap-3 overflow-hidden whitespace-nowrap rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:-outline-offset-2";
@@ -290,12 +290,13 @@ function SubItemLink({ link, pathname, onNavigate }: Omit<ItemProps, "iconOnly">
 
 function SidebarFooter({ iconOnly }: { iconOnly: boolean }) {
   const { signOut, pending } = useSignOut();
+  const datosDeDemostracion = useDemoData();
 
   return (
     <div className="shrink-0">
       <p className="px-6 pb-2 font-mono text-[11px] text-muted-foreground sidebar-collapsed:hidden">
         {siteConfig.version}
-        {isMockApi() && " · datos de demostración"}
+        {datosDeDemostracion && " · datos de demostración"}
       </p>
       <div className="border-t border-border p-3">
         <RailTooltip label="Cerrar sesión" enabled={iconOnly}>

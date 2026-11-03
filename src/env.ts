@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { API_DOMAINS } from "@/lib/api/domains";
 
 /**
  * Variables de entorno validadas con Zod. `.env.example` dice de dónde sale
@@ -60,8 +61,17 @@ const esquemaServidor = z.object({
   DATABASE_URL_UNPOOLED: opcional(conexionNeon(false)),
   NEON_API_KEY: opcional(z.string()),
   NEON_PROJECT_ID: opcional(z.string()),
-  /** API real externa del starter: se va con el interruptor por dominio (fase 1.1.5). */
-  API_URL: opcional(z.url("tiene que ser una URL")),
+  /** Dominios que usan su implementación real, separados por coma. Los demás usan la API simulada. */
+  API_REAL_DOMAINS: z.preprocess(
+    (valor) =>
+      typeof valor === "string"
+        ? valor
+            .split(",")
+            .map((dominio) => dominio.trim())
+            .filter(Boolean)
+        : [],
+    z.array(z.enum(API_DOMAINS, `dominio desconocido. Los válidos: ${API_DOMAINS.join(", ")}`)),
+  ),
   MOCK_API_DELAY_MS: opcional(
     z.coerce.number({ error: "tiene que ser un número de milisegundos" }).int().min(0, "no puede ser negativa"),
   ).default(350),
@@ -84,15 +94,6 @@ const OBLIGATORIAS: Record<Modo, (keyof z.infer<typeof esquemaServidor>)[]> = {
   produccion: ["DATABASE_URL", "DATABASE_URL_UNPOOLED", "AUTH_SECRET"],
   relajado: [],
 };
-
-const esquemaNavegador = z.object({
-  /** "false" apaga el mock; vacía o "true", queda prendido. */
-  NEXT_PUBLIC_API_MOCK: opcional(z.enum(["true", "false"], "tiene que ser true o false")).transform(
-    (valor) => valor !== "false",
-  ),
-  /** URL de la API real para el navegador: se va con el interruptor por dominio (fase 1.1.5). */
-  NEXT_PUBLIC_API_URL: opcional(z.url("tiene que ser una URL")),
-});
 
 function errorDeEnv(issues: z.core.$ZodIssue[]) {
   const renglones = issues.map((issue) => `  - ${issue.path.join(".") || "(general)"}: ${issue.message}`);
@@ -121,21 +122,7 @@ export function serverEnv(fuente: Fuente = process.env) {
   return resultado.data;
 }
 
-/**
- * Variables `NEXT_PUBLIC_*`, validadas. Se nombran una por una porque Next las
- * reemplaza en el código del navegador solo cuando aparecen escritas literalmente.
- */
-export function clientEnv() {
-  const resultado = esquemaNavegador.safeParse({
-    NEXT_PUBLIC_API_MOCK: process.env.NEXT_PUBLIC_API_MOCK,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-  });
-  if (!resultado.success) throw errorDeEnv(resultado.error.issues);
-  return resultado.data;
-}
-
 /** Valida todo de una vez. Se llama al arrancar el servidor. */
 export function validateEnv() {
   serverEnv();
-  clientEnv();
 }

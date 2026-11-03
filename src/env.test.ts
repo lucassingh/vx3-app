@@ -1,16 +1,12 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { clientEnv, serverEnv } from "./env";
+import { describe, expect, it } from "vitest";
+import { serverEnv } from "./env";
 
 const POOLER = "postgresql://user:pass@ep-jolly-sky-b66v587n-pooler.c-2.sa-east-1.aws.neon.tech/neondb?sslmode=require";
 const DIRECTA = "postgresql://user:pass@ep-jolly-sky-b66v587n.c-2.sa-east-1.aws.neon.tech/neondb?sslmode=require";
 const SECRETO = "x".repeat(32);
 
 const desarrollo = { NODE_ENV: "development", DATABASE_URL: POOLER, DATABASE_URL_UNPOOLED: DIRECTA };
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
 
 describe("serverEnv", () => {
   it("acepta una configuración de desarrollo completa y aplica los valores por defecto", () => {
@@ -61,6 +57,17 @@ describe("serverEnv", () => {
     expect(() => serverEnv({ ...desarrollo, DUX_ID_EMPRESA: "abc" })).toThrow(/DUX_ID_EMPRESA: .*entero positivo/);
   });
 
+  it("lee los dominios reales separados por coma y rechaza los que no existen", () => {
+    expect(serverEnv(desarrollo).API_REAL_DOMAINS).toEqual([]);
+    expect(serverEnv({ ...desarrollo, API_REAL_DOMAINS: "stock, catalogo" }).API_REAL_DOMAINS).toEqual([
+      "stock",
+      "catalogo",
+    ]);
+    expect(() => serverEnv({ ...desarrollo, API_REAL_DOMAINS: "stock,ventas" })).toThrow(
+      /API_REAL_DOMAINS.1: dominio desconocido/,
+    );
+  });
+
   it("valida la probabilidad de falla del mock", () => {
     expect(() => serverEnv({ ...desarrollo, MOCK_API_FAILURE_RATE: "2" })).toThrow(/va de 0 a 1/);
   });
@@ -69,19 +76,5 @@ describe("serverEnv", () => {
     expect(() => serverEnv({ NODE_ENV: "development", DUX_API_URL: "no-es-url" })).toThrow(
       /DUX_API_URL[\s\S]*DATABASE_URL[\s\S]*\.env\.example/,
     );
-  });
-});
-
-describe("clientEnv", () => {
-  it("deja el mock prendido salvo que diga false", () => {
-    vi.stubEnv("NEXT_PUBLIC_API_MOCK", "");
-    expect(clientEnv().NEXT_PUBLIC_API_MOCK).toBe(true);
-    vi.stubEnv("NEXT_PUBLIC_API_MOCK", "false");
-    expect(clientEnv().NEXT_PUBLIC_API_MOCK).toBe(false);
-  });
-
-  it("rechaza un valor que no es true ni false", () => {
-    vi.stubEnv("NEXT_PUBLIC_API_MOCK", "si");
-    expect(() => clientEnv()).toThrow(/NEXT_PUBLIC_API_MOCK: tiene que ser true o false/);
   });
 });

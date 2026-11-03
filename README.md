@@ -48,10 +48,11 @@ import { api } from "@/lib/api/server"; // Server Components
 import { api } from "@/lib/api/browser"; // Client Components
 ```
 
-`NEXT_PUBLIC_API_MOCK` elige entre la API simulada y la real (reiniciar
-`npm run dev` al cambiarla). Hoy pasa toda la app de una vez; en la fase 1.1
-pasa a elegirse por dominio, para que DUX sea real mientras el resto sigue
-simulado.
+Cada dominio (un módulo: `cobros`, `stock`, `catalogo`…) es simulado o real por
+separado. `API_REAL_DOMAINS` lista los reales, separados por coma; el resto usa la
+API simulada. Todo pasa por el endpoint único `/api/v1/*` de la app, que pide sesión
+y decide en el servidor (`src/lib/api/dispatch.ts`). Las implementaciones reales van
+en `src/lib/api/real-routes.ts`, con el mismo contrato que su mock.
 
 La API simulada vive en `src/mocks/`: `seed/` es la semilla compartida (SKUs
 reales, clientas, pedidos y anuncios coherentes entre pantallas), `domains/`

@@ -62,12 +62,15 @@ de pantalla en `src/components/kit/` (`KpiGrid`, `BarList`, `ColumnChart`,
   compone en un solo `api`.
 - Server Components: `import { api } from "@/lib/api/server"`.
   Client Components: `import { api } from "@/lib/api/browser"`.
-- **Mock sí o no: `NEXT_PUBLIC_API_MOCK`** (único interruptor, en
-  `src/lib/api/config.ts`). `true` o vacía: API simulada de `src/mocks/`, que el
-  servidor llama en proceso y el navegador vía `/api/mock/*`. `false`: API real
-  en `API_URL` (servidor) y `NEXT_PUBLIC_API_URL` (navegador); si faltan, el
-  error lo dice. Next la fija al compilar: después de cambiarla, reiniciar
-  `npm run dev`. Ver `.env.example`.
+- **Simulado o real, dominio por dominio: `API_REAL_DOMAINS`** (variable del
+  servidor, separada por comas; los dominios están en `src/lib/api/domains.ts`).
+  Todo pasa por el endpoint único `/api/v1/*` de la app, que pide sesión:
+  `src/lib/api/dispatch.ts` manda cada dominio a su implementación real
+  (`src/lib/api/real-routes.ts`) si figura en la variable, o a la API simulada
+  (`src/mocks/`) si no. El servidor lo llama en proceso; el navegador, por fetch.
+  Las rutas reales usan los mismos helpers y el mismo contrato que las simuladas
+  (`src/lib/api/route.ts`). Un dominio configurado como real sin implementación
+  responde 501. Ver `.env.example`.
 - La API simulada: `mocks/seed/` es la semilla compartida (productos reales del
   Excel con el motor de precios, clientas, anuncios, pedidos con sus montos,
   equipo y proveedores), así una clienta o un pedido es el mismo en todas las
@@ -90,9 +93,8 @@ de pantalla en `src/components/kit/` (`KpiGrid`, `BarList`, `ColumnChart`,
   (ver `notifications-menu.tsx`).
 - Textos que dependen de `Intl` (fechas, porcentajes) se formatean en el
   servidor con `src/lib/format.ts` y se pasan armados al cliente.
-- Backend real: `NEXT_PUBLIC_API_MOCK=false` + `API_URL` y `NEXT_PUBLIC_API_URL`; el token de sesión
-  se agrega en `withDefaults` (`src/lib/api/http.ts`). Los errores HTTP llegan
-  como `ApiError` (`status`, `message`).
+- Dominio real: sus rutas van en `src/lib/api/real-routes.ts` y se activa sumándolo
+  a `API_REAL_DOMAINS`. Los errores HTTP llegan como `ApiError` (`status`, `message`).
 - `MOCK_API_DELAY_MS` simula latencia; `MOCK_API_FAILURE_RATE=1` fuerza errores
   para revisar los estados de falla.
 
