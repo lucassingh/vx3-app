@@ -118,7 +118,12 @@ export function CuentasCaja({ items }: { items: CuentaView[] }) {
                   </Button>
                 </div>
               ) : (
-                <Button variant="ghost" size="sm" onClick={() => editar(item)} aria-label={`Corregir el saldo de ${item.nombre}`}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editar(item)}
+                  aria-label={`Corregir el saldo de ${item.nombre}`}
+                >
                   <Pencil aria-hidden />
                   Corregir
                 </Button>

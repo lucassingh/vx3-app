@@ -13,6 +13,12 @@
 # testing
 /coverage
 
+# cliente de Prisma generado (npm install o npm run db:generate)
+/src/generated/
+
+# dumps locales de la base (npm run db:dump)
+/backups/
+
 # next.js
 /.next/
 /out/

@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "@/hooks/use-theme";
 
-const iconClass =
-  "transition-[scale,rotate,opacity] duration-300 ease-snappy";
+const iconClass = "transition-[scale,rotate,opacity] duration-300 ease-snappy";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -24,13 +23,10 @@ export function ThemeToggle() {
           onClick={() => setTheme(isDark ? "light" : "dark")}
         >
           {/* Ambos íconos se renderizan; el CSS muestra el correcto antes de hidratar. */}
-          <Sun
-            data-theme-transition
-            className={`${iconClass} dark:-rotate-90 dark:scale-0 dark:opacity-0`}
-          />
+          <Sun data-theme-transition className={`${iconClass} dark:scale-0 dark:-rotate-90 dark:opacity-0`} />
           <Moon
             data-theme-transition
-            className={`${iconClass} absolute rotate-90 scale-0 opacity-0 dark:rotate-0 dark:scale-100 dark:opacity-100`}
+            className={`${iconClass} absolute scale-0 rotate-90 opacity-0 dark:scale-100 dark:rotate-0 dark:opacity-100`}
           />
         </Button>
       </TooltipTrigger>

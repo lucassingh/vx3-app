@@ -9,14 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel, Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
@@ -61,17 +54,13 @@ export async function SegmentosResumen({ searchParams }: { searchParams: Promise
           >
             <div className="flex items-center justify-between gap-2">
               <SegmentoBadge segmento={item.segmento} />
-              <span className="text-xs text-muted-foreground">
-                {selected ? "Filtrando" : "Filtrar"}
-              </span>
+              <span className="text-xs text-muted-foreground">{selected ? "Filtrando" : "Filtrar"}</span>
             </div>
             <p className="mt-4 flex items-baseline gap-1.5">
-              <span className="text-[1.75rem] font-semibold leading-none tracking-tight tabular-nums">
+              <span className="text-[1.75rem] leading-none font-semibold tracking-tight tabular-nums">
                 {item.clientas}
               </span>
-              <span className="text-[13px] text-muted-foreground">
-                {item.clientas === 1 ? "clienta" : "clientas"}
-              </span>
+              <span className="text-[13px] text-muted-foreground">{item.clientas === 1 ? "clienta" : "clientas"}</span>
             </p>
             <p className="mt-3 text-xs text-muted-foreground">
               <span className="font-medium text-foreground tabular-nums">
@@ -85,9 +74,7 @@ export async function SegmentosResumen({ searchParams }: { searchParams: Promise
               label={`Parte del margen de las clientas ${SEGMENTO[item.segmento].label.toLowerCase()}`}
               valueText={formatPercent(item.participacion, { maximumFractionDigits: 0 })}
             />
-            <p className="mt-3 text-pretty text-xs text-muted-foreground">
-              {SEGMENTO[item.segmento].description}
-            </p>
+            <p className="mt-3 text-xs text-pretty text-muted-foreground">{SEGMENTO[item.segmento].description}</p>
           </Link>
         );
       })}
@@ -129,9 +116,7 @@ export function ClientasCard({ searchParams }: { searchParams: Promise<SearchPar
       <CardHeader className="items-center pb-4">
         <div>
           <CardTitle>Todas las clientas</CardTitle>
-          <CardDescription>
-            Una ficha por teléfono normalizado, con lo que compró en cada canal
-          </CardDescription>
+          <CardDescription>Una ficha por teléfono normalizado, con lo que compró en cada canal</CardDescription>
         </div>
         <Suspense fallback={<SearchField disabled aria-label="Buscar clientas" />}>
           <UrlSearch label="Buscar clientas" placeholder="Nombre, teléfono o localidad" />
@@ -206,7 +191,7 @@ async function ClientasTable({ searchParams }: { searchParams: Promise<SearchPar
                     <Avatar name={clienta.nombre} />
                     <div className="min-w-0">
                       <p className="truncate font-medium">{clienta.nombre}</p>
-                      <p className="truncate text-xs tabular-nums text-muted-foreground">{clienta.telefono}</p>
+                      <p className="truncate text-xs text-muted-foreground tabular-nums">{clienta.telefono}</p>
                     </div>
                   </div>
                 </TableCell>
@@ -226,7 +211,7 @@ async function ClientasTable({ searchParams }: { searchParams: Promise<SearchPar
                 <TableCell className="text-right tabular-nums">{formatNumber(clienta.pedidos)}</TableCell>
                 <TableCell className="text-right">
                   <p className="font-medium tabular-nums">{formatCurrency(clienta.totalComprado)}</p>
-                  <p className="text-xs tabular-nums text-muted-foreground">
+                  <p className="text-xs text-muted-foreground tabular-nums">
                     Margen {formatCurrencyCompact(clienta.margen)}
                   </p>
                 </TableCell>

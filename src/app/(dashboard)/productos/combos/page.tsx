@@ -14,10 +14,7 @@ const HREF = "/productos/combos";
 export const metadata = getRouteMetadata(HREF);
 
 async function CombosLoader() {
-  const [facetas, inicial] = await Promise.all([
-    api.catalogo.facetas(),
-    api.catalogo.combos({ modo: "margen" }),
-  ]);
+  const [facetas, inicial] = await Promise.all([api.catalogo.facetas(), api.catalogo.combos({ modo: "margen" })]);
   return <CombosGenerador rubros={facetas.rubros} inicial={inicial} />;
 }
 

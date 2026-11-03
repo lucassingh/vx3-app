@@ -6,13 +6,7 @@ import { EmptyState } from "@/components/kit/empty-state";
 import { ProductThumb } from "@/components/kit/product-thumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/textarea";
 import { api } from "@/lib/api/browser";
@@ -51,21 +45,31 @@ function Flyer({ combo, formato, tema }: { combo: CatalogoCombo; formato: "feed"
         )}
       >
         <div aria-hidden className="flex h-full flex-col p-[6cqw]">
-          <p className="text-[3.6cqw] font-semibold uppercase tracking-[0.2em] opacity-80">VX3 · Ventas por Tres</p>
-          <p className="mt-[2cqw] text-[9cqw] font-semibold uppercase leading-none tracking-tight">{combo.nombre}</p>
+          <p className="text-[3.6cqw] font-semibold tracking-[0.2em] uppercase opacity-80">VX3 · Ventas por Tres</p>
+          <p className="mt-[2cqw] text-[9cqw] leading-none font-semibold tracking-tight uppercase">{combo.nombre}</p>
           <p className="mt-[2cqw] text-[3.8cqw] opacity-80">
             {combo.bultos} bultos · {combo.prendas} prendas
           </p>
           <div className={cn("mt-[4cqw] grid gap-[2cqw]", formato === "feed" ? "grid-cols-3" : "grid-cols-2")}>
             {combo.items.map((item) => (
-              <ProductThumb key={item.codigo} sku={item.sku} colors={item.colores} size="lg" className="rounded-[2cqw] border-0 text-[2.6cqw]" />
+              <ProductThumb
+                key={item.codigo}
+                sku={item.sku}
+                colors={item.colores}
+                size="lg"
+                className="rounded-[2cqw] border-0 text-[2.6cqw]"
+              />
             ))}
           </div>
           <div className="mt-auto pt-[4cqw]">
-            <p className="text-[3.6cqw] uppercase tracking-wide opacity-80">Precio del pack</p>
-            <p className="text-[12cqw] font-semibold leading-none tracking-tight tabular-nums">{formatCurrency(combo.total)}</p>
+            <p className="text-[3.6cqw] tracking-wide uppercase opacity-80">Precio del pack</p>
+            <p className="text-[12cqw] leading-none font-semibold tracking-tight tabular-nums">
+              {formatCurrency(combo.total)}
+            </p>
             <p className="mt-[1.5cqw] text-[4cqw] tabular-nums">{formatCurrency(porPrenda)} por prenda</p>
-            <p className="mt-[3cqw] text-[3.2cqw] opacity-75">Precio mayorista · colores sujetos a stock · pedilo por WhatsApp</p>
+            <p className="mt-[3cqw] text-[3.2cqw] opacity-75">
+              Precio mayorista · colores sujetos a stock · pedilo por WhatsApp
+            </p>
           </div>
         </div>
       </div>
@@ -76,13 +80,7 @@ function Flyer({ combo, formato, tema }: { combo: CatalogoCombo; formato: "feed"
   );
 }
 
-export function CombosGenerador({
-  rubros,
-  inicial,
-}: {
-  rubros: string[];
-  inicial: CatalogoCombosResultado;
-}) {
+export function CombosGenerador({ rubros, inicial }: { rubros: string[]; inicial: CatalogoCombosResultado }) {
   const [modo, setModo] = useState<CatalogoCombosModo>("margen");
   const [categoria, setCategoria] = useState(rubros.includes("Invierno") ? "Invierno" : (rubros[0] ?? ""));
   const [forzar, setForzar] = useState("");
@@ -104,10 +102,9 @@ export function CombosGenerador({
         });
         setResultado(nuevo);
         setSeleccion(nuevo.combos[0]?.id ?? "");
-        toast.success(
-          nuevo.combos.length === 1 ? "Se armó 1 combo" : `Se armaron ${nuevo.combos.length} combos`,
-          { description: "Con el costo vigente del stock, no el que congeló DUX en la venta." },
-        );
+        toast.success(nuevo.combos.length === 1 ? "Se armó 1 combo" : `Se armaron ${nuevo.combos.length} combos`, {
+          description: "Con el costo vigente del stock, no el que congeló DUX en la venta.",
+        });
       } catch {
         toast.error("No se pudieron generar los combos", { description: "Probá de nuevo en un momento." });
       }
@@ -226,7 +223,9 @@ export function CombosGenerador({
                           </span>
                         </span>
                         <span className="text-right">
-                          <span className="block text-lg font-semibold leading-6 tabular-nums">{formatCurrency(item.total)}</span>
+                          <span className="block text-lg leading-6 font-semibold tabular-nums">
+                            {formatCurrency(item.total)}
+                          </span>
                           <Badge variant={item.avisoMargen ? "warning" : "success"} dot>
                             Margen {porcentaje(item.margen, 0)}
                           </Badge>
@@ -236,7 +235,9 @@ export function CombosGenerador({
                         {item.items.map((linea) => (
                           <li key={linea.codigo} className="flex items-center gap-2.5 text-[13px]">
                             <ProductThumb sku="" colors={linea.colores} size="sm" className="size-6 rounded-md" />
-                            <span className="w-20 shrink-0 font-mono text-xs text-muted-foreground">{linea.codigo}</span>
+                            <span className="w-20 shrink-0 font-mono text-xs text-muted-foreground">
+                              {linea.codigo}
+                            </span>
                             <span className="min-w-0 flex-1 truncate">{linea.nombre}</span>
                             <span className="shrink-0 tabular-nums">{formatCurrency(linea.precio)}</span>
                           </li>
@@ -265,7 +266,11 @@ export function CombosGenerador({
               </div>
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
-              <div role="group" aria-label="Color del flyer" className="inline-flex rounded-lg border border-border bg-muted p-0.5">
+              <div
+                role="group"
+                aria-label="Color del flyer"
+                className="inline-flex rounded-lg border border-border bg-muted p-0.5"
+              >
                 {(Object.keys(TEMAS) as Tema[]).map((key) => (
                   <button
                     key={key}
@@ -319,7 +324,7 @@ export function CombosGenerador({
                   <li key={item.sku} className="flex items-center gap-3 py-2.5 text-sm">
                     <span className="w-16 shrink-0 font-mono text-xs text-muted-foreground">{item.sku}</span>
                     <span className="min-w-0 flex-1 truncate">{item.nombre}</span>
-                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                       <span className="font-medium text-warning">{formatNumber(item.bultos)} bultos</span> · vende{" "}
                       {formatNumber(item.rotacionSemanal)} por semana
                     </span>
@@ -333,7 +338,9 @@ export function CombosGenerador({
           <CardHeader>
             <div>
               <CardTitle>Costos sospechosos</CardTitle>
-              <CardDescription>DUX congela el costo en la venta y puede mostrar un margen falso (RN-109)</CardDescription>
+              <CardDescription>
+                DUX congela el costo en la venta y puede mostrar un margen falso (RN-109)
+              </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="pt-3">
@@ -344,8 +351,8 @@ export function CombosGenerador({
                     <span className="w-16 shrink-0 font-mono text-xs text-muted-foreground">{item.sku}</span>
                     <span className="min-w-0 flex-1 truncate">{item.nombre}</span>
                     <span className="shrink-0 text-xs tabular-nums">
-                      <span className="text-danger line-through">{porcentaje(item.margenAparente, 0)}</span>{" "}
-                      → <span className="font-medium">{porcentaje(item.margenReal, 0)}</span>
+                      <span className="text-danger line-through">{porcentaje(item.margenAparente, 0)}</span> →{" "}
+                      <span className="font-medium">{porcentaje(item.margenReal, 0)}</span>
                     </span>
                   </p>
                   <p className="pl-19 text-xs text-muted-foreground">{item.motivo}</p>

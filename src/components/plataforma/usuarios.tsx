@@ -1,22 +1,9 @@
 import { Check, Eye, Minus, ShieldCheck, ShieldOff } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SkeletonText, TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import type { AuditoriaEntry, NivelPermiso } from "@/lib/api/types";
@@ -86,7 +73,11 @@ export async function EquipoCard() {
                 <Badge variant={usuario.rol === "admin" ? "primary" : "outline"}>{ROL[usuario.rol]}</Badge>
               </TableCell>
               <TableCell className="text-muted-foreground first-letter:uppercase">
-                {usuario.ultimoAcceso ? <time dateTime={usuario.ultimoAcceso}>{cuando(usuario.ultimoAcceso)}</time> : "Nunca"}
+                {usuario.ultimoAcceso ? (
+                  <time dateTime={usuario.ultimoAcceso}>{cuando(usuario.ultimoAcceso)}</time>
+                ) : (
+                  "Nunca"
+                )}
               </TableCell>
               <TableCell>
                 {usuario.dosFactores ? (
@@ -132,9 +123,14 @@ function RolesFrame({ children }: { children: React.ReactNode }) {
       <CardHeader className="pb-4">
         <div>
           <CardTitle>Roles y permisos</CardTitle>
-          <CardDescription>Toda acción que mueve plata, stock o una regla queda en el registro, sea del rol que sea</CardDescription>
+          <CardDescription>
+            Toda acción que mueve plata, stock o una regla queda en el registro, sea del rol que sea
+          </CardDescription>
         </div>
-        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-label="Referencias">
+        <ul
+          className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
+          aria-label="Referencias"
+        >
           {(Object.keys(NIVEL) as NivelPermiso[]).map((nivel) => {
             const { label, icon: Icon, className } = NIVEL[nivel];
             return (
@@ -202,7 +198,15 @@ export function RolesSkeleton() {
 
 /* ---- Auditoría -------------------------------------------------------------- */
 
-function AuditoriaFrame({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function AuditoriaFrame({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
   return (
     <Card>
       <CardHeader>
@@ -241,7 +245,10 @@ export function AuditoriaSkeleton({ title = "Registro de auditoría" }: { title?
 export async function ActividadCard({ usuarioId }: { usuarioId: string }) {
   const entries = await api.plataforma.auditoria.list({ usuario: usuarioId });
   return (
-    <AuditoriaFrame title="Tu actividad reciente" description="Lo último que hiciste en la app, tal como queda en el registro">
+    <AuditoriaFrame
+      title="Tu actividad reciente"
+      description="Lo último que hiciste en la app, tal como queda en el registro"
+    >
       <AuditoriaList rows={toAuditoriaRows(entries.slice(0, 6))} filtros={false} />
     </AuditoriaFrame>
   );

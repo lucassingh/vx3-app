@@ -15,7 +15,7 @@ export function CasosTabs({
           {tabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
-              <span className="tabular-nums text-muted-foreground">{tab.count}</span>
+              <span className="text-muted-foreground tabular-nums">{tab.count}</span>
             </TabsTrigger>
           ))}
         </TabsList>

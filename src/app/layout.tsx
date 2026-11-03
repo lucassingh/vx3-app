@@ -24,11 +24,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang={siteConfig.lang}
-      className={cn(fontSans.variable, fontMono.variable)}
-      suppressHydrationWarning
-    >
+    <html lang={siteConfig.lang} className={cn(fontSans.variable, fontMono.variable)} suppressHydrationWarning>
       <head>
         {/* Aplica tema y estado del aside antes del primer paint. */}
         <script dangerouslySetInnerHTML={{ __html: getPreferencesScript() }} />

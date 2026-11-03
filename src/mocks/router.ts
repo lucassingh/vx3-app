@@ -13,7 +13,8 @@ import { routes as plataforma } from "./domains/plataforma";
 import { routes as postventa } from "./domains/postventa";
 import { routes as stock } from "./domains/stock";
 import { routes as vidriera } from "./domains/vidriera";
-import { errorResponse, type Route } from "./http";
+import { errorResponse, routeParams, type Route } from "./http";
+import { serverEnv } from "@/env";
 
 export { MOCK_API_PREFIX };
 
@@ -26,7 +27,7 @@ export { MOCK_API_PREFIX };
  *   MOCK_API_DELAY_MS      latencia base en ms (default 350, con ±30 % de variación)
  *   MOCK_API_FAILURE_RATE  probabilidad de 0 a 1 de responder 503 (default 0)
  */
-const routes: Route[] = [
+export const mockRoutes: Route[] = [
   ...dashboard,
   ...notifications,
   ...conversaciones,
@@ -44,29 +45,33 @@ const routes: Route[] = [
 ];
 
 function simulateLatency() {
-  const base = Number(process.env.MOCK_API_DELAY_MS ?? 350);
-  if (!Number.isFinite(base) || base <= 0) return Promise.resolve();
+  const base = serverEnv().MOCK_API_DELAY_MS;
+  if (base <= 0) return Promise.resolve();
   const jitter = base * 0.3 * (Math.random() * 2 - 1);
   return new Promise((resolve) => setTimeout(resolve, Math.round(base + jitter)));
 }
 
 function shouldFail() {
-  const rate = Number(process.env.MOCK_API_FAILURE_RATE ?? 0);
-  return Number.isFinite(rate) && rate > 0 && Math.random() < rate;
+  const rate = serverEnv().MOCK_API_FAILURE_RATE;
+  return rate > 0 && Math.random() < rate;
 }
 
-export async function handleMockRequest(request: Request): Promise<Response> {
+/**
+ * Atiende un request de la API simulada. `path` es la ruta sin prefijo ("/cobros/caja");
+ * si no viene, se toma del request, que entonces tiene que empezar con MOCK_API_PREFIX.
+ */
+export async function handleMockRequest(request: Request, path?: string): Promise<Response> {
   const url = new URL(request.url);
-  const path = url.pathname.slice(MOCK_API_PREFIX.length) || "/";
+  const ruta = path ?? (url.pathname.slice(MOCK_API_PREFIX.length) || "/");
 
   await simulateLatency();
   if (shouldFail()) {
     return errorResponse(503, "La API simulada falló a propósito (MOCK_API_FAILURE_RATE).");
   }
 
-  for (const route of routes) {
-    const match = route.method === request.method ? path.match(route.pattern) : null;
-    if (match) return route.handler({ url, params: match.slice(1), request });
+  for (const route of mockRoutes) {
+    const match = route.method === request.method ? ruta.match(route.pattern) : null;
+    if (match) return route.handler({ url, params: routeParams(match), request });
   }
-  return errorResponse(404, `No existe ${request.method} ${path} en la API simulada.`);
+  return errorResponse(404, `No existe ${request.method} ${ruta} en la API simulada.`);
 }

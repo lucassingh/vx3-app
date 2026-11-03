@@ -141,17 +141,24 @@ export function MessageItem({ mensaje }: { mensaje: MensajeView }) {
 
     case "producto":
       return (
-        <Bubble side="out" tone={mensaje.autor === "bot" ? "bot" : "persona"} author={mensaje.autor === "bot" ? botAuthor : undefined}>
+        <Bubble
+          side="out"
+          tone={mensaje.autor === "bot" ? "bot" : "persona"}
+          author={mensaje.autor === "bot" ? botAuthor : undefined}
+        >
           <div className="flex gap-3 rounded-xl border border-border bg-surface p-2.5 text-foreground">
             <ProductThumb sku={mensaje.sku} colors={mensaje.colores} size="md" />
             <div className="min-w-0 space-y-0.5">
-              <p className="line-clamp-2 text-[13px] font-medium leading-snug">{mensaje.nombre}</p>
+              <p className="line-clamp-2 text-[13px] leading-snug font-medium">{mensaje.nombre}</p>
               <p className="text-xs text-muted-foreground">
                 {mensaje.presentacion} ·{" "}
                 <span className="font-semibold text-foreground tabular-nums">{mensaje.montos?.precio}</span>
               </p>
               <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                <span className={cn("size-1.5 rounded-full", mensaje.stockBultos > 3 ? "bg-success" : "bg-warning")} aria-hidden />
+                <span
+                  className={cn("size-1.5 rounded-full", mensaje.stockBultos > 3 ? "bg-success" : "bg-warning")}
+                  aria-hidden
+                />
                 {mensaje.stockBultos} {mensaje.stockBultos === 1 ? "bulto disponible" : "bultos disponibles"}
               </p>
               <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
@@ -207,10 +214,14 @@ export function MessageItem({ mensaje }: { mensaje: MensajeView }) {
             </span>
             <span aria-hidden className="flex h-5 items-center gap-0.5">
               {[3, 7, 4, 9, 6, 11, 5, 8, 4, 10, 6, 3, 7, 5].map((height, index) => (
-                <span key={index} className="w-0.5 rounded-full bg-muted-foreground/60" style={{ height: `${height * 1.6}px` }} />
+                <span
+                  key={index}
+                  className="w-0.5 rounded-full bg-muted-foreground/60"
+                  style={{ height: `${height * 1.6}px` }}
+                />
               ))}
             </span>
-            <span className="text-xs tabular-nums text-muted-foreground">Audio · {mensaje.duracion}</span>
+            <span className="text-xs text-muted-foreground tabular-nums">Audio · {mensaje.duracion}</span>
           </p>
           <p className="mt-2 border-t border-border pt-2 text-[13px] leading-relaxed">
             <span className="text-xs font-medium text-muted-foreground">Transcripción: </span>

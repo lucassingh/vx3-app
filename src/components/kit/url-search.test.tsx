@@ -29,10 +29,9 @@ describe("UrlSearch", () => {
     await user.clear(input);
     await user.type(input, "V-1043");
 
-    await waitFor(
-      () => expect(replace).toHaveBeenCalledWith("/pedidos/bandeja?q=V-1043", { scroll: false }),
-      { timeout: 2000 },
-    );
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/pedidos/bandeja?q=V-1043", { scroll: false }), {
+      timeout: 2000,
+    });
     expect(replace).toHaveBeenCalledTimes(1);
   });
 

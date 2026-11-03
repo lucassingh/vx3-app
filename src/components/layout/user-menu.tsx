@@ -49,9 +49,7 @@ export function UserMenu() {
         <DropdownMenuLabel className="flex items-center gap-3 py-2 font-normal">
           <Avatar name={currentUser.name} src={currentUser.avatarUrl} className="size-9" />
           <span className="flex min-w-0 flex-col">
-            <span className="truncate text-sm font-medium text-foreground">
-              {currentUser.name}
-            </span>
+            <span className="truncate text-sm font-medium text-foreground">{currentUser.name}</span>
             <span className="truncate text-xs text-muted-foreground">{currentUser.email}</span>
           </span>
         </DropdownMenuLabel>
@@ -75,10 +73,7 @@ export function UserMenu() {
               Tema
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup
-                value={theme}
-                onValueChange={(value) => setTheme(value as ThemePreference)}
-              >
+              <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as ThemePreference)}>
                 {themeOptions.map(({ value, label, icon: Icon }) => (
                   <DropdownMenuRadioItem key={value} value={value}>
                     <Icon aria-hidden />

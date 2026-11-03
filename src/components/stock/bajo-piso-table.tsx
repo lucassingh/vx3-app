@@ -6,14 +6,7 @@ import { EmptyState } from "@/components/kit/empty-state";
 import { porcentaje } from "@/components/productos/porcentaje";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api } from "@/lib/api/browser";
 import type { MargenBajoPiso } from "@/lib/api/types";
 import { formatCurrency } from "@/lib/format";

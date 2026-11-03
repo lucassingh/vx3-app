@@ -1,13 +1,7 @@
 import { Eye, PackageOpen, ShoppingCart, Unlock } from "lucide-react";
 import { Funnel } from "@/components/kit/funnel";
 import { KpiGrid, KpiGridSkeleton } from "@/components/kit/kpi-grid";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel, Skeleton } from "@/components/ui/skeleton";
 import { BarListSkeleton, CardSkeleton, SkeletonText } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
@@ -37,7 +31,8 @@ function EmbudoFrame({ children }: { children: React.ReactNode }) {
         <div>
           <CardTitle>Embudo de la vidriera</CardTitle>
           <CardDescription>
-            De la visita al pedido, en los últimos 7 días. Estos eventos también se le mandan a Meta para optimizar la pauta.
+            De la visita al pedido, en los últimos 7 días. Estos eventos también se le mandan a Meta para optimizar la
+            pauta.
           </CardDescription>
         </div>
       </CardHeader>

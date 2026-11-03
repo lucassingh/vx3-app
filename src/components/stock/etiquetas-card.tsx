@@ -3,13 +3,7 @@
 import { FileDown, LoaderCircle, Tags } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/textarea";
 import { api } from "@/lib/api/browser";
@@ -43,7 +37,9 @@ export function EtiquetasCard({ rubros }: { rubros: string[] }) {
             <Tags aria-hidden className="size-4 text-primary" />
             Etiquetas del salón
           </CardTitle>
-          <CardDescription>Con los dos precios del local: TARJETA/QR y EF/TR, tomados de DUX en el momento</CardDescription>
+          <CardDescription>
+            Con los dos precios del local: TARJETA/QR y EF/TR, tomados de DUX en el momento
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-5">

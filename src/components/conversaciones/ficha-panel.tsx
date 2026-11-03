@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  ArrowUpRight,
-  Calculator,
-  LifeBuoy,
-  MapPin,
-  Megaphone,
-  Phone,
-  Plus,
-  Truck,
-} from "lucide-react";
+import { ArrowUpRight, Calculator, LifeBuoy, MapPin, Megaphone, Phone, Plus, Truck } from "lucide-react";
 import Link from "next/link";
 import { EstadoPedidoBadge, SegmentoBadge } from "@/components/kit/badges";
 import { Avatar } from "@/components/ui/avatar";
@@ -19,6 +10,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { TRANSPORTE, ZONA } from "@/lib/domain";
 import { toast } from "@/lib/toast";
 import type { ConversacionView } from "./view";
+import { primerNombre } from "@/lib/format";
 
 const ORIGEN_CLIENTA = {
   anuncio: "Anuncio",
@@ -51,9 +43,8 @@ function Stat({ label, value }: { label: string; value: string }) {
 /** Ficha de la clienta al costado del chat (RF-M11-02) y acciones desde el chat (RF-M11-06). */
 export function FichaPanel({ conversacion }: { conversacion: ConversacionView }) {
   const { clienta, ficha, fichaLabels } = conversacion;
-  const nombre = clienta.nombre.split(" ")[0];
-  const desde =
-    ficha.clientaDesdeDias === 0 ? "Primera compra hoy" : `Clienta hace ${ficha.clientaDesdeDias} días`;
+  const nombre = primerNombre(clienta.nombre);
+  const desde = ficha.clientaDesdeDias === 0 ? "Primera compra hoy" : `Clienta hace ${ficha.clientaDesdeDias} días`;
 
   return (
     <div className="space-y-6 p-5">
@@ -72,7 +63,11 @@ export function FichaPanel({ conversacion }: { conversacion: ConversacionView })
         <Row icon={Phone} label="Teléfono (identidad de la clienta)">
           <span className="flex items-center gap-1">
             <span className="tabular-nums">{clienta.telefono}</span>
-            <CopyButton value={clienta.telefono} label={`Copiar el teléfono de ${clienta.nombre}`} successMessage="Teléfono copiado" />
+            <CopyButton
+              value={clienta.telefono}
+              label={`Copiar el teléfono de ${clienta.nombre}`}
+              successMessage="Teléfono copiado"
+            />
           </span>
         </Row>
         <Row icon={MapPin} label="Localidad">

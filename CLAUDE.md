@@ -1,10 +1,10 @@
 @AGENTS.md
 
-# Dashboard starter
+# VX3 app
 
-Plantilla base de dashboard reutilizable (Next 16 · React 19 · Tailwind 4 · TypeScript).
-El objetivo es adaptar marca y navegación en minutos y dedicar el tiempo al
-contenido del negocio.
+App de gestión de VX3, construida sobre el starter de dashboard de Más Uno
+(Next 16 · React 19 · Tailwind 4 · TypeScript). Marca y navegación viven en
+`src/config/`; el resto es contenido del negocio, un dominio por módulo.
 
 ## Adaptar a un cliente nuevo
 
@@ -43,12 +43,12 @@ Conversaciones · M12 Clientas · M9 Pauta · M3 Bot · M4 Vidriera · M5 Pedido
 M6 Envíos · M7 Cobros · M8 Post-venta · M1 Productos · M2 Stock y compras ·
 M0 Configuración. Cada módulo es un **dominio** con los mismos archivos:
 
-| Qué | Dónde |
-| --- | --- |
-| Tipos y endpoints | `src/lib/api/contracts/<dominio>.ts` |
+| Qué                              | Dónde                                                    |
+| -------------------------------- | -------------------------------------------------------- |
+| Tipos y endpoints                | `src/lib/api/contracts/<dominio>.ts`                     |
 | Rutas y datos de la API simulada | `src/mocks/domains/<dominio>.ts` (+ `<dominio>.test.ts`) |
-| Componentes | `src/components/<dominio>/` |
-| Pantallas | `src/app/(dashboard)/<ruta>/page.tsx` |
+| Componentes                      | `src/components/<dominio>/`                              |
+| Pantallas                        | `src/app/(dashboard)/<ruta>/page.tsx`                    |
 
 Lo compartido: tipos de negocio en `src/lib/api/types.ts` (canal, estado del
 pedido, zona…), sus etiquetas y badges en `src/lib/domain.ts`, y los bloques
@@ -62,12 +62,15 @@ de pantalla en `src/components/kit/` (`KpiGrid`, `BarList`, `ColumnChart`,
   compone en un solo `api`.
 - Server Components: `import { api } from "@/lib/api/server"`.
   Client Components: `import { api } from "@/lib/api/browser"`.
-- **Mock sí o no: `NEXT_PUBLIC_API_MOCK`** (único interruptor, en
-  `src/lib/api/config.ts`). `true` o vacía: API simulada de `src/mocks/`, que el
-  servidor llama en proceso y el navegador vía `/api/mock/*`. `false`: API real
-  en `API_URL` (servidor) y `NEXT_PUBLIC_API_URL` (navegador); si faltan, el
-  error lo dice. Next la fija al compilar: después de cambiarla, reiniciar
-  `npm run dev`. Ver `.env.example`.
+- **Simulado o real, dominio por dominio: `API_REAL_DOMAINS`** (variable del
+  servidor, separada por comas; los dominios están en `src/lib/api/domains.ts`).
+  Todo pasa por el endpoint único `/api/v1/*` de la app, que pide sesión:
+  `src/lib/api/dispatch.ts` manda cada dominio a su implementación real
+  (`src/lib/api/real-routes.ts`) si figura en la variable, o a la API simulada
+  (`src/mocks/`) si no. El servidor lo llama en proceso; el navegador, por fetch.
+  Las rutas reales usan los mismos helpers y el mismo contrato que las simuladas
+  (`src/lib/api/route.ts`). Un dominio configurado como real sin implementación
+  responde 501. Ver `.env.example`.
 - La API simulada: `mocks/seed/` es la semilla compartida (productos reales del
   Excel con el motor de precios, clientas, anuncios, pedidos con sus montos,
   equipo y proveedores), así una clienta o un pedido es el mismo en todas las
@@ -90,9 +93,8 @@ de pantalla en `src/components/kit/` (`KpiGrid`, `BarList`, `ColumnChart`,
   (ver `notifications-menu.tsx`).
 - Textos que dependen de `Intl` (fechas, porcentajes) se formatean en el
   servidor con `src/lib/format.ts` y se pasan armados al cliente.
-- Backend real: `NEXT_PUBLIC_API_MOCK=false` + `API_URL` y `NEXT_PUBLIC_API_URL`; el token de sesión
-  se agrega en `withDefaults` (`src/lib/api/http.ts`). Los errores HTTP llegan
-  como `ApiError` (`status`, `message`).
+- Dominio real: sus rutas van en `src/lib/api/real-routes.ts` y se activa sumándolo
+  a `API_REAL_DOMAINS`. Los errores HTTP llegan como `ApiError` (`status`, `message`).
 - `MOCK_API_DELAY_MS` simula latencia; `MOCK_API_FAILURE_RATE=1` fuerza errores
   para revisar los estados de falla.
 
@@ -145,7 +147,6 @@ Las cards son blancas con borde fino (`Card`, `CardHeader`, `CardTitle`,
   `action: { label: "Reintentar", onClick }`; operaciones async con
   `toast.promise(promesa, { loading, success, error })`; acciones reversibles
   con `action: { label: "Deshacer", … }`.
-- Ejemplos en vivo en Ajustes (`components/views/toast-showcase.tsx`).
 - En tests, mockear `@/lib/toast` y verificar las llamadas
   (ver `notifications-menu.test.tsx`).
 

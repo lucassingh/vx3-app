@@ -89,8 +89,8 @@ export async function CajaView() {
             <div>
               <CardTitle>Cuentas</CardTitle>
               <CardDescription>
-                El saldo de cada banco sale del último extracto importado. Si alguno está viejo o el efectivo cambió,
-                se corrige acá y la cuenta se rehace sola.
+                El saldo de cada banco sale del último extracto importado. Si alguno está viejo o el efectivo cambió, se
+                corrige acá y la cuenta se rehace sola.
               </CardDescription>
             </div>
           </CardHeader>
@@ -144,11 +144,7 @@ function CalculoCard({ data }: { data: CajaDelDia }) {
             detalle={`Vencen ${formatCurrency(proximos)} y se espera cobrar ${formatCurrency(data.ingresosEsperados)}`}
             value={`− ${formatCurrency(data.reserva)}`}
           />
-          <Fila
-            label="Para mercadería hoy"
-            value={formatCurrency(Math.max(0, data.capacidadCompra))}
-            strong
-          />
+          <Fila label="Para mercadería hoy" value={formatCurrency(Math.max(0, data.capacidadCompra))} strong />
         </dl>
         <div className="mt-4 space-y-1.5 rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
           <p className="font-medium text-foreground">Lo que se espera cobrar</p>

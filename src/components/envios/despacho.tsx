@@ -1,13 +1,4 @@
-import {
-  CircleAlert,
-  CircleCheck,
-  Clock,
-  Mail,
-  PackageOpen,
-  Store,
-  Truck,
-  type LucideIcon,
-} from "lucide-react";
+import { CircleAlert, CircleCheck, Clock, Mail, PackageOpen, Store, Truck, type LucideIcon } from "lucide-react";
 import { EmptyState } from "@/components/kit/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -43,7 +34,10 @@ const CORTE: Record<GrupoDespacho["corteEstado"], { label: string; variant: "suc
   sin_corte: { label: "Sin corte", variant: "neutral" },
 };
 
-const ESTADO_ENVIO: Record<EnvioDelDia["estado"], { label: string; variant: "warning" | "neutral" | "accent" | "primary" | "success" }> = {
+const ESTADO_ENVIO: Record<
+  EnvioDelDia["estado"],
+  { label: string; variant: "warning" | "neutral" | "accent" | "primary" | "success" }
+> = {
   esperando_pago: { label: "Esperando el pago", variant: "warning" },
   por_facturar: { label: "Falta facturar", variant: "neutral" },
   en_armado: { label: "En armado", variant: "accent" },
@@ -89,7 +83,7 @@ function GrupoCard({ grupo }: { grupo: GrupoDespacho }) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {grupo.corte && (
-            <span className="inline-flex items-center gap-1.5 text-[13px] tabular-nums text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground tabular-nums">
               <Clock aria-hidden className="size-3.5" />
               Corte {grupo.corte}
             </span>
@@ -192,7 +186,11 @@ function EnvioRow({ envio, transporte }: { envio: EnvioDelDia; transporte: Trans
         ) : (
           <span className="flex items-center gap-1">
             <span className="max-w-40 truncate font-mono text-[11px] text-muted-foreground">{envio.seguimiento}</span>
-            <CopyButton value={url} label={`Copiar el link de seguimiento de ${envio.pedidoId}`} successMessage="Link de seguimiento copiado" />
+            <CopyButton
+              value={url}
+              label={`Copiar el link de seguimiento de ${envio.pedidoId}`}
+              successMessage="Link de seguimiento copiado"
+            />
           </span>
         )}
       </TableCell>
@@ -238,7 +236,9 @@ function DesviosFrame({ umbral, children }: { umbral?: React.ReactNode; children
 export async function DesviosCard() {
   const { umbral, casos } = await api.envios.desvios();
   return (
-    <DesviosFrame umbral={<Badge variant="outline">Alerta arriba del {formatPercent(umbral, { maximumFractionDigits: 0 })}</Badge>}>
+    <DesviosFrame
+      umbral={<Badge variant="outline">Alerta arriba del {formatPercent(umbral, { maximumFractionDigits: 0 })}</Badge>}
+    >
       <Table className="min-w-3xl">
         <TableHeader>
           <TableRow>

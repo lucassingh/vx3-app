@@ -12,15 +12,7 @@ import { currentUser } from "@/lib/auth";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { defineStore } from "../db";
 import { errorResponse, readJson, type Route } from "../http";
-import {
-  anuncios,
-  DAY,
-  getProducto,
-  HOUR,
-  isoAgo,
-  TIPO_CAMBIO_USD,
-  type AnuncioSeed,
-} from "../seed";
+import { anuncios, DAY, getProducto, HOUR, isoAgo, TIPO_CAMBIO_USD, type AnuncioSeed } from "../seed";
 
 /**
  * M9 · Pauta en Meta. Gasto en USD (RN-111), ventas verificadas y margen real
@@ -83,8 +75,13 @@ function readPeriodo(url: URL): PeriodoPauta {
   return url.searchParams.get("dias") === "14" ? 14 : 7;
 }
 
-function filaDe(anuncio: AnuncioSeed, periodo: PeriodoPauta, tipoCambio: number, estado: AnuncioSeed["estado"]): AnuncioFila {
-  const factor = periodo === 14 ? FACTOR_14[anuncio.id] ?? 2 : 1;
+function filaDe(
+  anuncio: AnuncioSeed,
+  periodo: PeriodoPauta,
+  tipoCambio: number,
+  estado: AnuncioSeed["estado"],
+): AnuncioFila {
+  const factor = periodo === 14 ? (FACTOR_14[anuncio.id] ?? 2) : 1;
   const gastoUsd = Math.round(anuncio.gastoUsd7d * factor);
   const conversaciones = Math.round(anuncio.conversaciones7d * factor);
   const legado14 = periodo === 14 && anuncio.gastoUsd7d === 0;
@@ -258,9 +255,10 @@ function presupuesto(now: number): PresupuestoMes {
   const campanas: CampanaPresupuesto[] = series.map(({ campana, propios, dias }) => {
     const gastadoUsd = Math.round(dias.reduce((sum, value) => sum + value, 0));
     const completos = dias.slice(0, -1);
-    const promedio = completos.length > 0
-      ? completos.reduce((sum, value) => sum + value, 0) / completos.length
-      : (dias[0] ?? 0) / 0.55;
+    const promedio =
+      completos.length > 0
+        ? completos.reduce((sum, value) => sum + value, 0) / completos.length
+        : (dias[0] ?? 0) / 0.55;
     const proyeccionUsd = Math.round(gastadoUsd + promedio * (diasDelMes - day + 0.45));
     const presupuestoUsd = state.presupuestos.get(campana.id) ?? 0;
     const gasto7d = propios.reduce((sum, anuncio) => sum + anuncio.gastoUsd7d, 0) * state.tipoCambio.valor;
@@ -283,7 +281,7 @@ function presupuesto(now: number): PresupuestoMes {
   const mm = String(month).padStart(2, "0");
   const gastoDiario: DailyPoint[] = Array.from({ length: day }, (_, index) => ({
     date: `${year}-${mm}-${String(index + 1).padStart(2, "0")}`,
-    value: Math.round(series.reduce((sum, { dias }) => sum + dias[index], 0) * 100) / 100,
+    value: Math.round(series.reduce((sum, { dias }) => sum + (dias[index] ?? 0), 0) * 100) / 100,
   }));
 
   return { mes, dia: day, diasDelMes, tipoCambio: state.tipoCambio.valor, campanas, gastoDiario };
@@ -361,7 +359,12 @@ export const routes: Route[] = [
       const campana = CAMPANAS.find((item) => item.id === decodeURIComponent(id));
       if (!campana) return errorResponse(404, `No existe la campaña ${id}.`);
       const { presupuestoUsd } = await readJson<{ presupuestoUsd: number }>(request);
-      if (typeof presupuestoUsd !== "number" || !Number.isFinite(presupuestoUsd) || presupuestoUsd <= 0 || presupuestoUsd > 100_000) {
+      if (
+        typeof presupuestoUsd !== "number" ||
+        !Number.isFinite(presupuestoUsd) ||
+        presupuestoUsd <= 0 ||
+        presupuestoUsd > 100_000
+      ) {
         return errorResponse(400, "El presupuesto tiene que ser un monto en dólares mayor a 0.");
       }
       getState().presupuestos.set(campana.id, Math.round(presupuestoUsd));

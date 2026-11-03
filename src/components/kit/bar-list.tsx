@@ -30,7 +30,7 @@ export function BarList({ items, className }: { items: BarListItem[]; className?
         <li key={item.id} className="space-y-2">
           <div className="flex items-baseline justify-between gap-3 text-sm">
             <span className="min-w-0 truncate">{item.label}</span>
-            <span className="shrink-0 tabular-nums text-muted-foreground">
+            <span className="shrink-0 text-muted-foreground tabular-nums">
               <span className="font-medium text-foreground">{item.valueLabel}</span>
               {item.detail && ` · ${item.detail}`}
             </span>

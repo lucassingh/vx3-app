@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { beforeEach, describe, expect, it } from "vitest";
 import type {
   ApiErrorBody,
@@ -40,12 +39,17 @@ beforeEach(() => {
 describe("catálogo", () => {
   it("sugiere el próximo SKU correlativo del subrubro en DUX", async () => {
     const { body } = await call<CatalogoAltaOpciones>("/catalogo/alta/opciones");
-    const sub = body.rubros.find((r) => r.rubro === "Conjuntos")?.subrubros.find((s) => s.nombre === "Armado tres piezas");
+    const sub = body.rubros
+      .find((r) => r.rubro === "Conjuntos")
+      ?.subrubros.find((s) => s.nombre === "Armado tres piezas");
     expect(sub).toMatchObject({ prefijo: "CJATN", proximoSku: "CJATN42", nombreBase: "Conjunto armado tres piezas" });
   });
 
   it("bloquea el alta con un SKU que termina en pack (RN-98) y publica uno válido", async () => {
-    const invalido = await call<ApiErrorBody>("/catalogo/alta/publicar", post({ input: { ...input, sku: "CJATN42-6" }, paso: "dux" }));
+    const invalido = await call<ApiErrorBody>(
+      "/catalogo/alta/publicar",
+      post({ input: { ...input, sku: "CJATN42-6" }, paso: "dux" }),
+    );
     expect(invalido.status).toBe(422);
 
     for (const paso of ["dux", "precios", "tiendanube"]) {

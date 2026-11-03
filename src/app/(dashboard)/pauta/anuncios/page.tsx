@@ -60,7 +60,10 @@ export default function Page({ searchParams }: { searchParams: Promise<SearchPar
           <AsyncWidget title="el tipo de cambio" fallback={<ConfigCardSkeleton title="Tipo de cambio" />}>
             <TipoCambioCard />
           </AsyncWidget>
-          <AsyncWidget title="el envío de ventas a Meta" fallback={<ConfigCardSkeleton title="Ventas devueltas a Meta" />}>
+          <AsyncWidget
+            title="el envío de ventas a Meta"
+            fallback={<ConfigCardSkeleton title="Ventas devueltas a Meta" />}
+          >
             <ConversionesCard />
           </AsyncWidget>
         </div>

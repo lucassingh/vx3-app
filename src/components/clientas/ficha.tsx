@@ -73,7 +73,7 @@ export async function FichaFromParams({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3">
-      <h3 className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{title}</h3>
+      <h3 className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">{title}</h3>
       {children}
     </section>
   );
@@ -120,7 +120,7 @@ async function FichaContent({ id }: { id: string }) {
         </dl>
 
         <Section title="Identidad">
-          <p className="text-pretty text-[13px] text-muted-foreground">
+          <p className="text-[13px] text-pretty text-muted-foreground">
             Teléfono normalizado{" "}
             <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
               {ficha.telefonoNormalizado}
@@ -194,15 +194,13 @@ async function FichaContent({ id }: { id: string }) {
                       <p className="text-sm font-medium">{evento.titulo}</p>
                       {evento.estado && <EstadoPedidoBadge estado={evento.estado} />}
                     </div>
-                    <p className="mt-0.5 text-pretty text-[13px] text-muted-foreground">{evento.detalle}</p>
+                    <p className="mt-0.5 text-[13px] text-pretty text-muted-foreground">{evento.detalle}</p>
                     <p className="mt-1 flex flex-wrap gap-x-2 text-xs text-muted-foreground">
                       <time dateTime={evento.fecha} className="first-letter:uppercase">
                         {formatRelativeTime(evento.fecha)}
                       </time>
                       {evento.monto !== undefined && (
-                        <span className="font-medium text-foreground tabular-nums">
-                          {formatCurrency(evento.monto)}
-                        </span>
+                        <span className="font-medium text-foreground tabular-nums">{formatCurrency(evento.monto)}</span>
                       )}
                     </p>
                   </div>

@@ -12,7 +12,7 @@ import type {
   SegmentoResumen,
 } from "@/lib/api/types";
 import { BANCO, TRANSPORTE } from "@/lib/domain";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, primerNombre } from "@/lib/format";
 import { normalizeText } from "@/lib/utils";
 import { defineStore } from "../db";
 import { errorResponse, paginate, readJson, type Route } from "../http";
@@ -80,9 +80,7 @@ function toFila(clienta: ClientaSeed): ClientaFila {
 }
 
 const pedidosDe = (clientaId: string) =>
-  pedidos
-    .filter((pedido) => pedido.clientaId === clientaId)
-    .toSorted((a, b) => a.creadoHaceMin - b.creadoHaceMin);
+  pedidos.filter((pedido) => pedido.clientaId === clientaId).toSorted((a, b) => a.creadoHaceMin - b.creadoHaceMin);
 
 /** Estados en los que el pedido ya es una compra firme. */
 const COMPRADO = new Set(["listo_facturar", "facturado", "en_armado", "despachado", "entregado", "cobrado", "rendido"]);
@@ -204,7 +202,8 @@ function eventosDePedido(pedido: PedidoSeed, now: number): FichaEvento[] {
     eventos.push({
       id: `${pedido.id}-rendicion`,
       tipo: "cobro",
-      titulo: pedido.estado === "rendido" ? "Contraentrega rendida por Transtech" : "Transtech cobró: falta la rendición",
+      titulo:
+        pedido.estado === "rendido" ? "Contraentrega rendida por Transtech" : "Transtech cobró: falta la rendición",
       detalle: `Pedido ${pedido.id}`,
       fecha: isoAgo(Math.max(5, Math.round(pedido.creadoHaceMin * 0.3)), now),
       monto: detalle.total,
@@ -321,7 +320,9 @@ function motivoRecompra(clienta: ClientaSeed, tipo: RecompraTipo) {
   if (tipo === "dormida") return `${ultimaCompraDias} días sin comprar`;
   if (tipo === "reposicion" && cicloDias) {
     const faltan = cicloDias - ultimaCompraDias;
-    return faltan <= 0 ? `Repone cada ${cicloDias} días: le toca hoy` : `Repone cada ${cicloDias} días: le toca en ${faltan}`;
+    return faltan <= 0
+      ? `Repone cada ${cicloDias} días: le toca hoy`
+      : `Repone cada ${cicloDias} días: le toca en ${faltan}`;
   }
   if (cicloDias && ultimaCompraDias > cicloDias) return `Compra cada ${cicloDias} días y van ${ultimaCompraDias}`;
   return "Su ritmo de compra bajó en los últimos dos meses";
@@ -335,7 +336,7 @@ function comoSeLlama(sku: string) {
 
 /** RN-74: tono VX3, cercano y con presión sutil; nunca el mismo texto para todas. */
 function mensajeSugerido(clienta: ClientaSeed, tipo: RecompraTipo, sku: string | undefined, index: number) {
-  const nombre = clienta.nombre.split(" ")[0];
+  const nombre = primerNombre(clienta.nombre);
   const producto = sku ? comoSeLlama(sku) : "lo nuevo de la temporada";
   const despacho =
     clienta.zona === "interior"
@@ -354,8 +355,8 @@ function mensajeSugerido(clienta: ClientaSeed, tipo: RecompraTipo, sku: string |
     `¡Hola ${nombre}! ¿Cómo andás? 😊 Te escribo de VX3 porque entraron ${producto} en colores nuevos y me acordé de vos. ¿Querés que te arme un pedido? ${despacho}`,
     `¡Hola ${nombre}! Hace unas semanas que no sabemos de vos 💛 Repusimos ${producto}, que es lo que más te llevás. ¿Te paso fotos de lo que entró? ${despacho}`,
     `¡${nombre}, buen día! Tenemos ${producto} con buen stock, pero se está moviendo rápido. ¿Te guardo una media docena? ${despacho}`,
-  ];
-  return variantes[index % variantes.length];
+  ] as const;
+  return variantes[index % variantes.length] ?? variantes[0];
 }
 
 /** Las que ya figuran como contactadas hoy al arrancar la demo. */
@@ -365,10 +366,7 @@ function crearRecompra(): ClientaParaRecompra[] {
   const elegidas = clientas
     .map((clienta) => ({ clienta, tipo: tipoRecompra(clienta) }))
     .filter((item): item is { clienta: ClientaSeed; tipo: RecompraTipo } => item.tipo !== null)
-    .toSorted(
-      (a, b) =>
-        PRIORIDAD[a.tipo] - PRIORIDAD[b.tipo] || b.clienta.totalComprado - a.clienta.totalComprado,
-    );
+    .toSorted((a, b) => PRIORIDAD[a.tipo] - PRIORIDAD[b.tipo] || b.clienta.totalComprado - a.clienta.totalComprado);
 
   return elegidas.map(({ clienta, tipo }, index) => {
     const propios = pedidosDe(clienta.id);
@@ -380,9 +378,10 @@ function crearRecompra(): ClientaParaRecompra[] {
     let nota: string | undefined;
     if (abierto) {
       const falta = detalleDe(abierto).faltaParaMinimo;
-      nota = falta > 0
-        ? `Tiene el ${abierto.id} abierto bajo el mínimo: le faltan ${formatCurrency(falta)}. Conviene cerrar ese primero.`
-        : `Tiene el ${abierto.id} armándose desde hoy sin confirmar. Conviene cerrar ese primero.`;
+      nota =
+        falta > 0
+          ? `Tiene el ${abierto.id} abierto bajo el mínimo: le faltan ${formatCurrency(falta)}. Conviene cerrar ese primero.`
+          : `Tiene el ${abierto.id} armándose desde hoy sin confirmar. Conviene cerrar ese primero.`;
     }
 
     return {
@@ -481,7 +480,7 @@ export const routes: Route[] = [
       const index = duplicados.findIndex((item) => item.id === decodeURIComponent(id));
       if (index === -1) return errorResponse(404, `No existe el duplicado ${id}.`);
       const [fusionado] = duplicados.splice(index, 1);
-      return Response.json({ fusionados: fusionado.registros.length });
+      return Response.json({ fusionados: fusionado?.registros.length ?? 0 });
     },
   },
   {
@@ -514,9 +513,7 @@ export const routes: Route[] = [
     pattern: /^\/clientas\/([^/]+)$/,
     handler: ({ params: [id] }) => {
       const clienta = clientas.find((item) => item.id === decodeURIComponent(id));
-      return clienta
-        ? Response.json(ficha(clienta, Date.now()))
-        : errorResponse(404, `No existe la clienta ${id}.`);
+      return clienta ? Response.json(ficha(clienta, Date.now())) : errorResponse(404, `No existe la clienta ${id}.`);
     },
   },
 ];

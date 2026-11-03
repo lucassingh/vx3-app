@@ -102,15 +102,11 @@ export type PausarResultado = {
 export function pautaEndpoints(request: ApiRequest) {
   return {
     kpis: (dias: PeriodoPauta = 7) => request<Kpi[]>(`/pauta/kpis${toQueryString({ dias })}`),
-    anuncios: (dias: PeriodoPauta = 7) =>
-      request<AnuncioFila[]>(`/pauta/anuncios${toQueryString({ dias })}`),
-    atribucion: (dias: PeriodoPauta = 7) =>
-      request<AtribucionEstado>(`/pauta/atribucion${toQueryString({ dias })}`),
+    anuncios: (dias: PeriodoPauta = 7) => request<AnuncioFila[]>(`/pauta/anuncios${toQueryString({ dias })}`),
+    atribucion: (dias: PeriodoPauta = 7) => request<AtribucionEstado>(`/pauta/atribucion${toQueryString({ dias })}`),
     config: () => request<PautaConfig>("/pauta/config"),
     cambiosDisponibles: (id: string) =>
-      request<{ conjunto: string; cambiosRestantes: number }>(
-        `/pauta/anuncios/${encodeURIComponent(id)}/cambios`,
-      ),
+      request<{ conjunto: string; cambiosRestantes: number }>(`/pauta/anuncios/${encodeURIComponent(id)}/cambios`),
     pausar: (id: string, pausar: boolean) =>
       request<PausarResultado>(`/pauta/anuncios/${encodeURIComponent(id)}/estado`, {
         method: "POST",

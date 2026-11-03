@@ -51,8 +51,7 @@
   /* ---- 4. FORMA ---------------------------------------------------------- */
   --radius: 0.75rem; /* radio de las cards; botones e inputs derivan de este */
   --card-shadow: 0 1px 2px 0 rgb(24 24 27 / 0.04);
-  --popover-shadow:
-    0 12px 32px -8px rgb(24 24 27 / 0.14), 0 2px 6px -2px rgb(24 24 27 / 0.06);
+  --popover-shadow: 0 12px 32px -8px rgb(24 24 27 / 0.14), 0 2px 6px -2px rgb(24 24 27 / 0.06);
 }
 
 [data-theme="dark"] {

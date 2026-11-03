@@ -23,19 +23,12 @@ export function DropdownMenuContent({
 }: React.ComponentProps<typeof MenuPrimitive.Content>) {
   return (
     <MenuPrimitive.Portal>
-      <MenuPrimitive.Content
-        sideOffset={sideOffset}
-        className={cn(contentClass, className)}
-        {...props}
-      />
+      <MenuPrimitive.Content sideOffset={sideOffset} className={cn(contentClass, className)} {...props} />
     </MenuPrimitive.Portal>
   );
 }
 
-export function DropdownMenuItem({
-  className,
-  ...props
-}: React.ComponentProps<typeof MenuPrimitive.Item>) {
+export function DropdownMenuItem({ className, ...props }: React.ComponentProps<typeof MenuPrimitive.Item>) {
   return <MenuPrimitive.Item className={cn(itemClass, className)} {...props} />;
 }
 
@@ -60,35 +53,22 @@ export function DropdownMenuSubTrigger({
   ...props
 }: React.ComponentProps<typeof MenuPrimitive.SubTrigger>) {
   return (
-    <MenuPrimitive.SubTrigger
-      className={cn(itemClass, "data-[state=open]:bg-muted", className)}
-      {...props}
-    >
+    <MenuPrimitive.SubTrigger className={cn(itemClass, "data-[state=open]:bg-muted", className)} {...props}>
       {children}
       <ChevronRight className="ml-auto" />
     </MenuPrimitive.SubTrigger>
   );
 }
 
-export function DropdownMenuSubContent({
-  className,
-  ...props
-}: React.ComponentProps<typeof MenuPrimitive.SubContent>) {
+export function DropdownMenuSubContent({ className, ...props }: React.ComponentProps<typeof MenuPrimitive.SubContent>) {
   return (
     <MenuPrimitive.Portal>
-      <MenuPrimitive.SubContent
-        sideOffset={6}
-        className={cn(contentClass, "min-w-40", className)}
-        {...props}
-      />
+      <MenuPrimitive.SubContent sideOffset={6} className={cn(contentClass, "min-w-40", className)} {...props} />
     </MenuPrimitive.Portal>
   );
 }
 
-export function DropdownMenuLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof MenuPrimitive.Label>) {
+export function DropdownMenuLabel({ className, ...props }: React.ComponentProps<typeof MenuPrimitive.Label>) {
   return (
     <MenuPrimitive.Label
       className={cn("px-2 py-1.5 text-xs font-medium text-muted-foreground", className)}
@@ -97,14 +77,6 @@ export function DropdownMenuLabel({
   );
 }
 
-export function DropdownMenuSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof MenuPrimitive.Separator>) {
-  return (
-    <MenuPrimitive.Separator
-      className={cn("-mx-1 my-1 h-px bg-border", className)}
-      {...props}
-    />
-  );
+export function DropdownMenuSeparator({ className, ...props }: React.ComponentProps<typeof MenuPrimitive.Separator>) {
+  return <MenuPrimitive.Separator className={cn("-mx-1 my-1 h-px bg-border", className)} {...props} />;
 }

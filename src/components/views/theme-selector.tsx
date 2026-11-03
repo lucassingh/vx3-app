@@ -55,11 +55,7 @@ export function ThemeSelector() {
 /** Mini maqueta del panel con los tokens reales del tema indicado. */
 function ThemePreview({ mode, className }: { mode: "light" | "dark"; className?: string }) {
   return (
-    <div
-      aria-hidden
-      data-theme={mode}
-      className={cn("flex overflow-hidden rounded-lg bg-canvas", className)}
-    >
+    <div aria-hidden data-theme={mode} className={cn("flex overflow-hidden rounded-lg bg-canvas", className)}>
       <div className="w-1/4 space-y-1.5 border-r border-border bg-surface p-2">
         <div className="mb-2.5 size-2.5 rounded-[3px] bg-primary" />
         <div className="h-1.5 w-full rounded-full bg-primary/25" />

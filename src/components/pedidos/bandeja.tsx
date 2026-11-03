@@ -47,7 +47,9 @@ export function PedidosCard({ searchParams }: { searchParams: Promise<SearchPara
           <Suspense fallback={<UrlSelectFallback label="Filtrar por canal" allLabel="Todos los canales" />}>
             <UrlSelect param="canal" label="Filtrar por canal" allLabel="Todos los canales" options={canalOptions} />
           </Suspense>
-          <Suspense fallback={<SearchField disabled aria-label="Buscar pedidos" placeholder="Número, clienta o teléfono" />}>
+          <Suspense
+            fallback={<SearchField disabled aria-label="Buscar pedidos" placeholder="Número, clienta o teléfono" />}
+          >
             <UrlSearch label="Buscar pedidos" placeholder="Número, clienta o teléfono" />
           </Suspense>
         </div>
@@ -87,7 +89,10 @@ async function PedidosTabla({ searchParams }: { searchParams: Promise<SearchPara
 
   return (
     <>
-      <nav aria-label="Filtrar por estado" className="scrollbar-thin flex gap-1.5 overflow-x-auto border-t border-border px-5 py-3">
+      <nav
+        aria-label="Filtrar por estado"
+        className="flex scrollbar-thin gap-1.5 overflow-x-auto border-t border-border px-5 py-3"
+      >
         {tabs.map((tab) => {
           const active = tab.value === estado || (!tab.value && !estado);
           return (
@@ -104,7 +109,7 @@ async function PedidosTabla({ searchParams }: { searchParams: Promise<SearchPara
               )}
             >
               {tab.label}
-              <span className="tabular-nums text-muted-foreground">{tab.count}</span>
+              <span className="text-muted-foreground tabular-nums">{tab.count}</span>
             </Link>
           );
         })}
@@ -154,14 +159,14 @@ async function PedidosTabla({ searchParams }: { searchParams: Promise<SearchPara
                   </span>
                 </TableCell>
                 <TableCell>
-                  <p className="tabular-nums">{pedido.bultos} {pedido.bultos === 1 ? "bulto" : "bultos"}</p>
+                  <p className="tabular-nums">
+                    {pedido.bultos} {pedido.bultos === 1 ? "bulto" : "bultos"}
+                  </p>
                   <p className="max-w-48 truncate font-mono text-[11px] text-muted-foreground">{pedido.resumen}</p>
                 </TableCell>
                 <TableCell className="text-right">
                   <p className="font-medium tabular-nums">{formatCurrency(pedido.total)}</p>
-                  {pedido.faltaParaMinimo > 0 && (
-                    <p className="text-xs text-warning">Bajo el mínimo</p>
-                  )}
+                  {pedido.faltaParaMinimo > 0 && <p className="text-xs text-warning">Bajo el mínimo</p>}
                 </TableCell>
                 <TableCell>
                   <p className="max-w-44 truncate">{TRANSPORTE[pedido.transporte]}</p>
@@ -191,7 +196,11 @@ async function PedidosTabla({ searchParams }: { searchParams: Promise<SearchPara
               <TableCell colSpan={COLUMNS.length + 1}>
                 <EmptyState
                   title="No hay pedidos con estos filtros"
-                  description={q ? `Nada coincide con “${q}”. Probá con el número de pedido o el teléfono.` : "Cambiá el estado o el canal."}
+                  description={
+                    q
+                      ? `Nada coincide con “${q}”. Probá con el número de pedido o el teléfono.`
+                      : "Cambiá el estado o el canal."
+                  }
                 />
               </TableCell>
             </TableRow>
@@ -211,7 +220,10 @@ async function PedidosTabla({ searchParams }: { searchParams: Promise<SearchPara
           de <span className="font-medium text-foreground tabular-nums">{formatNumber(result.total)}</span>
         </p>
         <div className="flex items-center gap-2">
-          <PageLink href={href({ page: result.page - 1 > 1 ? result.page - 1 : undefined })} disabled={result.page <= 1}>
+          <PageLink
+            href={href({ page: result.page - 1 > 1 ? result.page - 1 : undefined })}
+            disabled={result.page <= 1}
+          >
             <ChevronLeft />
             Anterior
           </PageLink>
@@ -270,8 +282,8 @@ export function TrabadosSection() {
           Pedidos trabados
         </h2>
         <p className="text-[13px] text-muted-foreground">
-          El bot sigue la secuencia solo: un mensaje por vez, una palanca por mensaje, y a las 24 h se anula y se
-          libera la reserva. Nunca llega a DUX un pedido que no se confirmó.
+          El bot sigue la secuencia solo: un mensaje por vez, una palanca por mensaje, y a las 24 h se anula y se libera
+          la reserva. Nunca llega a DUX un pedido que no se confirmó.
         </p>
       </div>
       <AsyncWidget
@@ -298,7 +310,11 @@ async function TrabadosGrid() {
   if (trabados.length === 0) {
     return (
       <Card>
-        <EmptyState icon={CircleCheck} title="No hay pedidos trabados" description="Todos los pedidos armándose tuvieron respuesta." />
+        <EmptyState
+          icon={CircleCheck}
+          title="No hay pedidos trabados"
+          description="Todos los pedidos armándose tuvieron respuesta."
+        />
       </Card>
     );
   }
@@ -339,7 +355,10 @@ function TrabadoCard({ trabado }: { trabado: PedidoTrabado }) {
               ) : (
                 <Clock
                   aria-hidden
-                  className={cn("size-4 shrink-0", paso.estado === "proximo" ? "text-primary" : "text-muted-foreground")}
+                  className={cn(
+                    "size-4 shrink-0",
+                    paso.estado === "proximo" ? "text-primary" : "text-muted-foreground",
+                  )}
                 />
               )}
               <span className={cn("min-w-0 flex-1", paso.estado === "pendiente" && "text-muted-foreground")}>
@@ -349,7 +368,7 @@ function TrabadoCard({ trabado }: { trabado: PedidoTrabado }) {
                 </span>
               </span>
               {paso.at ? (
-                <time dateTime={paso.at} className="text-xs tabular-nums text-muted-foreground">
+                <time dateTime={paso.at} className="text-xs text-muted-foreground tabular-nums">
                   {formatTime(paso.at)}
                 </time>
               ) : paso.estado === "proximo" ? (

@@ -34,7 +34,8 @@ type MontoDialogProps = {
 const COPY = {
   "tipo-cambio": {
     title: "Actualizar el tipo de cambio",
-    description: "El gasto de Meta está en dólares. Con este valor se pasa a pesos y se recalcula el RM de cada anuncio.",
+    description:
+      "El gasto de Meta está en dólares. Con este valor se pasa a pesos y se recalcula el RM de cada anuncio.",
     label: "Pesos por dólar",
     prefix: "$",
   },
@@ -120,7 +121,7 @@ export function MontoDialog({
             <div className="relative">
               <span
                 aria-hidden
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground"
+                className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground"
               >
                 {copy.prefix}
               </span>

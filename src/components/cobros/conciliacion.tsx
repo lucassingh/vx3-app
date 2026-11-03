@@ -104,7 +104,7 @@ function ExtractosCard({ data }: { data: ConciliacionResumen }) {
                     </p>
                   </div>
                 </div>
-                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                   <span className="font-medium text-foreground">{extracto.conciliados}</span> de {extracto.movimientos}
                 </span>
               </div>
@@ -138,7 +138,9 @@ function SinCruceCard({ items }: { items: SinCruce[] }) {
       <CardHeader>
         <div>
           <CardTitle>Sin cruce</CardTitle>
-          <CardDescription>Lo que no aparece por ningún lado no se carga: la ausencia es el registro (RN-43)</CardDescription>
+          <CardDescription>
+            Lo que no aparece por ningún lado no se carga: la ausencia es el registro (RN-43)
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="pt-3">
@@ -217,7 +219,7 @@ function ComprobantesCard({ items }: { items: ComprobanteLeido[] }) {
               </TableCell>
               <TableCell className="font-mono text-xs">{item.operacion}</TableCell>
               <TableCell className="font-mono text-[13px]">{item.pedidoId ?? "—"}</TableCell>
-              <TableCell className="tabular-nums text-muted-foreground">
+              <TableCell className="text-muted-foreground tabular-nums">
                 {formatPercent(item.confianza, { maximumFractionDigits: 0 })}
               </TableCell>
               <TableCell>

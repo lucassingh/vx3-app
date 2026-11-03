@@ -118,8 +118,7 @@ export type RecompraResultados = {
 
 export function clientasEndpoints(request: ApiRequest) {
   return {
-    list: (query: ClientasQuery = {}) =>
-      request<Paginated<ClientaFila>>(`/clientas${toQueryString(query)}`),
+    list: (query: ClientasQuery = {}) => request<Paginated<ClientaFila>>(`/clientas${toQueryString(query)}`),
     segmentos: () => request<SegmentoResumen[]>("/clientas/segmentos"),
     get: (id: string) => request<FichaClienta>(`/clientas/${encodeURIComponent(id)}`),
     duplicados: () => request<DuplicadoClienta[]>("/clientas/duplicados"),

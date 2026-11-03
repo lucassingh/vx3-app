@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { beforeEach, describe, expect, it } from "vitest";
 import type { ClientaParaRecompra, FichaClienta, Paginated, ClientaFila, DuplicadoClienta } from "@/lib/api/types";
 import { resetDb } from "../db";
@@ -37,7 +36,7 @@ describe("clientas", () => {
 
   it("fusiona un duplicado y lo saca de la lista", async () => {
     const before = await call<DuplicadoClienta[]>("/clientas/duplicados");
-    const [first] = before.body;
+    const first = before.body[0]!;
     expect((await call(`/clientas/duplicados/${first.id}/fusionar`, { method: "POST" })).status).toBe(200);
     const after = await call<DuplicadoClienta[]>("/clientas/duplicados");
     expect(after.body.map((item) => item.id)).not.toContain(first.id);

@@ -42,13 +42,15 @@ export function ColumnChart({ bars, max, ticks, description }: ColumnChartProps)
       Home: 0,
       End: last,
     };
-    if (!(event.key in targets)) return;
+    const target = targets[event.key];
+    if (target === undefined) return;
     event.preventDefault();
-    const next = Math.min(last, Math.max(0, targets[event.key]));
+    const next = Math.min(last, Math.max(0, target));
     barRefs.current[next]?.focus();
   };
 
-  const active = activeIndex === null ? null : { index: activeIndex, ...bars[activeIndex] };
+  const activeBar = activeIndex === null ? undefined : bars[activeIndex];
+  const active = activeIndex === null || !activeBar ? null : { index: activeIndex, ...activeBar };
   const align =
     active === null || (active.index >= 3 && active.index <= last - 3)
       ? "-translate-x-1/2"
@@ -60,7 +62,7 @@ export function ColumnChart({ bars, max, ticks, description }: ColumnChartProps)
     <div className="grid h-full min-h-60 grid-cols-[auto_1fr] grid-rows-[1fr_auto] gap-x-3 gap-y-2">
       <div
         aria-hidden
-        className="-my-1.5 flex flex-col justify-between text-right text-[11px] leading-none tabular-nums text-muted-foreground"
+        className="-my-1.5 flex flex-col justify-between text-right text-[11px] leading-none text-muted-foreground tabular-nums"
       >
         {ticks.map((tick, index) => (
           <span key={index}>{tick}</span>
@@ -121,20 +123,15 @@ export function ColumnChart({ bars, max, ticks, description }: ColumnChartProps)
               bottom: `calc(${(active.value / max) * 100}% + 0.5rem)`,
             }}
           >
-            <div className="whitespace-nowrap rounded-lg border border-border bg-popover px-2.5 py-1.5 shadow-popover">
+            <div className="rounded-lg border border-border bg-popover px-2.5 py-1.5 whitespace-nowrap shadow-popover">
               <p className="text-sm font-semibold tabular-nums">{active.valueLabel}</p>
-              <p className="text-xs text-muted-foreground first-letter:uppercase">
-                {active.label}
-              </p>
+              <p className="text-xs text-muted-foreground first-letter:uppercase">{active.label}</p>
             </div>
           </div>
         )}
       </div>
 
-      <div
-        aria-hidden
-        className="col-start-2 flex justify-between text-[11px] text-muted-foreground"
-      >
+      <div aria-hidden className="col-start-2 flex justify-between text-[11px] text-muted-foreground">
         <span>{bars[0]?.axisLabel}</span>
         <span>{bars[Math.round(last / 2)]?.axisLabel}</span>
         <span>{bars[last]?.axisLabel}</span>

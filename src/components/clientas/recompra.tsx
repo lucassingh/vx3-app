@@ -16,10 +16,34 @@ export async function RecompraResultadosGrid() {
   const pct = (value: number) => formatPercent(value, { maximumFractionDigits: 0 });
 
   const kpis: Kpi[] = [
-    { id: "contactadas", label: "Contactadas · 7 días", value: r.contactadas, format: "number", hint: "Desde esta lista, a mano" },
-    { id: "respondieron", label: "Respondieron", value: r.respondieron, format: "number", hint: `${pct(r.respondieron / r.contactadas)} de las contactadas` },
-    { id: "compraron", label: "Volvieron a comprar", value: r.compraron, format: "number", hint: `${pct(r.compraron / r.contactadas)} de las contactadas` },
-    { id: "margen", label: "Margen recuperado", value: r.margen, format: "currency", hint: `Ventas por ${formatCurrency(r.ventas)}, sin costo de pauta` },
+    {
+      id: "contactadas",
+      label: "Contactadas · 7 días",
+      value: r.contactadas,
+      format: "number",
+      hint: "Desde esta lista, a mano",
+    },
+    {
+      id: "respondieron",
+      label: "Respondieron",
+      value: r.respondieron,
+      format: "number",
+      hint: `${pct(r.respondieron / r.contactadas)} de las contactadas`,
+    },
+    {
+      id: "compraron",
+      label: "Volvieron a comprar",
+      value: r.compraron,
+      format: "number",
+      hint: `${pct(r.compraron / r.contactadas)} de las contactadas`,
+    },
+    {
+      id: "margen",
+      label: "Margen recuperado",
+      value: r.margen,
+      format: "currency",
+      hint: `Ventas por ${formatCurrency(r.ventas)}, sin costo de pauta`,
+    },
   ];
 
   return (

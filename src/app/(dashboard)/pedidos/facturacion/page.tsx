@@ -40,8 +40,8 @@ export default function Page() {
               Para facturar
             </h2>
             <p className="text-[13px] text-muted-foreground">
-              Ventanas de facturación: de 9 a 11 y después cada 30 a 45 minutos. Al facturar sale el remito de armado
-              a la cola de impresión.
+              Ventanas de facturación: de 9 a 11 y después cada 30 a 45 minutos. Al facturar sale el remito de armado a
+              la cola de impresión.
             </p>
           </div>
           <AsyncWidget title="los pedidos para facturar" fallback={<FacturablesListSkeleton />}>

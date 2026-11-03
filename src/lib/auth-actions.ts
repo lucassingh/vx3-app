@@ -1,19 +1,11 @@
 "use server";
 
 import { cookies } from "next/headers";
-import {
-  checkCredentials,
-  createSessionToken,
-  SESSION_COOKIE,
-  SESSION_MAX_AGE_S,
-} from "@/lib/session";
+import { checkCredentials, createSessionToken, SESSION_COOKIE, SESSION_MAX_AGE_S } from "@/lib/session";
 
 export type SignInResult = { ok: true } | { ok: false; message: string };
 
-export async function signIn(credentials: {
-  email: string;
-  password: string;
-}): Promise<SignInResult> {
+export async function signIn(credentials: { email: string; password: string }): Promise<SignInResult> {
   if (!checkCredentials(credentials.email, credentials.password)) {
     return { ok: false, message: "El email o la contraseña no son correctos." };
   }

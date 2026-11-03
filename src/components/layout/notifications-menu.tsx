@@ -50,15 +50,13 @@ export function NotificationsMenu({ initialItems }: { initialItems: Notification
           variant="ghost"
           size="icon-sm"
           className="relative"
-          aria-label={
-            unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : "Notificaciones"
-          }
+          aria-label={unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : "Notificaciones"}
         >
           <Bell />
           {unreadCount > 0 && (
             <span
               aria-hidden
-              className="absolute right-1.5 top-1.5 size-2 rounded-full bg-accent ring-2 ring-surface"
+              className="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent ring-2 ring-surface"
             />
           )}
         </Button>
@@ -66,28 +64,19 @@ export function NotificationsMenu({ initialItems }: { initialItems: Notification
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between py-2 text-sm text-foreground">
           Notificaciones
-          {unreadCount > 0 && (
-            <span className="text-xs font-normal text-muted-foreground">
-              {unreadCount} sin leer
-            </span>
-          )}
+          {unreadCount > 0 && <span className="text-xs font-normal text-muted-foreground">{unreadCount} sin leer</span>}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
         {optimisticItems.length === 0 && (
-          <p className="px-2 py-6 text-center text-sm text-muted-foreground">
-            No tenés notificaciones.
-          </p>
+          <p className="px-2 py-6 text-center text-sm text-muted-foreground">No tenés notificaciones.</p>
         )}
         {optimisticItems.map((item) => {
           const content = (
             <>
               <span
                 aria-hidden
-                className={cn(
-                  "mt-1.5 size-1.5 shrink-0 rounded-full",
-                  item.read ? "bg-transparent" : "bg-primary",
-                )}
+                className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", item.read ? "bg-transparent" : "bg-primary")}
               />
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="font-medium">
@@ -95,21 +84,14 @@ export function NotificationsMenu({ initialItems }: { initialItems: Notification
                   {!item.read && <span className="sr-only"> (sin leer)</span>}
                 </span>
                 <span className="text-[13px] text-muted-foreground">{item.description}</span>
-                <time
-                  dateTime={item.createdAt}
-                  className="text-xs text-muted-foreground first-letter:uppercase"
-                >
+                <time dateTime={item.createdAt} className="text-xs text-muted-foreground first-letter:uppercase">
                   {formatRelativeTime(item.createdAt)}
                 </time>
               </span>
             </>
           );
           return (
-            <DropdownMenuItem
-              key={item.id}
-              asChild={Boolean(item.href)}
-              className="h-auto items-start gap-3 py-2.5"
-            >
+            <DropdownMenuItem key={item.id} asChild={Boolean(item.href)} className="h-auto items-start gap-3 py-2.5">
               {item.href ? <Link href={item.href}>{content}</Link> : content}
             </DropdownMenuItem>
           );

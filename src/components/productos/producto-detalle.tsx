@@ -68,7 +68,9 @@ export function ProductoDetalle({ producto, children }: { producto: CatalogoProd
             <dl className="min-w-0 flex-1 divide-y divide-border">
               <Atributo label="Bulto">
                 <span className="font-medium tabular-nums">{formatCurrency(producto.bulto.precio)}</span>{" "}
-                <span className="text-muted-foreground">· {producto.bulto.label} ({producto.bulto.codigo})</span>
+                <span className="text-muted-foreground">
+                  · {producto.bulto.label} ({producto.bulto.codigo})
+                </span>
               </Atributo>
               <Atributo label="Disponible">
                 {formatNumber(producto.bultosDisponibles)} bultos{" "}
@@ -155,7 +157,7 @@ export function ProductoDetalle({ producto, children }: { producto: CatalogoProd
                   {producto.descripcion.revisada ? "Revisada" : "Falta revisar"}
                 </Badge>
               </p>
-              <p className="mt-2 text-pretty text-sm leading-relaxed">{producto.descripcion.texto}</p>
+              <p className="mt-2 text-sm leading-relaxed text-pretty">{producto.descripcion.texto}</p>
             </div>
           </Seccion>
 

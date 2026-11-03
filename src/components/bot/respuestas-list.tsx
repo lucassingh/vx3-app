@@ -99,7 +99,9 @@ export function RespuestasList({ initial }: { initial: RespuestaView[] }) {
                 aria-label={`Marcar como buena la respuesta a ${item.clienta.nombre}`}
                 aria-pressed={item.calificacion === "buena"}
                 onClick={() => calificar(item.id, "buena")}
-                className={cn(item.calificacion === "buena" && "border-success/50 bg-success/10 text-success hover:bg-success/15")}
+                className={cn(
+                  item.calificacion === "buena" && "border-success/50 bg-success/10 text-success hover:bg-success/15",
+                )}
               >
                 <ThumbsUp />
               </Button>
@@ -108,7 +110,9 @@ export function RespuestasList({ initial }: { initial: RespuestaView[] }) {
                 size="sm"
                 aria-pressed={item.calificacion === "mala"}
                 onClick={() => calificar(item.id, "mala")}
-                className={cn(item.calificacion === "mala" && "border-danger/50 bg-danger/10 text-danger hover:bg-danger/15")}
+                className={cn(
+                  item.calificacion === "mala" && "border-danger/50 bg-danger/10 text-danger hover:bg-danger/15",
+                )}
               >
                 <ThumbsDown />
                 {item.calificacion === "mala" ? "Marcada como mala" : "Marcar como mala"}

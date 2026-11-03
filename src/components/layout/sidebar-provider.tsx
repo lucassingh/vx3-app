@@ -1,21 +1,9 @@
 "use client";
 
 import { MotionConfig } from "motion/react";
-import {
-  createContext,
-  use,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import {
-  getSidebarCollapsed,
-  setSidebarCollapsed,
-  subscribeSidebar,
-} from "@/lib/preferences";
+import { getSidebarCollapsed, setSidebarCollapsed, subscribeSidebar } from "@/lib/preferences";
 
 const DESKTOP_QUERY = "(min-width: 64rem)";
 
@@ -32,11 +20,7 @@ type SidebarContextValue = {
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const collapsed = useSyncExternalStore(
-    subscribeSidebar,
-    getSidebarCollapsed,
-    () => false,
-  );
+  const collapsed = useSyncExternalStore(subscribeSidebar, getSidebarCollapsed, () => false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const toggle = useCallback(() => {
@@ -70,10 +54,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     return () => media.removeEventListener("change", onChange);
   }, []);
 
-  const value = useMemo(
-    () => ({ collapsed, mobileOpen, setMobileOpen, toggle }),
-    [collapsed, mobileOpen, toggle],
-  );
+  const value = useMemo(() => ({ collapsed, mobileOpen, setMobileOpen, toggle }), [collapsed, mobileOpen, toggle]);
 
   return (
     <SidebarContext value={value}>

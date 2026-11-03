@@ -8,10 +8,7 @@ import { findRoute, getBreadcrumbs, getRouteMetadata, isActivePath } from "./nav
 // Las expectativas salen de config/navigation.ts: siguen valiendo al rebrandear.
 const items = navigation.flatMap((section) => section.items);
 const group = items.find((item) => item.items !== undefined);
-const links: NavLink[] = [
-  ...items.flatMap((item) => (item.items ? item.items : [item])),
-  ...userNavigation,
-];
+const links: NavLink[] = [...items.flatMap((item) => (item.items ? item.items : [item])), ...userNavigation];
 
 describe("config/navigation", () => {
   it("cada href tiene su page.tsx en src/app/(dashboard)", () => {
@@ -46,7 +43,7 @@ describe("isActivePath", () => {
 describe("findRoute y getBreadcrumbs", () => {
   it("resuelve un subitem con su grupo y su sección", () => {
     if (!group) return;
-    const child = group.items[0];
+    const child = group.items[0]!;
     const match = findRoute(child.href);
 
     expect(match?.link.title).toBe(child.title);
@@ -59,7 +56,7 @@ describe("findRoute y getBreadcrumbs", () => {
   });
 
   it("incluye los links del menú de usuario", () => {
-    const [link] = userNavigation;
+    const link = userNavigation[0]!;
     expect(findRoute(link.href)?.link.title).toBe(link.title);
   });
 
@@ -69,7 +66,7 @@ describe("findRoute y getBreadcrumbs", () => {
   });
 
   it("toma el título de la pantalla para la metadata", () => {
-    const [first] = links;
+    const first = links[0]!;
     expect(getRouteMetadata(first.href).title).toBe(first.title);
   });
 });

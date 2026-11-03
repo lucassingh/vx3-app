@@ -53,7 +53,7 @@ export function StatCard({
         <Icon aria-hidden className="size-4 shrink-0" />
         <span className="truncate">{label}</span>
       </p>
-      <p className="mt-3 text-[1.75rem] font-semibold leading-none tracking-tight tabular-nums">{value}</p>
+      <p className="mt-3 text-[1.75rem] leading-none font-semibold tracking-tight tabular-nums">{value}</p>
       <p className="mt-3 text-xs text-muted-foreground">{hint}</p>
     </div>
   );

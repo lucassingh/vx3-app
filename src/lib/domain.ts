@@ -1,20 +1,5 @@
-import {
-  Globe,
-  MessageCircle,
-  Store,
-  ShoppingBag,
-  type LucideIcon,
-} from "lucide-react";
-import type {
-  Banco,
-  Canal,
-  EstadoPedido,
-  MedioPago,
-  OrigenVenta,
-  Segmento,
-  Transporte,
-  Zona,
-} from "@/lib/api/types";
+import { Globe, MessageCircle, Store, ShoppingBag, type LucideIcon } from "lucide-react";
+import type { Banco, Canal, EstadoPedido, MedioPago, OrigenVenta, Segmento, Transporte, Zona } from "@/lib/api/types";
 
 /**
  * Etiquetas y variantes de badge de los valores de negocio compartidos.

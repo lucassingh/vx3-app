@@ -11,14 +11,7 @@ import type { DailyPoint, Share } from "../types";
 export type ReglaGrupo = "precios" | "pedidos" | "envios" | "cobros" | "postventa" | "bot" | "pauta";
 
 export type ReglaTipo =
-  | "coeficiente"
-  | "porcentaje"
-  | "moneda"
-  | "numero"
-  | "hora"
-  | "texto"
-  | "seleccion"
-  | "booleano";
+  "coeficiente" | "porcentaje" | "moneda" | "numero" | "hora" | "texto" | "seleccion" | "booleano";
 
 export type ReglaValor = number | string | boolean | null;
 
@@ -207,11 +200,14 @@ export type SeguridadCuenta = {
 
 /* ---- Valores de reglas: texto y validación (los usan el mock y la pantalla) - */
 
-const miles = (value: number) =>
-  String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const miles = (value: number) => String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 const decimal = (value: number) => String(value).replace(".", ",");
 /** Coeficientes con 2 a 4 decimales: 1.3 → "1,30", 1.1765 → "1,1765". */
-const coeficiente = (value: number) => value.toFixed(4).replace(/0{1,2}$/, "").replace(".", ",");
+const coeficiente = (value: number) =>
+  value
+    .toFixed(4)
+    .replace(/0{1,2}$/, "")
+    .replace(".", ",");
 
 /** Texto de un valor de regla, sin Intl (igual en servidor y navegador): "$ 45.000", "× 1,3". */
 export function describirValorRegla(regla: Pick<ReglaNegocio, "tipo" | "unidad" | "opciones">, valor: ReglaValor) {
@@ -291,10 +287,7 @@ export function plataformaEndpoints(request: ApiRequest) {
       list: () => request<ReglaNegocio[]>("/plataforma/reglas"),
       historial: () => request<CambioRegla[]>("/plataforma/reglas/historial"),
       actualizar: (cambios: CambioReglaInput[]) =>
-        request<{ reglas: ReglaNegocio[]; cambios: CambioRegla[] }>(
-          "/plataforma/reglas",
-          json("PATCH", { cambios }),
-        ),
+        request<{ reglas: ReglaNegocio[]; cambios: CambioRegla[] }>("/plataforma/reglas", json("PATCH", { cambios })),
     },
     integraciones: {
       list: () => request<Integracion[]>("/plataforma/integraciones"),
@@ -323,8 +316,7 @@ export function plataformaEndpoints(request: ApiRequest) {
     usuarios: {
       list: () => request<UsuarioEquipo[]>("/plataforma/usuarios"),
       roles: () => request<MatrizPermisos>("/plataforma/roles"),
-      invitar: (input: InvitacionInput) =>
-        request<UsuarioEquipo>("/plataforma/usuarios/invitar", json("POST", input)),
+      invitar: (input: InvitacionInput) => request<UsuarioEquipo>("/plataforma/usuarios/invitar", json("POST", input)),
     },
     auditoria: {
       list: (query: { usuario?: string } = {}) =>

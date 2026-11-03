@@ -12,12 +12,47 @@ import { bultosDisponibles, getProducto, PEDIDO_MINIMO, presentacionesDe } from 
 /** M4 · Vidriera: contenido del catálogo maestro, precio y stock de DUX. */
 
 const coleccionesSeed: VidrieraColeccion[] = [
-  { id: "col-reel", nombre: "Lo del reel de hoy", descripcion: "El conjunto AmorArma CJATN14 y lo que combina", productos: 6, activa: true, visitas7d: 1_120 },
-  { id: "col-conjuntos", nombre: "Conjuntos armados", descripcion: "Tres piezas, dos piezas y con culote", productos: 24, activa: true, visitas7d: 860 },
-  { id: "col-grandes", nombre: "Talles grandes", descripcion: "Curvas desde XL y desde 100", productos: 31, activa: true, visitas7d: 540 },
-  { id: "col-medias", nombre: "Medias por docena", descripcion: "Niño, hombre y deportivas", productos: 18, activa: true, visitas7d: 410 },
+  {
+    id: "col-reel",
+    nombre: "Lo del reel de hoy",
+    descripcion: "El conjunto AmorArma CJATN14 y lo que combina",
+    productos: 6,
+    activa: true,
+    visitas7d: 1_120,
+  },
+  {
+    id: "col-conjuntos",
+    nombre: "Conjuntos armados",
+    descripcion: "Tres piezas, dos piezas y con culote",
+    productos: 24,
+    activa: true,
+    visitas7d: 860,
+  },
+  {
+    id: "col-grandes",
+    nombre: "Talles grandes",
+    descripcion: "Curvas desde XL y desde 100",
+    productos: 31,
+    activa: true,
+    visitas7d: 540,
+  },
+  {
+    id: "col-medias",
+    nombre: "Medias por docena",
+    descripcion: "Niño, hombre y deportivas",
+    productos: 18,
+    activa: true,
+    visitas7d: 410,
+  },
   { id: "col-hombre", nombre: "Hombre", descripcion: "Boxer y medias", productos: 12, activa: true, visitas7d: 190 },
-  { id: "col-invierno", nombre: "Liquidación invierno", descripcion: "Térmicas con stock alto", productos: 9, activa: false, visitas7d: 70 },
+  {
+    id: "col-invierno",
+    nombre: "Liquidación invierno",
+    descripcion: "Térmicas con stock alto",
+    productos: 9,
+    activa: false,
+    visitas7d: 70,
+  },
 ];
 
 const DESTACADOS: { sku: string; vistas7d: number; activo: boolean }[] = [
@@ -84,9 +119,27 @@ function resumen(): VidrieraResumen {
         format: "number",
         delta: { value: 0.18, unit: "percent", period: "vs. la semana anterior", positive: true },
       },
-      { id: "carritos", label: "Carritos armados", value: 412, format: "number", hint: "El 37 % llegó al mínimo de $ 45.000" },
-      { id: "pedidos", label: "Pedidos confirmados", value: 46, format: "number", hint: "38 siguieron por WhatsApp con su número" },
-      { id: "liberados", label: "Carritos liberados solos", value: 27, format: "number", hint: "Vencieron sin llegar a DUX: nada para anular" },
+      {
+        id: "carritos",
+        label: "Carritos armados",
+        value: 412,
+        format: "number",
+        hint: "El 37 % llegó al mínimo de $ 45.000",
+      },
+      {
+        id: "pedidos",
+        label: "Pedidos confirmados",
+        value: 46,
+        format: "number",
+        hint: "38 siguieron por WhatsApp con su número",
+      },
+      {
+        id: "liberados",
+        label: "Carritos liberados solos",
+        value: 27,
+        format: "number",
+        hint: "Vencieron sin llegar a DUX: nada para anular",
+      },
     ],
     embudo: [
       { id: "visitas", label: "Visitas", value: 3_840 },

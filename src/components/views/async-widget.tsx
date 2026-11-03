@@ -17,19 +17,14 @@ function WidgetError({ title, className }: WidgetErrorProps, { error, retry }: E
   return (
     <Card
       role="alert"
-      className={cn(
-        "flex flex-col items-center justify-center gap-4 px-6 py-10 text-center",
-        className,
-      )}
+      className={cn("flex flex-col items-center justify-center gap-4 px-6 py-10 text-center", className)}
     >
       <span className="grid size-10 place-items-center rounded-full bg-danger/10 text-danger">
         <CircleAlert aria-hidden className="size-5" />
       </span>
       <div className="space-y-1">
         <p className="text-sm font-medium">No pudimos cargar {title}</p>
-        <p className="text-sm text-muted-foreground">
-          Puede ser un problema momentáneo. Probá de nuevo.
-        </p>
+        <p className="text-sm text-muted-foreground">Puede ser un problema momentáneo. Probá de nuevo.</p>
         {process.env.NODE_ENV === "development" && error instanceof Error && (
           <p className="pt-1 font-mono text-xs text-muted-foreground">{error.message}</p>
         )}

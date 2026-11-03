@@ -3,14 +3,7 @@ import { KpiGrid, KpiGridSkeleton } from "@/components/kit/kpi-grid";
 import { EmptyState } from "@/components/kit/empty-state";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel, Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CardSkeleton, SkeletonText, TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import { formatDate } from "@/lib/format";
@@ -20,10 +13,7 @@ import { CodeTag, cuando } from "./shared";
 /* ---- Resumen ---------------------------------------------------------------- */
 
 export async function ReglasResumen() {
-  const [reglas, historial] = await Promise.all([
-    api.plataforma.reglas.list(),
-    api.plataforma.reglas.historial(),
-  ]);
+  const [reglas, historial] = await Promise.all([api.plataforma.reglas.list(), api.plataforma.reglas.historial()]);
   const aConfirmar = reglas.filter((regla) => regla.aConfirmar || regla.nota).length;
   const ultimo = historial[0];
 

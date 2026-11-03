@@ -93,7 +93,9 @@ export function Propuestas({ items }: { items: PropuestaView[] }) {
         });
         router.refresh();
       } catch {
-        toast.error("No se pudieron registrar los cobros", { action: { label: "Reintentar", onClick: confirmarAltos } });
+        toast.error("No se pudieron registrar los cobros", {
+          action: { label: "Reintentar", onClick: confirmarAltos },
+        });
       } finally {
         setBusy(null);
       }

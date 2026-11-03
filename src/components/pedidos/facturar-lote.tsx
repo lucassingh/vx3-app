@@ -94,7 +94,11 @@ export function FacturarLote({ items }: { items: FacturableItem[] }) {
                     checked={selected.has(item.id)}
                     disabled={!item.listo || pending}
                     onCheckedChange={(checked) => toggle(item.id, checked === true)}
-                    aria-label={item.listo ? `Seleccionar ${item.id}` : `${item.id}: ${item.bloqueo ?? "no se puede facturar todavía"}`}
+                    aria-label={
+                      item.listo
+                        ? `Seleccionar ${item.id}`
+                        : `${item.id}: ${item.bloqueo ?? "no se puede facturar todavía"}`
+                    }
                   />
                 </div>
                 <div className="min-w-0 flex-1">{item.content}</div>

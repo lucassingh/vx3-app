@@ -7,6 +7,11 @@ const MINUS = "−";
 /** Usa el signo menos tipográfico (−) en lugar del guion. */
 const withMinus = (value: string) => value.replace("-", MINUS);
 
+/** Primer nombre para saludar: "Johana Quiroga" → "Johana". */
+export function primerNombre(nombreCompleto: string) {
+  return nombreCompleto.trim().split(/\s+/)[0] ?? nombreCompleto;
+}
+
 export function formatNumber(value: number, options?: Intl.NumberFormatOptions) {
   return new Intl.NumberFormat(locale, options).format(value);
 }
@@ -78,9 +83,7 @@ export function formatDelta({ value, unit }: NonNullable<Kpi["delta"]>) {
 
 /** Fechas sin hora (YYYY-MM-DD): se formatean en UTC para no correrse un día. */
 export function formatDate(isoDate: string, options: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...options }).format(
-    new Date(isoDate),
-  );
+  return new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...options }).format(new Date(isoDate));
 }
 
 /** Hora local de Buenos Aires de una fecha ISO: "14:35". */

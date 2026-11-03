@@ -1,32 +1,10 @@
-import {
-  Banknote,
-  CheckCircle2,
-  Megaphone,
-  MessagesSquare,
-  Percent,
-  Send,
-  Target,
-  Wallet,
-} from "lucide-react";
+import { Banknote, CheckCircle2, Megaphone, MessagesSquare, Percent, Send, Target, Wallet } from "lucide-react";
 import { KpiGrid, KpiGridSkeleton } from "@/components/kit/kpi-grid";
 import { ProductThumb } from "@/components/kit/product-thumb";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel, Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SkeletonText, TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import type { AnuncioFila, PeriodoPauta, SemaforoAnuncio } from "@/lib/api/types";
@@ -48,7 +26,10 @@ export function readPeriodo(params: SearchParams): PeriodoPauta {
   return param(params, "dias") === "14" ? 14 : 7;
 }
 
-export const SEMAFORO: Record<SemaforoAnuncio, { label: string; variant: "success" | "primary" | "warning" | "danger" }> = {
+export const SEMAFORO: Record<
+  SemaforoAnuncio,
+  { label: string; variant: "success" | "primary" | "warning" | "danger" }
+> = {
   escalar: { label: "Escalar", variant: "success" },
   mantener: { label: "Mantener", variant: "primary" },
   revisar: { label: "Revisar", variant: "warning" },
@@ -105,7 +86,8 @@ function AnunciosFrame({ periodo, children }: { periodo?: PeriodoPauta; children
         <div>
           <CardTitle>Anuncios</CardTitle>
           <CardDescription>
-            {periodo ? `Últimos ${periodo} días · ` : ""}pedidos verificados en DUX y margen línea por línea con el costo real
+            {periodo ? `Últimos ${periodo} días · ` : ""}pedidos verificados en DUX y margen línea por línea con el
+            costo real
           </CardDescription>
         </div>
       </CardHeader>
@@ -123,7 +105,10 @@ function AnuncioRow({ anuncio }: { anuncio: AnuncioFila }) {
           {anuncio.sku && anuncio.producto ? (
             <ProductThumb sku={anuncio.sku} colors={anuncio.producto.colores} size="md" />
           ) : (
-            <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-lg border border-border bg-muted">
+            <span
+              aria-hidden
+              className="grid size-12 shrink-0 place-items-center rounded-lg border border-border bg-muted"
+            >
               <Megaphone className="size-4 text-muted-foreground" />
             </span>
           )}
@@ -141,11 +126,11 @@ function AnuncioRow({ anuncio }: { anuncio: AnuncioFila }) {
       </TableCell>
       <TableCell className="text-right">
         <p className="font-medium tabular-nums">{formatUsd(anuncio.gastoUsd)}</p>
-        <p className="text-xs tabular-nums text-muted-foreground">{formatCurrencyCompact(anuncio.gastoArs)}</p>
+        <p className="text-xs text-muted-foreground tabular-nums">{formatCurrencyCompact(anuncio.gastoArs)}</p>
       </TableCell>
       <TableCell className="text-right tabular-nums">{formatNumber(anuncio.conversaciones)}</TableCell>
       <TableCell className="text-right tabular-nums">{anuncio.pedidos}</TableCell>
-      <TableCell className="text-right tabular-nums text-muted-foreground">
+      <TableCell className="text-right text-muted-foreground tabular-nums">
         {anuncio.tasaCierre === null ? "—" : formatPercent(anuncio.tasaCierre)}
       </TableCell>
       <TableCell className="text-right tabular-nums">{formatCurrency(anuncio.margen)}</TableCell>
@@ -153,19 +138,19 @@ function AnuncioRow({ anuncio }: { anuncio: AnuncioFila }) {
         <p className={cn("font-semibold tabular-nums", rmClass(anuncio.rm))}>
           {anuncio.rm === null ? "—" : formatRatio(anuncio.rm)}
         </p>
-        {anuncio.muestraChica && <p className="whitespace-nowrap text-[11px] text-muted-foreground">muestra chica</p>}
+        {anuncio.muestraChica && <p className="text-[11px] whitespace-nowrap text-muted-foreground">muestra chica</p>}
       </TableCell>
       <TableCell className={cn("text-right tabular-nums", anuncio.ganancia < 0 && "text-danger")}>
         {formatCurrency(anuncio.ganancia)}
       </TableCell>
-      <TableCell className="text-right tabular-nums text-muted-foreground">
+      <TableCell className="text-right text-muted-foreground tabular-nums">
         {anuncio.valorRecompra90d > 0 ? formatCurrencyCompact(anuncio.valorRecompra90d) : "—"}
       </TableCell>
       <TableCell>
         <Badge variant={semaforo.variant} dot>
           {semaforo.label}
         </Badge>
-        <p className="mt-1 w-56 text-pretty text-xs text-muted-foreground">{anuncio.motivo}</p>
+        <p className="mt-1 w-56 text-xs text-pretty text-muted-foreground">{anuncio.motivo}</p>
       </TableCell>
       <TableCell className="text-right">
         <PausarButton id={anuncio.id} nombre={anuncio.nombre} conjunto={anuncio.conjunto} estado={anuncio.estado} />
@@ -178,8 +163,9 @@ export async function AnunciosCard({ searchParams }: { searchParams: Promise<Sea
   const periodo = readPeriodo(await searchParams);
   const anuncios = await api.pauta.anuncios(periodo);
   const conGasto = anuncios.filter((anuncio) => !anuncio.legado);
-  const sum = (key: "gastoUsd" | "gastoArs" | "conversaciones" | "pedidos" | "margen" | "ganancia" | "valorRecompra90d") =>
-    conGasto.reduce((total, anuncio) => total + anuncio[key], 0);
+  const sum = (
+    key: "gastoUsd" | "gastoArs" | "conversaciones" | "pedidos" | "margen" | "ganancia" | "valorRecompra90d",
+  ) => conGasto.reduce((total, anuncio) => total + anuncio[key], 0);
   const rmTotal = sum("gastoArs") > 0 ? sum("margen") / sum("gastoArs") : null;
 
   return (
@@ -283,13 +269,13 @@ export async function AtribucionCard({ searchParams }: { searchParams: Promise<S
         <p className="font-medium">
           {cuadra ? "Reconciliación exacta" : "La atribución no cuadra: el informe no se emite"}
         </p>
-        <p className="mt-1 tabular-nums text-muted-foreground">
-          Atribuido <span className="font-medium text-foreground">{formatCurrency(a.atribuido)}</span> · facturado en DUX{" "}
-          <span className="font-medium text-foreground">{formatCurrency(a.facturado)}</span> · diferencia{" "}
+        <p className="mt-1 text-muted-foreground tabular-nums">
+          Atribuido <span className="font-medium text-foreground">{formatCurrency(a.atribuido)}</span> · facturado en
+          DUX <span className="font-medium text-foreground">{formatCurrency(a.facturado)}</span> · diferencia{" "}
           <span className="font-medium text-foreground">{formatCurrency(a.atribuido - a.facturado)}</span>
         </p>
       </div>
-      <p className="mt-3 text-pretty text-xs text-muted-foreground">
+      <p className="mt-3 text-xs text-pretty text-muted-foreground">
         Byos decía {a.pedidosSegunByos} pedidos de pauta en este período; los verificados son {a.pedidosVerificados}.
       </p>
     </AtribucionFrame>
@@ -339,10 +325,12 @@ export async function TipoCambioCard() {
     <ConfigFrame
       title="Tipo de cambio"
       description="Meta cobra en dólares (RN-111)"
-      action={<MontoDialog target={{ kind: "tipo-cambio" }} initialValue={tipoCambio.valor} triggerLabel="Actualizar" />}
+      action={
+        <MontoDialog target={{ kind: "tipo-cambio" }} initialValue={tipoCambio.valor} triggerLabel="Actualizar" />
+      }
     >
       <p className="flex items-baseline gap-1.5">
-        <span className="text-[1.75rem] font-semibold leading-none tracking-tight tabular-nums">
+        <span className="text-[1.75rem] leading-none font-semibold tracking-tight tabular-nums">
           {formatCurrency(tipoCambio.valor)}
         </span>
         <span className="text-[13px] text-muted-foreground">por dólar</span>
@@ -383,7 +371,7 @@ export async function ConversionesCard() {
         <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
           <Send aria-hidden className="size-4" />
         </span>
-        <p className="text-pretty text-[13px]">
+        <p className="text-[13px] text-pretty">
           <span className="font-semibold tabular-nums">{conversiones.eventos7d} compras</span> enviadas en los últimos 7
           días, con el <code className="rounded bg-muted px-1 font-mono text-xs">ctwa_clid</code> de cada conversación y
           deduplicadas por número de pedido ({conversiones.deduplicados7d} reintentos descartados).
@@ -403,7 +391,7 @@ export async function ConversionesCard() {
           <dd className="truncate font-mono text-xs">{conversiones.permiso}</dd>
         </div>
       </dl>
-      <p className="mt-4 flex gap-2 text-pretty text-xs text-muted-foreground">
+      <p className="mt-4 flex gap-2 text-xs text-pretty text-muted-foreground">
         <MessagesSquare aria-hidden className="mt-px size-3.5 shrink-0" />
         Antes Meta recibía valor de conversión 0 en todos los anuncios: optimizaba para conseguir conversaciones, no
         compras.

@@ -8,6 +8,7 @@ import { Input, Label } from "@/components/ui/input";
 import { currentUser } from "@/lib/auth";
 import { signIn } from "@/lib/auth-actions";
 import { toast } from "@/lib/toast";
+import { primerNombre } from "@/lib/format";
 
 /** Precargadas mientras hay un solo usuario (ver src/lib/session.ts). */
 const DEFAULT_EMAIL = "eliasllaury@gmail.com";
@@ -30,7 +31,7 @@ export function LoginForm() {
       });
       if (result.ok) {
         toast.success("Sesión iniciada", {
-          description: `Hola de nuevo, ${currentUser.name.split(" ")[0]}.`,
+          description: `Hola de nuevo, ${primerNombre(currentUser.name)}.`,
         });
         router.replace("/");
       } else {
@@ -77,11 +78,7 @@ export function LoginForm() {
             aria-pressed={showPassword}
             className="absolute inset-y-0 right-0 grid w-10 place-items-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:-outline-offset-2"
           >
-            {showPassword ? (
-              <EyeOff aria-hidden className="size-4" />
-            ) : (
-              <Eye aria-hidden className="size-4" />
-            )}
+            {showPassword ? <EyeOff aria-hidden className="size-4" /> : <Eye aria-hidden className="size-4" />}
           </button>
         </div>
       </div>
