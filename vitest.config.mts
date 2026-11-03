@@ -61,7 +61,7 @@ export default defineConfig({
         "src/generated/**",
         "src/mocks/seed/**",
         "src/**/*.d.ts",
-        "src/app/**/{page,layout,loading,error,not-found}.tsx",
+        "src/app/**/{page,layout,loading,error,global-error,not-found}.tsx",
       ],
       reporter: ["text-summary", "html"],
       // La meta (tecnica_doc §8) es 80 % global y 95 % en los servicios. El global
@@ -75,7 +75,7 @@ export default defineConfig({
         branches: 28,
         functions: 30,
         lines: 34,
-        "src/{env.ts,lib/{errors,result,money,dates,logger,action}.ts,lib/api/dispatch.ts,modules/platform/{permissions,access,health}.ts}":
+        "src/{env.ts,lib/{errors,result,money,dates,logger,action,sentry}.ts,lib/api/dispatch.ts,modules/platform/{permissions,access,health}.ts}":
           {
             statements: 95,
             branches: 90,

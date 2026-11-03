@@ -22,6 +22,12 @@ inputs:
   database-url-unpooled:
     description: Conexión directa del dueño de la branch de Neon que se migra
     required: true
+  sentry-auth-token:
+    description: Token de Sentry para subir los source maps (solo QA y producción)
+    required: false
+  sentry-org:
+    description: Slug de la organización de Sentry
+    required: false
 
 outputs:
   url:
@@ -53,6 +59,8 @@ runs:
       shell: bash
       env:
         APP_ENV: ${{ inputs.app-env }}
+        SENTRY_AUTH_TOKEN: ${{ inputs.sentry-auth-token }}
+        SENTRY_ORG: ${{ inputs.sentry-org }}
       run: vercel build ${{ inputs.target == 'production' && '--prod' || '' }} --token=${{ inputs.vercel-token }}
 
     # Si una migración sale mal, la base se puede restaurar a este momento

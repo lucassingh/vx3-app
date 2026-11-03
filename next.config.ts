@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs/config";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { NextConfig } from "next";
@@ -28,4 +29,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Los source maps se suben a Sentry solo en los deploys de QA y producción, que
+// traen SENTRY_AUTH_TOKEN, y después se borran: no quedan públicos.
+const subirSourceMaps = Boolean(process.env.SENTRY_AUTH_TOKEN);
+
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: "cli-vx3",
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  release: { name: process.env.GITHUB_SHA, create: subirSourceMaps },
+  sourcemaps: { disable: !subirSourceMaps },
+  silent: !subirSourceMaps,
+  telemetry: false,
+});

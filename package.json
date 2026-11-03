@@ -29,6 +29,7 @@
   "dependencies": {
     "@prisma/adapter-neon": "7.10.1",
     "@prisma/client": "7.10.1",
+    "@sentry/nextjs": "11.8.0",
     "better-auth": "1.7.12",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

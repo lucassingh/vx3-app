@@ -71,6 +71,8 @@ jobs:
           app-env: production
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           database-url-unpooled: ${{ secrets.PROD_DATABASE_URL_UNPOOLED }}
+          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          sentry-org: ${{ secrets.SENTRY_ORG }}
 
       - name: Prueba de salud
         run: node scripts/smoke.mjs "$PRODUCTION_URL" --commit "$GITHUB_SHA"

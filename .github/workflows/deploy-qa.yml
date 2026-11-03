@@ -47,6 +47,8 @@ jobs:
           app-env: qa
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           database-url-unpooled: ${{ secrets.QA_DATABASE_URL_UNPOOLED }}
+          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          sentry-org: ${{ secrets.SENTRY_ORG }}
 
       - name: Alias de QA
         run: vercel alias set "${{ steps.deploy.outputs.url }}" "$QA_HOST" --token="${{ secrets.VERCEL_TOKEN }}" --scope="$VERCEL_ORG_ID"
