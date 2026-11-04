@@ -51,9 +51,18 @@ runs:
       shell: bash
       run: npm install --global vercel@64.7.0
 
+    # Al build solo le llegan las variables públicas (NEXT_PUBLIC_*, que quedan
+    # en el bundle) y las del sistema de Vercel. Las del servidor las pone Vercel
+    # al correr; las sensibles ni siquiera bajan (vienen con un texto de relleno
+    # que no pasa la validación de src/env.ts). Así ningún secreto queda en el runner.
     - name: Variables del ambiente
       shell: bash
-      run: vercel pull --yes --environment=${{ inputs.target }} --token=${{ inputs.vercel-token }}
+      run: |
+        vercel pull --yes --environment=${{ inputs.target }} --token=${{ inputs.vercel-token }}
+        archivo=".vercel/.env.${{ inputs.target }}.local"
+        grep -E '^(NEXT_PUBLIC_|VERCEL|TURBO_|NX_)' "$archivo" > "$archivo.build" || true
+        mv "$archivo.build" "$archivo"
+        echo "Variables para el build: $(cut -d= -f1 "$archivo" | grep -v '^VERCEL_GIT' | tr '\n' ' ')"
 
     - name: Build
       shell: bash
