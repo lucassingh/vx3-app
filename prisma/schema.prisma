@@ -251,6 +251,8 @@ model DuxCustomer {
   id              String    @id @db.Uuid
   duxId           Int       @unique @map("dux_id")
   name            String
+  /// El nombre de pila, cuando DUX lo tiene aparte: para saludar sin arriesgar con un apellido.
+  firstName       String?   @map("first_name")
   phone           String?
   /// Los últimos 10 dígitos: la identidad de la clienta (RN-90).
   normalizedPhone String?   @map("normalized_phone")
@@ -279,6 +281,26 @@ enum SyncRunStatus {
 /// Una corrida de sincronización: lo que muestra el panel de integraciones (RF-M0-04).
 /// Nunca dos sincronizaciones a la vez de una integración. Vence solo: si un Workflow
 /// muere sin soltarlo, no traba para siempre.
+/// Una clienta: una fila por teléfono (RN-90), armada desde dux_customers y recalculada
+/// en cada sincronización. Una ficha de DUX sin teléfono no llega acá.
+model Customer {
+  id              String   @id @db.Uuid
+  normalizedPhone String   @unique @map("normalized_phone")
+  name            String
+  firstName       String?  @map("first_name")
+  phone           String
+  email           String?
+  province        String?
+  city            String?
+  /// Cuántas fichas de DUX son esta clienta.
+  duxRecords      Int      @map("dux_records")
+  contentHash     String   @map("content_hash")
+  firstSeenAt     DateTime @map("first_seen_at") @db.Timestamptz(6)
+  changedAt       DateTime @map("changed_at") @db.Timestamptz(6)
+
+  @@map("customers")
+}
+
 model SyncLock {
   integration String   @id
   holder      String

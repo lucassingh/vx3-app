@@ -9,6 +9,7 @@ const OTRA_CLAVE = "B".repeat(43);
 const clienta = (cambios: Partial<ErpClienta> = {}): ErpClienta => ({
   id: 7,
   nombre: "NOMBRE REAL",
+  nombrePila: "PILA REAL",
   telefono: "+5491144445555",
   email: "real@correo.com",
   provincia: "Buenos Aires",
@@ -54,6 +55,7 @@ describe("anonimizarClienta", () => {
     expect(anonimizarClienta(clienta(), CLAVE)).toMatchObject({
       id: 7,
       nombre: "Clienta 7",
+      nombrePila: null,
       email: "clienta-7@anonimizada.invalid",
       provincia: "Buenos Aires",
       localidad: null,

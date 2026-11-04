@@ -149,6 +149,7 @@ describe("aErpClienta", () => {
     expect(clienta).toEqual({
       id: 501,
       nombre: "NOMBRE PRIVADO",
+      nombrePila: "NOMBRE PRIVADO",
       telefono: "+541144445555",
       email: "privado@correo.prueba",
       provincia: "BUENOS AIRES",
@@ -162,7 +163,12 @@ describe("aErpClienta", () => {
   });
 
   it("toma el celular si no tiene teléfono, y lo vacío queda vacío", () => {
-    expect(aErpClienta(datos[1]!)).toMatchObject({ telefono: "11-55556666", email: null, provincia: null });
+    expect(aErpClienta(datos[1]!)).toMatchObject({
+      nombrePila: null,
+      telefono: "11-55556666",
+      email: null,
+      provincia: null,
+    });
   });
 });
 

@@ -66,6 +66,8 @@ export type PaginaDeComprobantes = { comprobantes: ErpComprobante[]; total: numb
 export type ErpClienta = {
   id: number;
   nombre: string;
+  /** Cuando el ERP lo tiene aparte del nombre completo. */
+  nombrePila: string | null;
   telefono: string | null;
   email: string | null;
   provincia: string | null;

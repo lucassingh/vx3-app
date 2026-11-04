@@ -159,6 +159,7 @@ export type FilaDelRegistro = {
 function nombreDeOperacion(operacion: string): string {
   const [, mes, sucursal] = /^ventas_historial:(.+):(.+)$/.exec(operacion) ?? [];
   if (mes && sucursal) return `Historial de ventas · ${mes} · sucursal ${sucursal}`;
+  if (operacion === "fichas") return "Fichas de clientas";
   return LECTURAS_DUX[operacion] ?? operacion;
 }
 

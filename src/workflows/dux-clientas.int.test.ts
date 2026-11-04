@@ -31,6 +31,7 @@ const AVISO = " Anonimizadas: este ambiente no es producción.";
 const clienta = (id: number, cambios: Partial<ErpClienta> = {}): ErpClienta => ({
   id,
   nombre: "NOMBRE REAL",
+  nombrePila: "PILA REAL",
   telefono: "+5491144445555",
   email: "real@correo.com",
   provincia: "Buenos Aires",
@@ -192,6 +193,7 @@ describe("fuera de producción", () => {
     expect(texto).not.toContain("44445555");
     expect(await fila(7)).toMatchObject({
       name: "Clienta 7",
+      firstName: null,
       email: "clienta-7@anonimizada.invalid",
       province: "Buenos Aires",
       city: null,
@@ -266,6 +268,7 @@ describe("en producción", () => {
 
     expect(await fila(7)).toMatchObject({
       name: "NOMBRE REAL",
+      firstName: "PILA REAL",
       phone: "+5491144445555",
       normalizedPhone: "1144445555",
       email: "real@correo.com",

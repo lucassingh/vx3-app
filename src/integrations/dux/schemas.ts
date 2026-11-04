@@ -90,6 +90,7 @@ export const duxPaginaFacturasSchema = z.object({
 export const duxClienteSchema = z.object({
   id_cliente: z.number(),
   full_name: z.string(),
+  nombre: z.string().nullish(),
   email: z.string().nullish(),
   provincia: z.string().nullish(),
   localidad: z.string().nullish(),

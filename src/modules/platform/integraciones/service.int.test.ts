@@ -138,6 +138,14 @@ describe("listarIntegraciones", () => {
     expect((await dux()).sincronizando).toBe(false);
   });
 
+  it("las fichas no cuentan para el estado: no le piden nada a DUX", async () => {
+    await conToken();
+    await tresBien();
+    await corrida("fichas", { status: "error", startedAt: new Date() });
+
+    expect((await dux()).estado).toBe("ok");
+  });
+
   it("el historial no cuenta para el estado", async () => {
     await conToken();
     await tresBien();
@@ -182,6 +190,14 @@ describe("registroDeSincronizaciones", () => {
     });
     expect(vieja).toMatchObject({ operacion: "Productos, stock y precios", origen: "automática", resultado: "ok" });
     expect(vieja?.duracionMs).toBeGreaterThan(0);
+  });
+
+  it("nombra el armado de las fichas", async () => {
+    await corrida("fichas");
+
+    const [fila] = await registroDeSincronizaciones();
+
+    expect(fila?.operacion).toBe("Fichas de clientas");
   });
 
   it("nombra cada mes del historial", async () => {

@@ -78,6 +78,7 @@ export function aErpClienta(cliente: DuxCliente): ErpClienta {
   return {
     id: cliente.id_cliente,
     nombre: cliente.full_name.trim(),
+    nombrePila: cliente.nombre?.trim() || null,
     telefono: cliente.telefono?.trim() || cliente.cel?.trim() || null,
     email: cliente.email?.trim() || null,
     provincia: cliente.provincia?.trim() || null,
