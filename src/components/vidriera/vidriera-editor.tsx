@@ -5,13 +5,7 @@ import { useState, useTransition } from "react";
 import { ProductThumb } from "@/components/kit/product-thumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api/browser";
@@ -73,13 +67,17 @@ export function VidrieraEditor({
     if (destino < 0 || destino >= colecciones.length) return;
     const previo = colecciones;
     const nuevo = [...colecciones];
-    [nuevo[index], nuevo[destino]] = [nuevo[destino], nuevo[index]];
+    const movida = nuevo[index];
+    const desplazada = nuevo[destino];
+    if (!movida || !desplazada) return;
+    nuevo[index] = desplazada;
+    nuevo[destino] = movida;
     setColecciones(nuevo);
     run(
       () => setColecciones(previo),
       () => api.vidriera.ordenarColecciones(nuevo.map((item) => item.id)),
       "Orden actualizado",
-      `“${nuevo[destino].nombre}” quedó en el lugar ${destino + 1}.`,
+      `“${movida.nombre}” quedó en el lugar ${destino + 1}.`,
     );
   };
 
@@ -122,13 +120,15 @@ export function VidrieraEditor({
         <CardHeader className="pb-4">
           <div>
             <CardTitle>Colecciones</CardTitle>
-            <CardDescription>El orden en que se ven en la portada. Se ordenan y se ocultan sin tocar DUX.</CardDescription>
+            <CardDescription>
+              El orden en que se ven en la portada. Se ordenan y se ocultan sin tocar DUX.
+            </CardDescription>
           </div>
         </CardHeader>
         <ol className="divide-y divide-border border-t border-border">
           {colecciones.map((coleccion, index) => (
             <li key={coleccion.id} className="flex items-center gap-3 px-5 py-3">
-              <span className="w-5 shrink-0 text-center text-xs font-semibold tabular-nums text-muted-foreground">
+              <span className="w-5 shrink-0 text-center text-xs font-semibold text-muted-foreground tabular-nums">
                 {index + 1}
               </span>
               <div className={cn("min-w-0 flex-1", !coleccion.activa && "opacity-60")}>
@@ -137,7 +137,7 @@ export function VidrieraEditor({
                   {coleccion.descripcion} · {coleccion.productos} productos
                 </p>
               </div>
-              <span className="hidden shrink-0 items-center gap-1 text-xs tabular-nums text-muted-foreground sm:inline-flex">
+              <span className="hidden shrink-0 items-center gap-1 text-xs text-muted-foreground tabular-nums sm:inline-flex">
                 <Eye aria-hidden className="size-3.5" />
                 {coleccion.visitasLabel}
               </span>
@@ -175,7 +175,9 @@ export function VidrieraEditor({
         <CardHeader>
           <div>
             <CardTitle>Destacados de la portada</CardTitle>
-            <CardDescription>Precio de la lista MAYORISTA EF/TR y stock disponible de DUX, menos lo reservado</CardDescription>
+            <CardDescription>
+              Precio de la lista MAYORISTA EF/TR y stock disponible de DUX, menos lo reservado
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="pt-5">
@@ -190,9 +192,10 @@ export function VidrieraEditor({
               >
                 <ProductThumb sku={item.sku} colors={item.colores} size="md" />
                 <div className="min-w-0 flex-1 space-y-1">
-                  <p className="line-clamp-2 text-[13px] font-medium leading-snug">{item.nombre}</p>
+                  <p className="line-clamp-2 text-[13px] leading-snug font-medium">{item.nombre}</p>
                   <p className="text-xs text-muted-foreground">
-                    {item.presentacion} · <span className="font-semibold text-foreground tabular-nums">{item.precioLabel}</span>
+                    {item.presentacion} ·{" "}
+                    <span className="font-semibold text-foreground tabular-nums">{item.precioLabel}</span>
                   </p>
                   <div className="flex items-center justify-between gap-2 pt-0.5">
                     <span className="text-[11px] text-muted-foreground">
@@ -215,7 +218,9 @@ export function VidrieraEditor({
         <CardHeader>
           <div>
             <CardTitle>Quién ve los precios</CardTitle>
-            <CardDescription>Los links que manda el bot identifican a la clienta: entra sin registrarse</CardDescription>
+            <CardDescription>
+              Los links que manda el bot identifican a la clienta: entra sin registrarse
+            </CardDescription>
           </div>
           <Badge variant="warning" dot>
             A definir con los socios
@@ -228,7 +233,7 @@ export function VidrieraEditor({
               {ACCESOS.map(({ id, titulo, descripcion, icon: Icon }) => (
                 <Label
                   key={id}
-                  className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-4 font-normal leading-normal transition-colors hover:bg-muted/50 has-[:checked]:border-primary has-[:checked]:bg-primary/8 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-ring"
+                  className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-4 leading-normal font-normal transition-colors hover:bg-muted/50 has-[:checked]:border-primary has-[:checked]:bg-primary/8 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-ring"
                 >
                   <input
                     type="radio"

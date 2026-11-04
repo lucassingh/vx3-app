@@ -12,13 +12,15 @@ import { RouteHeader } from "@/components/pedidos/route-header";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/pedidos/facturacion";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M5 · Facturar es revisar y confirmar (RF-M5-02 a RF-M5-05). */
-export default function Page() {
+export default async function Page() {
+  await requirePageAccess("/pedidos/facturacion");
   return (
     <>
       <RouteHeader
@@ -40,8 +42,8 @@ export default function Page() {
               Para facturar
             </h2>
             <p className="text-[13px] text-muted-foreground">
-              Ventanas de facturación: de 9 a 11 y después cada 30 a 45 minutos. Al facturar sale el remito de armado
-              a la cola de impresión.
+              Ventanas de facturación: de 9 a 11 y después cada 30 a 45 minutos. Al facturar sale el remito de armado a
+              la cola de impresión.
             </p>
           </div>
           <AsyncWidget title="los pedidos para facturar" fallback={<FacturablesListSkeleton />}>

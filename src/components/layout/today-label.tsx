@@ -11,8 +11,7 @@ const options: Intl.DateTimeFormatOptions = {
 };
 
 const subscribe = () => () => {};
-const formatToday = () =>
-  new Intl.DateTimeFormat(siteConfig.locale, options).format(new Date());
+const formatToday = () => new Intl.DateTimeFormat(siteConfig.locale, options).format(new Date());
 
 /**
  * Fecha de hoy en la zona horaria del usuario. El script inline la escribe

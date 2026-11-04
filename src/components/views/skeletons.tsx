@@ -1,14 +1,7 @@
 import { PageBody, PageHeaderSkeleton } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingLabel, Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
 /*
@@ -25,23 +18,14 @@ export function SkeletonText({ lines = 3, className }: { lines?: number; classNa
   return (
     <div className={cn("space-y-2.5", className)}>
       {Array.from({ length: lines }, (_, index) => (
-        <Skeleton
-          key={index}
-          className={cn("h-3.5", index === lines - 1 ? "w-2/5" : widths[index % widths.length])}
-        />
+        <Skeleton key={index} className={cn("h-3.5", index === lines - 1 ? "w-2/5" : widths[index % widths.length])} />
       ))}
     </div>
   );
 }
 
 /** Card genérica: título, bajada y contenido. */
-export function CardSkeleton({
-  className,
-  children,
-}: {
-  className?: string;
-  children?: React.ReactNode;
-}) {
+export function CardSkeleton({ className, children }: { className?: string; children?: React.ReactNode }) {
   return (
     <Card className={className}>
       <CardHeader>
@@ -81,11 +65,7 @@ export function ChartSkeleton({ bars = 30, className }: { bars?: number; classNa
   return (
     <div className={cn("flex h-full min-h-60 items-end gap-2 pl-8", className)}>
       {Array.from({ length: bars }, (_, index) => (
-        <Skeleton
-          key={index}
-          className="flex-1 rounded-b-none"
-          style={{ height: `${30 + ((index * 37) % 60)}%` }}
-        />
+        <Skeleton key={index} className="flex-1 rounded-b-none" style={{ height: `${30 + ((index * 37) % 60)}%` }} />
       ))}
     </div>
   );

@@ -1,7 +1,7 @@
-// @vitest-environment node
 import { beforeEach, describe, expect, it } from "vitest";
 import type { CotizacionEnvio, GrupoDespacho } from "@/lib/api/types";
 import { resetDb } from "../db";
+import { routeParams } from "../http";
 import { armarCajas, routes } from "./envios";
 
 async function call<T>(method: string, path: string, body?: unknown) {
@@ -9,7 +9,7 @@ async function call<T>(method: string, path: string, body?: unknown) {
   const request = new Request(url, { method, body: body ? JSON.stringify(body) : undefined });
   for (const route of routes) {
     const match = route.method === method ? url.pathname.match(route.pattern) : null;
-    if (match) return (await (await route.handler({ url, params: match.slice(1), request })).json()) as T;
+    if (match) return (await (await route.handler({ url, params: routeParams(match), request })).json()) as T;
   }
   throw new Error(`Sin ruta para ${method} ${path}`);
 }
@@ -33,7 +33,10 @@ describe("cotizador", () => {
       simularFalla: false,
     });
     expect(cotizacion.destino).toMatchObject({ valido: true, zona: "amba_1" });
-    expect(cotizacion.opciones.find((opcion) => opcion.id === "mensajeria")).toMatchObject({ recomendada: true, precio: 4_500 });
+    expect(cotizacion.opciones.find((opcion) => opcion.id === "mensajeria")).toMatchObject({
+      recomendada: true,
+      precio: 4_500,
+    });
     expect(cotizacion.opciones.find((opcion) => opcion.id === "via_cargo")?.disponible).toBe(false);
     expect(cotizacion.id).toMatch(/^C-\d+$/);
   });
@@ -61,6 +64,10 @@ describe("despacho", () => {
     const despues = await call<GrupoDespacho[]>("GET", "/envios/despacho");
     const mensajeria = despues.find((grupo) => grupo.transporte === "mensajeria")!;
     expect(mensajeria.accion.hecho).toBe(true);
-    expect(mensajeria.envios.filter((envio) => envio.estado === "subido").every((envio) => envio.etiqueta?.startsWith("ZP-"))).toBe(true);
+    expect(
+      mensajeria.envios
+        .filter((envio) => envio.estado === "subido")
+        .every((envio) => envio.etiqueta?.startsWith("ZP-")),
+    ).toBe(true);
   });
 });

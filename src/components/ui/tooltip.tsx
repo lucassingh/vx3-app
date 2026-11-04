@@ -30,10 +30,7 @@ export function TooltipContent({
 export function Kbd({ className, ...props }: React.ComponentProps<"kbd">) {
   return (
     <kbd
-      className={cn(
-        "rounded border border-current/20 px-1 font-mono text-[10px] leading-4 opacity-70",
-        className,
-      )}
+      className={cn("rounded border border-current/20 px-1 font-mono text-[10px] leading-4 opacity-70", className)}
       {...props}
     />
   );

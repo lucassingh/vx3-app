@@ -8,6 +8,7 @@ import { AsyncWidget } from "@/components/views/async-widget";
 import { CardSkeleton, SkeletonText } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/productos/alta";
 
@@ -39,7 +40,8 @@ function AltaSkeleton() {
 }
 
 /** M1 · Alta de producto en un solo formulario. Reemplaza el Sheet, los 3 .xls y el alta del Hub. */
-export default function AltaPage() {
+export default async function AltaPage() {
+  await requirePageAccess("/productos/alta");
   const route = findRoute(HREF);
 
   return (

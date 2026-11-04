@@ -48,7 +48,7 @@ function BreadcrumbTrail() {
                 <span className="truncate text-muted-foreground">{crumb.label}</span>
               )}
               {!last && (
-                <span aria-hidden className="select-none text-border-strong">
+                <span aria-hidden className="text-border-strong select-none">
                   /
                 </span>
               )}

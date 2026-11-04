@@ -1,0 +1,129 @@
+// Esquema de la base (Neon, proyecto cli-vx3). Convenciones en tecnica_doc/tecnica.md §5:
+// tablas y columnas en inglés, snake_case y en plural; IDs uuid v7 generados en la app
+// (src/db/ids.ts); fechas en timestamptz; montos en centavos (bigint).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---- Auth (Better Auth, tecnica_doc/tecnica.md §6) --------------------------------
+// Los nombres de los campos son los que espera Better Auth; las columnas, nuestras.
+
+/// Persona que usa la app. Sin registro público: la crea un admin (o el script
+/// auth:create-admin) con una contraseña temporal.
+model User {
+  id                 String    @id @db.Uuid
+  name               String
+  email              String    @unique
+  emailVerified      Boolean   @default(false) @map("email_verified")
+  image              String?
+  /// Para entrar con usuario en vez de email (plugin username), en minúsculas.
+  username           String?   @unique
+  displayUsername    String?   @map("display_username")
+  /// Uno de los roles de src/modules/platform/permissions.ts.
+  role               String?
+  /// Desactivado por un admin: no puede entrar y pierde sus sesiones.
+  banned             Boolean?  @default(false)
+  banReason          String?   @map("ban_reason")
+  banExpires         DateTime? @map("ban_expires") @db.Timestamptz(6)
+  /// Entró con una contraseña temporal: la tiene que cambiar antes de seguir.
+  mustChangePassword Boolean   @default(false) @map("must_change_password")
+  /// Puesto o tarea, para que el equipo sepa quién es quién.
+  jobTitle           String?   @map("job_title")
+  lastLoginAt        DateTime? @map("last_login_at") @db.Timestamptz(6)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  sessions           Session[]
+  accounts           Account[]
+
+  @@map("users")
+}
+
+/// Sesión abierta. La cookie lleva el token firmado con AUTH_SECRET.
+model Session {
+  id             String   @id @db.Uuid
+  token          String   @unique
+  userId         String   @map("user_id") @db.Uuid
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(6)
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  impersonatedBy String?  @map("impersonated_by")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+/// Credenciales del usuario: el hash de la contraseña (providerId "credential").
+model Account {
+  id                    String    @id @db.Uuid
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id") @db.Uuid
+  password              String?
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamptz(6)
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamptz(6)
+  scope                 String?
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+/// Tokens de un solo uso de Better Auth (hoy no se usan: queda para el recupero por mail).
+model Verification {
+  id         String   @id @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+/// Intentos fallidos de login por usuario y por IP (src/modules/platform/auth/throttle.ts).
+model LoginThrottle {
+  /// "user:<email o usuario>" o "ip:<dirección>".
+  key             String    @id
+  failures        Int       @default(0)
+  windowStartedAt DateTime  @map("window_started_at") @db.Timestamptz(6)
+  /// Cuántas veces se bloqueó seguidas: la espera se duplica con cada una.
+  lockouts        Int       @default(0)
+  lockedUntil     DateTime? @map("locked_until") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("login_throttles")
+}
+
+/// Registro de acciones sensibles: quién hizo qué, sobre qué y cuándo (RF-M0-03).
+/// El actor puede ser una persona, el bot o un proceso, por eso no apunta a usuarios.
+model AuditLog {
+  id         String   @id @db.Uuid
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  actorId    String?  @map("actor_id") @db.Uuid
+  actorLabel String   @map("actor_label")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  before     Json?
+  after      Json?
+  requestId  String?  @map("request_id")
+
+  @@index([entityType, entityId])
+  @@index([occurredAt])
+  @@map("audit_logs")
+}

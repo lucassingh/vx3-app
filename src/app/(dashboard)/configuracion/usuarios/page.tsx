@@ -1,5 +1,5 @@
 import { PageBody, PageHeader } from "@/components/layout/page-header";
-import { InvitarUsuario } from "@/components/plataforma/invitar-usuario";
+import { CrearUsuario } from "@/components/plataforma/crear-usuario";
 import {
   AuditoriaCard,
   AuditoriaSkeleton,
@@ -10,13 +10,15 @@ import {
 } from "@/components/plataforma/usuarios";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/configuracion/usuarios";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** RF-M0-01 y RF-M0-03 · Usuarios, roles (06 §4) y registro de auditoría. */
-export default function UsuariosPage() {
+export default async function UsuariosPage() {
+  await requirePageAccess("/configuracion/usuarios");
   const { link } = findRoute(HREF)!;
 
   return (
@@ -25,7 +27,7 @@ export default function UsuariosPage() {
         eyebrow="Configuración"
         title={link.title}
         description={link.description}
-        actions={<InvitarUsuario />}
+        actions={<CrearUsuario />}
       />
       <PageBody>
         <AsyncWidget title="el equipo" fallback={<EquipoSkeleton />}>

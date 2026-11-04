@@ -23,14 +23,15 @@ import { PageBody, PageHeader } from "@/components/layout/page-header";
 import { TodayLabel } from "@/components/layout/today-label";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
-import { currentUser } from "@/lib/auth";
+import { requireUser } from "@/modules/platform/auth/session";
 import { getRouteMetadata } from "@/lib/navigation";
+import { primerNombre } from "@/lib/format";
 
 export const metadata = getRouteMetadata("/");
 
 /** M10 · Dashboard ejecutivo: qué pasó hoy, qué está trabado y dónde se pierde plata. */
-export default function HomePage() {
-  const firstName = currentUser.name.split(" ")[0];
+export default async function HomePage() {
+  const firstName = primerNombre((await requireUser()).name);
 
   return (
     <>

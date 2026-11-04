@@ -6,14 +6,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { CardFooter } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api } from "@/lib/api/browser";
 import type { AlertaPreferencia, CanalAlerta } from "@/lib/api/types";
 import { toast } from "@/lib/toast";
@@ -69,7 +62,7 @@ export function AlertasForm({ initial }: { initial: AlertaPreferencia[] }) {
             <TableRow key={alerta.id}>
               <TableCell>
                 <p className="font-medium">{alerta.nombre}</p>
-                <p className="text-pretty text-[13px] text-muted-foreground">{alerta.descripcion}</p>
+                <p className="text-[13px] text-pretty text-muted-foreground">{alerta.descripcion}</p>
               </TableCell>
               {CANALES.map((canal) => (
                 <TableCell key={canal.id} className="text-center">

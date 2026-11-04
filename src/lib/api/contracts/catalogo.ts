@@ -137,7 +137,15 @@ export type CatalogoCombosQuery = {
 export type CatalogoCombo = {
   id: string;
   nombre: string;
-  items: { sku: string; codigo: string; nombre: string; colores: string[]; prendas: number; precio: number; costo: number }[];
+  items: {
+    sku: string;
+    codigo: string;
+    nombre: string;
+    colores: string[];
+    prendas: number;
+    precio: number;
+    costo: number;
+  }[];
   bultos: number;
   prendas: number;
   /** Suma de los bultos redondeada hacia arriba a $500 (RN-96). */
@@ -158,8 +166,7 @@ export function catalogoEndpoints(request: ApiRequest) {
   return {
     kpis: () => request<Kpi[]>("/catalogo/kpis"),
     facetas: () => request<CatalogoFacetas>("/catalogo/facetas"),
-    productos: (query: CatalogoQuery = {}) =>
-      request<CatalogoProducto[]>(`/catalogo/productos${toQueryString(query)}`),
+    productos: (query: CatalogoQuery = {}) => request<CatalogoProducto[]>(`/catalogo/productos${toQueryString(query)}`),
     producto: (sku: string) => request<CatalogoProducto>(`/catalogo/productos/${encodeURIComponent(sku)}`),
     control: () => request<CatalogoControl[]>("/catalogo/control"),
     altaOpciones: () => request<CatalogoAltaOpciones>("/catalogo/alta/opciones"),
@@ -173,7 +180,6 @@ export function catalogoEndpoints(request: ApiRequest) {
         method: "POST",
         body: JSON.stringify({ input }),
       }),
-    combos: (query: CatalogoCombosQuery) =>
-      request<CatalogoCombosResultado>(`/catalogo/combos${toQueryString(query)}`),
+    combos: (query: CatalogoCombosQuery) => request<CatalogoCombosResultado>(`/catalogo/combos${toQueryString(query)}`),
   };
 }

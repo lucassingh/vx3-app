@@ -102,7 +102,8 @@ const SIN_CRUCE: (Omit<SinCruce, "fecha"> & { minutos: number })[] = [
     titular: "MARTINEZ LUCAS EZEQUIEL",
     minutos: 5 * HOUR,
     detalle: "A nombre de un tercero y sin comprobante en ninguna conversación.",
-    sugerencia: "Si una clienta manda el comprobante, se cruza solo. Un comprobante a nombre de otra persona sirve (RN-42).",
+    sugerencia:
+      "Si una clienta manda el comprobante, se cruza solo. Un comprobante a nombre de otra persona sirve (RN-42).",
   },
   {
     id: "s-3",
@@ -197,11 +198,66 @@ function conciliacion(): ConciliacionResumen {
   const estadoDe = (id: string): ComprobanteLeido["estado"] =>
     getConciliacionDb().estados.get(id) === "confirmada" ? "conciliado" : "propuesto";
   const comprobantes: ComprobanteLeido[] = [
-    { id: "cp-1", clienta: "Celeste Benítez", recibidoAt: isoAgo(14, now), monto: 42_000, banco: "Santander", titular: "Benítez Jorge Omar", operacion: "4471-3390-1027", pedidoId: "V-1059", confianza: 0.95, estado: estadoDe("m-303") },
-    { id: "cp-2", clienta: "Daiana Ferreyra", recibidoAt: isoAgo(45, now), monto: 38_400, banco: "Mercado Pago", titular: "Ferreyra Daiana", operacion: "MP-77120938", pedidoId: "V-1057", confianza: 0.91, estado: "sin_cruce" },
-    { id: "cp-3", clienta: "Agustina Ríos", recibidoAt: isoAgo(68, now), monto: detalleDe(getPedido("V-1056")).total, banco: "Santander", titular: "Ríos Agustina Belén", operacion: "4471-2209-8813", pedidoId: "V-1056", confianza: 0.98, estado: estadoDe("m-301") },
-    { id: "cp-4", clienta: "Romina Gaitán", recibidoAt: isoAgo(92, now), monto: detalleDe(getPedido("V-1055")).total, banco: "Supervielle", titular: "Gaitán Romina Soledad", operacion: "SV-20581144", pedidoId: "V-1055", confianza: 0.99, estado: "conciliado" },
-    { id: "cp-5", clienta: "Carolina Vera", recibidoAt: isoAgo(262, now), monto: detalleDe(getPedido("V-1049")).total, banco: "Provincia", titular: "Vera Carolina", operacion: "BP-0091283", pedidoId: "V-1049", confianza: 0.97, estado: "conciliado" },
+    {
+      id: "cp-1",
+      clienta: "Celeste Benítez",
+      recibidoAt: isoAgo(14, now),
+      monto: 42_000,
+      banco: "Santander",
+      titular: "Benítez Jorge Omar",
+      operacion: "4471-3390-1027",
+      pedidoId: "V-1059",
+      confianza: 0.95,
+      estado: estadoDe("m-303"),
+    },
+    {
+      id: "cp-2",
+      clienta: "Daiana Ferreyra",
+      recibidoAt: isoAgo(45, now),
+      monto: 38_400,
+      banco: "Mercado Pago",
+      titular: "Ferreyra Daiana",
+      operacion: "MP-77120938",
+      pedidoId: "V-1057",
+      confianza: 0.91,
+      estado: "sin_cruce",
+    },
+    {
+      id: "cp-3",
+      clienta: "Agustina Ríos",
+      recibidoAt: isoAgo(68, now),
+      monto: detalleDe(getPedido("V-1056")).total,
+      banco: "Santander",
+      titular: "Ríos Agustina Belén",
+      operacion: "4471-2209-8813",
+      pedidoId: "V-1056",
+      confianza: 0.98,
+      estado: estadoDe("m-301"),
+    },
+    {
+      id: "cp-4",
+      clienta: "Romina Gaitán",
+      recibidoAt: isoAgo(92, now),
+      monto: detalleDe(getPedido("V-1055")).total,
+      banco: "Supervielle",
+      titular: "Gaitán Romina Soledad",
+      operacion: "SV-20581144",
+      pedidoId: "V-1055",
+      confianza: 0.99,
+      estado: "conciliado",
+    },
+    {
+      id: "cp-5",
+      clienta: "Carolina Vera",
+      recibidoAt: isoAgo(262, now),
+      monto: detalleDe(getPedido("V-1049")).total,
+      banco: "Provincia",
+      titular: "Vera Carolina",
+      operacion: "BP-0091283",
+      pedidoId: "V-1049",
+      confianza: 0.97,
+      estado: "conciliado",
+    },
   ];
 
   return {
@@ -236,26 +292,135 @@ type CasoSeed = [
 /** Los 17 casos del último corte. `monto: null` toma el total real del pedido de la semilla. */
 const CASOS: CasoSeed[] = [
   ["V-1042", "c-11", null, "entregado_sin_rendir", "entregado_sin_rendir", "Entregado", "Entregado, sin rendición", 2],
-  ["V-1041", "c-11", null, "entregado_sin_rendir", "efectivo_chofer", "Entregado", "Cobrado en efectivo por el chofer", 4],
-  ["V-1033", "c-04", null, "entregado_sin_rendir", "otro_alias", "En camino", "Pagó por transferencia a un alias que no es de VX3", 9],
-  ["V-1026", "c-15", 61_400, "entregado_sin_rendir", "entregado_sin_rendir", "Entregado", "Entregado, sin rendición", 6],
-  ["V-1024", "c-04", 58_900, "entregado_sin_rendir", "pago_sin_pedido", "Entregado", "Transferencia que no cubre un pedido claro: dice que pagó dos juntos", 7],
-  ["V-1021", "c-19", 63_200, "entregado_sin_rendir", "envio_duplicado", "Entregado (2 envíos)", "Un solo pedido: Zupply tiene ZP-87120 y ZP-87188", 8],
-  ["V-1019", "c-13", 56_800, "entregado_sin_rendir", "entregado_sin_rendir", "En camino", "Entregado: la clienta lo confirmó por WhatsApp", 9],
-  ["V-1017", "c-04", 65_400, "entregado_sin_rendir", "efectivo_chofer", "Entregado", "Cobrado en efectivo por el chofer", 10],
+  [
+    "V-1041",
+    "c-11",
+    null,
+    "entregado_sin_rendir",
+    "efectivo_chofer",
+    "Entregado",
+    "Cobrado en efectivo por el chofer",
+    4,
+  ],
+  [
+    "V-1033",
+    "c-04",
+    null,
+    "entregado_sin_rendir",
+    "otro_alias",
+    "En camino",
+    "Pagó por transferencia a un alias que no es de VX3",
+    9,
+  ],
+  [
+    "V-1026",
+    "c-15",
+    61_400,
+    "entregado_sin_rendir",
+    "entregado_sin_rendir",
+    "Entregado",
+    "Entregado, sin rendición",
+    6,
+  ],
+  [
+    "V-1024",
+    "c-04",
+    58_900,
+    "entregado_sin_rendir",
+    "pago_sin_pedido",
+    "Entregado",
+    "Transferencia que no cubre un pedido claro: dice que pagó dos juntos",
+    7,
+  ],
+  [
+    "V-1021",
+    "c-19",
+    63_200,
+    "entregado_sin_rendir",
+    "envio_duplicado",
+    "Entregado (2 envíos)",
+    "Un solo pedido: Zupply tiene ZP-87120 y ZP-87188",
+    8,
+  ],
+  [
+    "V-1019",
+    "c-13",
+    56_800,
+    "entregado_sin_rendir",
+    "entregado_sin_rendir",
+    "En camino",
+    "Entregado: la clienta lo confirmó por WhatsApp",
+    9,
+  ],
+  [
+    "V-1017",
+    "c-04",
+    65_400,
+    "entregado_sin_rendir",
+    "efectivo_chofer",
+    "Entregado",
+    "Cobrado en efectivo por el chofer",
+    10,
+  ],
   ["V-1044", "c-15", null, "en_camino", null, "En camino", "En camino desde ayer", 1],
-  ["V-1030", "c-01", 59_800, "en_camino", "rebote_fecha", "En camino", "Rebotó el sábado: estaba programado para el domingo", 4],
-  ["V-1029", "c-15", 54_300, "en_camino", "devolucion_fisica", "En camino", "Volvió al local el lunes, sin registrar en Zupply", 5],
+  [
+    "V-1030",
+    "c-01",
+    59_800,
+    "en_camino",
+    "rebote_fecha",
+    "En camino",
+    "Rebotó el sábado: estaba programado para el domingo",
+    4,
+  ],
+  [
+    "V-1029",
+    "c-15",
+    54_300,
+    "en_camino",
+    "devolucion_fisica",
+    "En camino",
+    "Volvió al local el lunes, sin registrar en Zupply",
+    5,
+  ],
   ["V-1028", "c-04", 62_700, "en_camino", null, "En camino", "En camino", 2],
-  ["V-1027", "c-11", 55_100, "en_camino", "envio_duplicado", "En camino (2 envíos)", "El mismo pedido salió en dos envíos", 5],
-  ["V-1025", "c-19", 58_600, "en_camino", "entregado_sin_rendir", "En camino", "Entregado el viernes: lo confirmó la clienta", 6],
+  [
+    "V-1027",
+    "c-11",
+    55_100,
+    "en_camino",
+    "envio_duplicado",
+    "En camino (2 envíos)",
+    "El mismo pedido salió en dos envíos",
+    5,
+  ],
+  [
+    "V-1025",
+    "c-19",
+    58_600,
+    "en_camino",
+    "entregado_sin_rendir",
+    "En camino",
+    "Entregado el viernes: lo confirmó la clienta",
+    6,
+  ],
   ["V-1020", "c-01", 52_600, "ausente", "rebote_fecha", "Ausente", "Ausente: hay que reprogramar", 4],
   ["V-1018", "c-13", 56_900, "ausente", "devolucion_fisica", "Ausente", "Devuelto al local", 7],
   ["V-1016", "c-02", 54_500, "ausente", "efectivo_chofer", "Ausente", "Pagó en efectivo: mandó la foto del recibo", 8],
 ];
 
 /** Pedidos donde el estado de Zupply no es el real (RF-M7-08). */
-const ZUPPLY_EQUIVOCADO = new Set(["V-1033", "V-1021", "V-1019", "V-1030", "V-1029", "V-1027", "V-1025", "V-1018", "V-1016"]);
+const ZUPPLY_EQUIVOCADO = new Set([
+  "V-1033",
+  "V-1021",
+  "V-1019",
+  "V-1030",
+  "V-1029",
+  "V-1027",
+  "V-1025",
+  "V-1018",
+  "V-1016",
+]);
 
 export const TIPO_CASO: Record<TipoCasoContraentrega, string> = {
   entregado_sin_rendir: "Entregado sin rendir",
@@ -303,9 +468,33 @@ function liquidaciones(now: number): LiquidacionTranstech[] {
     hasta: isoDate(lunes - n * 7 * DAY * 60_000 + 5 * DAY * 60_000),
   });
   return [
-    { id: "liq-3", ...semana(1), rendido: 2_184_000, reclamado: 214_000, recuperado: 162_000, estado: "en_reclamo", nota: "Federico reconoció 4 de 6 casos; quedan 2 rebotes por revisar." },
-    { id: "liq-2", ...semana(2), rendido: 2_410_000, reclamado: 187_000, recuperado: 187_000, estado: "cerrada", nota: "Todo recuperado en la rendición siguiente." },
-    { id: "liq-1", ...semana(3), rendido: 1_960_000, reclamado: 143_000, recuperado: 98_000, estado: "cerrada", nota: "$ 45.000 de un envío duplicado se descontaron del reparto." },
+    {
+      id: "liq-3",
+      ...semana(1),
+      rendido: 2_184_000,
+      reclamado: 214_000,
+      recuperado: 162_000,
+      estado: "en_reclamo",
+      nota: "Federico reconoció 4 de 6 casos; quedan 2 rebotes por revisar.",
+    },
+    {
+      id: "liq-2",
+      ...semana(2),
+      rendido: 2_410_000,
+      reclamado: 187_000,
+      recuperado: 187_000,
+      estado: "cerrada",
+      nota: "Todo recuperado en la rendición siguiente.",
+    },
+    {
+      id: "liq-1",
+      ...semana(3),
+      rendido: 1_960_000,
+      reclamado: 143_000,
+      recuperado: 98_000,
+      estado: "cerrada",
+      nota: "$ 45.000 de un envío duplicado se descontaron del reparto.",
+    },
   ];
 }
 
@@ -355,12 +544,22 @@ function reclamo(): ReclamoTranstech {
     "Hola Federico, ¿cómo va?",
     `Te paso el reclamo de la semana del ${fecha(desde)} al ${fecha(hasta)}: ${tipificados.length} casos por ${formatCurrency(total)}.`,
     "",
-    ...porTipo.map((item) => `• ${item.label}: ${item.casos} ${item.casos === 1 ? "caso" : "casos"}, ${formatCurrency(item.monto)}`),
+    ...porTipo.map(
+      (item) => `• ${item.label}: ${item.casos} ${item.casos === 1 ? "caso" : "casos"}, ${formatCurrency(item.monto)}`,
+    ),
     "",
     "En el Excel va cada pedido con la clienta, el monto, lo que figura en Zupply y lo que encontramos nosotros. ¿Lo cerramos con la rendición del lunes? Gracias.",
   ].join("\n");
 
-  return { desde, hasta, porTipo, casos: tipificados.length, total, mensaje, enviado: getConciliacionDb().reclamoEnviado };
+  return {
+    desde,
+    hasta,
+    porTipo,
+    casos: tipificados.length,
+    total,
+    mensaje,
+    enviado: getConciliacionDb().reclamoEnviado,
+  };
 }
 
 /** Cobros pendientes de más de 2 días, con su monto (Manual v4 P-07 R-5). Los usa el Inicio (P-15). */
@@ -477,14 +676,19 @@ function caja(): CajaDelDia {
     reserva,
     capacidadCompra: disponible - sumar(compromisosHoy) - reserva,
     proveedores: proveedores
-      .filter((proveedor) => SALDOS_PROVEEDOR[proveedor.id])
-      .map((proveedor) => ({
-        id: proveedor.id,
-        proveedor: proveedor.nombre,
-        saldo: SALDOS_PROVEEDOR[proveedor.id],
-        condiciones: proveedor.condiciones,
-        ultimaCompraDias: proveedor.ultimaCompraDias,
-      }))
+      .flatMap((proveedor) => {
+        const saldo = SALDOS_PROVEEDOR[proveedor.id];
+        if (!saldo) return [];
+        return [
+          {
+            id: proveedor.id,
+            proveedor: proveedor.nombre,
+            saldo,
+            condiciones: proveedor.condiciones,
+            ultimaCompraDias: proveedor.ultimaCompraDias,
+          },
+        ];
+      })
       .toSorted((a, b) => b.saldo - a.saldo),
   };
 }

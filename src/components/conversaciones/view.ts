@@ -92,8 +92,8 @@ export function toConversacionView(conversacion: Conversacion, now: number): Con
     return { ...mensaje, hora };
   });
 
-  const ultimoMensaje = conversacion.mensajes.findLast((mensaje) => mensaje.tipo !== "sistema") ??
-    conversacion.mensajes.at(-1);
+  const ultimoMensaje =
+    conversacion.mensajes.findLast((mensaje) => mensaje.tipo !== "sistema") ?? conversacion.mensajes.at(-1);
   const actividad = conversacion.mensajes.at(-1)?.enviadoEn;
 
   const pedidos: ConversacionView["fichaLabels"]["pedidos"] = {};

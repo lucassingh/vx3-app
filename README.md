@@ -1,149 +1,141 @@
-# Dashboard starter
+# VX3 app
 
-Cascarón de dashboard profesional y reutilizable: aside con secciones, items y
-subitems, navbar con breadcrumb y avatar, tema claro/oscuro y un área de
-pantallas lista para construir. Se adapta a la marca de un cliente editando
-solo los archivos de `src/config/`.
+App de gestión de VX3, mayorista de lencería y blanco. Concentra en un solo
+lugar el catálogo, las conversaciones, los pedidos, los envíos, los cobros, la
+post-venta, la pauta y el stock, con DUX por detrás como ERP fiscal y de stock.
+La desarrolla Más Uno.
+
+**Estado:** las 25 pantallas de los módulos M0 a M12 andan sobre una API
+simulada. Las integraciones reales (DUX, Meta, WhatsApp, Correo, Zupply, bancos)
+entran dominio por dominio, una fase por PR, sin tocar las pantallas.
 
 **Stack:** Next.js 16 (App Router, Cache Components) · React 19 · TypeScript ·
 Tailwind CSS 4 · Radix UI · Motion · Lucide · Vitest + Testing Library.
 
+## Arrancar
+
 ```bash
 npm install
-npm run dev     # http://localhost:3000
-npm test        # tests unitarios
+cp .env.example .env.local   # completar los valores: cada variable dice de dónde sale
+npm run db:migrate            # aplica las migraciones en tu base
+npm run auth:create-admin     # tu usuario admin, con una contraseña temporal
+npm run dev
 ```
 
-Abrí http://localhost:3000 e ingresá con `eliasllaury@gmail.com` / `Admin123456!`
-(credenciales fijas por ahora, ver `src/lib/session.ts`).
+No hay registro público: el primer admin de cada base se crea con
+`npm run auth:create-admin` y los demás usuarios, desde Configuración → Usuarios y
+roles. Con la API simulada no hace falta ninguna otra credencial.
 
-## Qué incluye
+| Script                      | Qué hace                                                                          |
+| --------------------------- | --------------------------------------------------------------------------------- |
+| `npm run dev`               | Servidor de desarrollo                                                            |
+| `npm run build`             | Build de producción (valida tipos y las reglas de Cache Components)               |
+| `npm run lint`              | ESLint                                                                            |
+| `npm run typecheck`         | TypeScript sin emitir                                                             |
+| `npm run format`            | Prettier sobre todo el repo (`format:check` solo verifica)                        |
+| `npm test`                  | Tests unitarios y de componentes, una vez                                         |
+| `npm run test:watch`        | Los mismos, en modo watch                                                         |
+| `npm run test:coverage`     | Los mismos, con cobertura y sus umbrales (`vitest.config.mts`)                    |
+| `npm run test:int`          | Tests de integración en una branch efímera de Neon que se crea y se borra         |
+| `npm run db:migrate:dev`    | Crea y aplica una migración en la branch `develop` de Neon (`-- --name <nombre>`) |
+| `npm run db:migrate`        | Aplica las migraciones pendientes (lo que corre la CI; nunca genera nada)         |
+| `npm run db:seed`           | Datos de referencia, idempotentes                                                 |
+| `npm run db:studio`         | Prisma Studio                                                                     |
+| `npm run db:dump`           | Copia local de la base con `pg_dump` (en `backups/`)                              |
+| `npm run db:roles`          | Usuarios `app` y `readonly` de una branch (`-- --branch develop`), idempotente    |
+| `npm run auth:create-admin` | Crea un admin con contraseña temporal (el primero de cada base)                   |
 
-- **Layout**: aside blanco con secciones y grupos desplegables, navbar con botón
-  de colapsar junto al breadcrumb, avatar con menú de usuario y cierre de
-  sesión al pie del aside.
-- **Aside colapsable**: se reduce a íconos con tooltips y menús flotantes para
-  los subitems. Atajo `⌘B` / `Ctrl+B`. En mobile se convierte en drawer.
-- **Tema claro y oscuro**: claro, oscuro o sistema, persistido y sin parpadeo
-  al cargar. En claro, el área de pantallas usa `#f3f3f5`, el aside, la navbar y
-  las cards son blancos y los bordes son finos.
-- **API simulada**: Inicio y notificaciones piden sus datos a una API mock con
-  latencia real, búsqueda y paginación en la URL, skeletons de carga y errores
-  por widget con "Reintentar". Pasar al backend real es `NEXT_PUBLIC_API_MOCK=false` + `API_URL`.
-- **Skeletons**: presets con shimmer (KPIs, gráfico, lista, tabla, card,
-  página completa) para que cada carga tenga la forma del contenido final.
-- **Avisos (toasts)**: Sonner con los tokens del tema; éxito, error con
-  reintento, promesas y deshacer. `import { toast } from "@/lib/toast"`.
-- **Pantallas de ejemplo**: Inicio con KPIs, gráfico de actividad, distribución y
-  tabla con búsqueda; una pantalla placeholder por cada item del menú; Ajustes
-  con selector de tema y vista previa de los colores de marca; login y 404.
-- **Tests**: Vitest + Testing Library, con ejemplos de lógica, API, componentes
-  con teclado y mutaciones optimistas.
-- **Accesibilidad**: HTML semántico, skip link, foco visible, `aria-current`,
-  navegación por teclado (incluido el gráfico), contraste AA y respeto por
-  `prefers-reduced-motion`.
+## Datos: API simulada y real
 
-## Adaptarlo a un cliente
-
-| Qué | Dónde |
-| --- | --- |
-| Colores primary / secondary / accent (claro y oscuro) | `src/config/theme.css` |
-| Nombre, bajada, logo, idioma, versión, tema inicial | `src/config/site.ts` |
-| Secciones, items y subitems del aside | `src/config/navigation.ts` |
-| Tipografías | `src/config/fonts.ts` |
-| Favicon | `src/app/icon.svg` |
-| Usuario y auth (simulados) | `src/lib/auth.ts` |
-
-Cada `href` de la navegación tiene su pantalla en
-`src/app/(dashboard)/<href>/page.tsx`. Al agregar un item, creá su `page.tsx`
-(podés empezar con `<PlaceholderView href="/ruta" />`); una ruta sin página
-muestra el 404 dentro del dashboard.
-
-### Pedírselo a Claude
-
-El repo incluye un `CLAUDE.md` con el procedimiento completo, así que alcanza
-con algo como:
-
-> Adaptá el dashboard para **Cliente X**: primary `#1d4ed8`, secondary
-> `#0f172a`, accent `#f59e0b`. Navegación: General → Inicio, Clientes,
-> Facturación (Emitidas, Recibidas); Configuración → Usuarios, Ajustes.
-
-## Datos y API simulada
-
-Los componentes nunca llaman a `fetch` directo: usan `api`, tipado con el
-contrato de `src/lib/api/types.ts`.
+Los componentes nunca llaman a `fetch` directo: usan `api`, tipado con los
+contratos de `src/lib/api/contracts/` (uno por módulo).
 
 ```tsx
-// Server Component
-import { api } from "@/lib/api/server";
-const page = await api.records.list({ q: "atlas", page: 1 });
-
-// Client Component
-import { api } from "@/lib/api/browser";
-await api.notifications.markAllRead();
+import { api } from "@/lib/api/server"; // Server Components
+import { api } from "@/lib/api/browser"; // Client Components
 ```
 
-| Variable (`.env.local`) | Efecto |
-| --- | --- |
-| `NEXT_PUBLIC_API_MOCK` | `true` (o vacía) = API simulada · `false` = API real. Reiniciar `npm run dev` al cambiarla. |
-| `API_URL` / `NEXT_PUBLIC_API_URL` | URL de la API real (servidor / navegador), con el mock apagado. |
-| `AUTH_SECRET` | Firma de la cookie de sesión. |
-| `MOCK_API_DELAY_MS` | Latencia simulada (default 350 ms). |
-| `MOCK_API_FAILURE_RATE` | Probabilidad de error 503 (0 a 1), para ver los estados de falla. |
+Cada dominio (un módulo: `cobros`, `stock`, `catalogo`…) es simulado o real por
+separado. `API_REAL_DOMAINS` lista los reales, separados por coma; el resto usa la
+API simulada. Todo pasa por el endpoint único `/api/v1/*` de la app, que pide sesión
+y decide en el servidor (`src/lib/api/dispatch.ts`). Las implementaciones reales van
+en `src/lib/api/real-routes.ts`, con el mismo contrato que su mock.
 
-La API simulada vive en `src/mocks/` y responde en `/api/mock/*`
-(probá `/api/mock/records?q=atlas`). Sus datos están en memoria: los cambios
-(por ejemplo, marcar notificaciones como leídas) duran hasta reiniciar el servidor.
+La API simulada vive en `src/mocks/`: `seed/` es la semilla compartida (SKUs
+reales, clientas, pedidos y anuncios coherentes entre pantallas), `domains/`
+arma las respuestas de cada módulo y `db.ts` guarda el estado en memoria hasta
+reiniciar el servidor.
 
-## Tests
+## Usuarios, sesiones y permisos
 
-```bash
-npm test            # una vez (CI)
-npm run test:watch  # modo watch
-```
+Auth propia con Better Auth (fijado en la 1.7.12), con los usuarios en nuestra base
+(`src/modules/platform/auth/`). Se entra con email o usuario; sesión de 7 días que se
+renueva con el uso; quien entra con una contraseña temporal la cambia antes de seguir.
+Cinco intentos fallidos bloquean al usuario (veinte, a la IP) con una espera que crece.
+Better Auth no tiene ruta HTTP: todo pasa por nuestras Server Actions.
 
-Incluye tests de navegación (verifica que cada item del menú tenga su página),
-formato, preferencias, la API simulada, el cliente de API, el gráfico con
-teclado, la búsqueda con debounce, las notificaciones con actualización
-optimista, los avisos (toasts), el botón de copiar y los skeletons. Los Server Components `async` no se pueden renderizar en Vitest; su
-lógica se prueba por separado.
+- **Roles y matriz:** `src/modules/platform/permissions.ts` es la fuente de verdad. Cada
+  área tiene permiso de ver y de editar (`pedidos.ver`, `pedidos.editar`).
+- **Qué área es cada pantalla y cada ruta de la API:** `src/modules/platform/access.ts`.
+- **Dónde se verifica:** el proxy solo mira que haya cookie. La verificación real está en
+  `requirePageAccess(href)`, primera línea de cada pantalla (un test lo exige); en el
+  despachador de la API (401 sin sesión, 403 sin permiso), y en cada Server Action vía
+  `defineAction({ permission })`.
+- **Auditoría:** el `audit()` que `defineAction` le da a cada acción escribe en
+  `audit_logs` quién hizo qué, con el antes y el después, sin contraseñas ni tokens.
+
+## Base de datos
+
+PostgreSQL en Neon (proyecto `cli-vx3`), con Prisma 7 fijado en la 7.10.1. La app usa
+la conexión con pooler (`DATABASE_URL`, en `src/db/client.ts`) y las migraciones la
+directa (`DATABASE_URL_UNPOOLED`, en `prisma.config.ts`). El esquema está en
+`prisma/schema.prisma`; el cliente se genera solo al instalar (`src/generated/`, fuera de
+git). Los IDs son uuid v7 generados en la app (`newId()` de `src/db/ids.ts`).
+
+Tres usuarios por branch (`src/db/roles.ts`): el dueño (`neondb_owner`) migra; `app`, el
+de la app en Vercel, lee y escribe datos pero no toca el esquema ni cambia la auditoría;
+`readonly` es para soporte y los backups. `npm run db:roles` los crea y deja las
+conexiones en `.secrets/neon-<branch>.env`, fuera de git.
 
 ## Estructura
 
 ```
 src/
-├─ config/            ← todo lo que cambia por cliente
-│  ├─ theme.css       colores, superficies, estados, radios
-│  ├─ site.ts         identidad del producto
-│  ├─ navigation.ts   aside y menú de usuario
-│  └─ fonts.ts
-├─ app/
-│  ├─ (auth)/login/   login de demo
-│  ├─ (dashboard)/    layout con aside + navbar y una carpeta por pantalla
-│  └─ api/mock/       API simulada para el navegador
+├─ app/(dashboard)/   una carpeta por pantalla
 ├─ components/
-│  ├─ layout/         aside, navbar, breadcrumb, menús, PageHeader/PageBody
-│  ├─ ui/             Button, Card, Table, Badge, Input, Avatar, DropdownMenu,
-│  │                  Tooltip, Skeleton, Toaster, CopyButton
-│  ├─ views/          PlaceholderView, AsyncWidget, presets de skeletons
+│  ├─ <dominio>/      componentes de cada módulo (pedidos, cobros, pauta…)
 │  ├─ kit/            bloques de pantalla (KPIs, barras, gráfico, embudo…)
-│  ├─ inicio/         widgets del Inicio (M10)
-│  └─ <dominio>/      componentes de cada módulo (pedidos, cobros, pauta…)
-├─ mocks/             datos semilla, base en memoria y rutas de la API simulada
-├─ hooks/             useTheme, useSignOut
-├─ lib/
-│  ├─ api/            contrato, endpoints y clientes (server / browser)
-│  └─ …               preferencias, navegación, formato, auth, utils
-└─ test/              setup de Vitest
+│  ├─ ui/             primitivas (Button, Card, Table, Badge, Input…)
+│  └─ layout/         aside, navbar, breadcrumb, PageHeader/PageBody
+├─ config/            marca y navegación
+├─ lib/               piezas base (errores, Money, fechas, logger, defineAction)
+├─ lib/api/           contratos, endpoints y clientes (server / browser)
+├─ modules/           lógica real por módulo (platform: auth, permisos, usuarios, auditoría)
+└─ mocks/             semilla, base en memoria y rutas de la API simulada
 ```
 
-## Notas técnicas
+## Cómo se trabaja
 
-- **Sin flash al cargar**: un script inline en `<head>` aplica `data-theme` y
-  `data-sidebar` en `<html>` antes del primer paint; React los lee con
-  `useSyncExternalStore`. Así el layout queda estático (compatible con Cache
-  Components) y no hay errores de hidratación.
-- **Tokens**: `theme.css` define variables CSS y `globals.css` las expone a
-  Tailwind (`bg-primary`, `bg-surface`, `bg-canvas`, `text-muted-foreground`…).
-  Los tonos suaves se derivan con opacidad (`bg-primary/10`), sin variables extra.
-- **Variantes propias**: `dark:` y `sidebar-collapsed:` (esta solo aplica en desktop).
+- **Branches:** `main` es producción, `develop` es QA y cada fase de
+  implementación va en `phase/<N.M>-<slug>`, que nace de `develop`.
+- **Commits:** Conventional Commits en inglés, uno por ítem de la fase.
+- **PR:** de la fase hacia `develop`, con la descripción en español y la CI en
+  verde. Merge commit, sin squash.
+
+## Ambientes y despliegue
+
+Todo lo despliega GitHub Actions, que migra la base antes de publicar:
+
+- **Preview:** cada PR a `develop`, con la URL comentada en la PR (`preview.yml`).
+- **QA:** cada push a `develop`, en `cli-vx3-qa.vercel.app` (`deploy-qa.yml`).
+- **Producción:** un tag `vX.Y.Z` sobre un commit de `main` que coincida con la versión
+  de `package.json` (`deploy-prod.yml`). Mergear a `main` no despliega nada: el tag es la
+  aprobación.
+
+Backup semanal cifrado (`backup.yml`), prueba de restauración (`restore-test.yml`),
+errores en Sentry y mantenimiento diario con Vercel Cron y un Workflow
+(`src/workflows/`). Qué hacer cuando algo se rompe, cómo volver atrás y cómo rotar
+un secreto: [`docs/operacion.md`](docs/operacion.md).
+
+Las convenciones de código (tokens de color, skeletons, toasts, tests) están en
+`CLAUDE.md`.

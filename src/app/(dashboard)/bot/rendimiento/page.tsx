@@ -18,13 +18,15 @@ import { PageBody, PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/bot/rendimiento";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M3 · Rendimiento del bot: acierto, derivaciones, costo y visor de respuestas. */
-export default function BotRendimientoPage() {
+export default async function BotRendimientoPage() {
+  await requirePageAccess("/bot/rendimiento");
   const route = findRoute(HREF);
 
   return (

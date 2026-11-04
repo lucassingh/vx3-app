@@ -10,6 +10,7 @@ import { AsyncWidget } from "@/components/views/async-widget";
 import { SkeletonText } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import { getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/envios/cotizador";
 
@@ -41,7 +42,8 @@ function CotizadorSkeleton() {
 }
 
 /** M6 · Cotizador propio: arma los bultos y cotiza bulto por bulto (RF-M6-01, 03, 09). */
-export default function Page() {
+export default async function Page() {
+  await requirePageAccess("/envios/cotizador");
   return (
     <>
       <RouteHeader

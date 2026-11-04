@@ -13,7 +13,7 @@ const MINIMO = 45_000;
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3">
-      <h3 className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{title}</h3>
+      <h3 className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">{title}</h3>
       {children}
     </section>
   );
@@ -105,8 +105,8 @@ export function PedidoDetalle({ pedido }: { pedido: PedidoBandeja }) {
         {pedido.faltaParaMinimo > 0 && (
           <div className="space-y-1.5 rounded-lg bg-muted/60 p-3">
             <p className="text-[13px]">
-              Faltan <span className="font-semibold">{formatCurrency(pedido.faltaParaMinimo)}</span> para el
-              mínimo de {formatCurrency(MINIMO)}. Se pide un complementario por la diferencia, no un pedido nuevo.
+              Faltan <span className="font-semibold">{formatCurrency(pedido.faltaParaMinimo)}</span> para el mínimo de{" "}
+              {formatCurrency(MINIMO)}. Se pide un complementario por la diferencia, no un pedido nuevo.
             </p>
             <Meter
               value={pedido.mercaderia}
@@ -138,7 +138,7 @@ export function PedidoDetalle({ pedido }: { pedido: PedidoBandeja }) {
               <span
                 aria-hidden
                 className={cn(
-                  "absolute -left-[1.6875rem] top-1 size-2.5 rounded-full border-2 border-surface",
+                  "absolute top-1 -left-[1.6875rem] size-2.5 rounded-full border-2 border-surface",
                   paso.actual ? "bg-primary ring-4 ring-primary/15" : paso.hecho ? "bg-primary/60" : "bg-border-strong",
                 )}
               />

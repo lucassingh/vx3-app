@@ -1,4 +1,5 @@
-import { toQueryString, type ApiRequest } from "../http";
+import type { ApiRequest } from "../http";
+import type { Nivel, Role } from "@/modules/platform/permissions";
 import type { DailyPoint, Share } from "../types";
 
 /**
@@ -11,14 +12,7 @@ import type { DailyPoint, Share } from "../types";
 export type ReglaGrupo = "precios" | "pedidos" | "envios" | "cobros" | "postventa" | "bot" | "pauta";
 
 export type ReglaTipo =
-  | "coeficiente"
-  | "porcentaje"
-  | "moneda"
-  | "numero"
-  | "hora"
-  | "texto"
-  | "seleccion"
-  | "booleano";
+  "coeficiente" | "porcentaje" | "moneda" | "numero" | "hora" | "texto" | "seleccion" | "booleano";
 
 export type ReglaValor = number | string | boolean | null;
 
@@ -141,7 +135,8 @@ export type IaConsumo = {
 
 /* ---- Usuarios, roles y auditoría (RF-M0-01, RF-M0-03, `06` §4) ------------- */
 
-export type RolUsuario = "admin" | "operaciones" | "postventa" | "compras" | "marketing" | "solo_lectura";
+/** Los roles y la matriz viven en src/modules/platform/permissions.ts. */
+export type RolUsuario = Role;
 
 export type UsuarioEquipo = {
   id: string;
@@ -155,7 +150,7 @@ export type UsuarioEquipo = {
   estado: "activo" | "invitado";
 };
 
-export type NivelPermiso = "edita" | "ve" | "no";
+export type NivelPermiso = Nivel;
 
 export type MatrizPermisos = {
   roles: { id: RolUsuario; nombre: string; quien: string }[];
@@ -175,8 +170,6 @@ export type AuditoriaEntry = {
   /** Fecha y hora ISO. */
   en: string;
 };
-
-export type InvitacionInput = { email: string; rol: RolUsuario };
 
 /* ---- Preferencias de alertas y cuenta ------------------------------------- */
 
@@ -207,11 +200,14 @@ export type SeguridadCuenta = {
 
 /* ---- Valores de reglas: texto y validación (los usan el mock y la pantalla) - */
 
-const miles = (value: number) =>
-  String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const miles = (value: number) => String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 const decimal = (value: number) => String(value).replace(".", ",");
 /** Coeficientes con 2 a 4 decimales: 1.3 → "1,30", 1.1765 → "1,1765". */
-const coeficiente = (value: number) => value.toFixed(4).replace(/0{1,2}$/, "").replace(".", ",");
+const coeficiente = (value: number) =>
+  value
+    .toFixed(4)
+    .replace(/0{1,2}$/, "")
+    .replace(".", ",");
 
 /** Texto de un valor de regla, sin Intl (igual en servidor y navegador): "$ 45.000", "× 1,3". */
 export function describirValorRegla(regla: Pick<ReglaNegocio, "tipo" | "unidad" | "opciones">, valor: ReglaValor) {
@@ -291,10 +287,7 @@ export function plataformaEndpoints(request: ApiRequest) {
       list: () => request<ReglaNegocio[]>("/plataforma/reglas"),
       historial: () => request<CambioRegla[]>("/plataforma/reglas/historial"),
       actualizar: (cambios: CambioReglaInput[]) =>
-        request<{ reglas: ReglaNegocio[]; cambios: CambioRegla[] }>(
-          "/plataforma/reglas",
-          json("PATCH", { cambios }),
-        ),
+        request<{ reglas: ReglaNegocio[]; cambios: CambioRegla[] }>("/plataforma/reglas", json("PATCH", { cambios })),
     },
     integraciones: {
       list: () => request<Integracion[]>("/plataforma/integraciones"),
@@ -319,16 +312,6 @@ export function plataformaEndpoints(request: ApiRequest) {
         request<IaConfig>("/plataforma/ia", json("PATCH", cambios)),
       cargarKey: (input: { tipo: "api" | "admin"; key: string }) =>
         request<CredencialEnmascarada>("/plataforma/ia/keys", json("POST", input)),
-    },
-    usuarios: {
-      list: () => request<UsuarioEquipo[]>("/plataforma/usuarios"),
-      roles: () => request<MatrizPermisos>("/plataforma/roles"),
-      invitar: (input: InvitacionInput) =>
-        request<UsuarioEquipo>("/plataforma/usuarios/invitar", json("POST", input)),
-    },
-    auditoria: {
-      list: (query: { usuario?: string } = {}) =>
-        request<AuditoriaEntry[]>(`/plataforma/auditoria${toQueryString(query)}`),
     },
     preferencias: {
       get: () => request<AlertaPreferencia[]>("/plataforma/preferencias"),

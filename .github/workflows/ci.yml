@@ -1,0 +1,77 @@
+# CI reutilizable: la llaman preview.yml (cada PR), deploy-qa.yml (cada push a
+# develop) y deploy-prod.yml (cada tag de versión), antes de desplegar. Se
+# puede correr sola a mano desde Actions.
+#
+#   checks       typecheck, lint, formato, tests unitarios y de componentes con
+#                cobertura, y build. Sin secretos.
+#   integration  tests de integración en una branch efímera de Neon (npm run
+#                test:int): migra, verifica que las migraciones y schema.prisma
+#                coincidan, corre y borra la branch. Necesita los secrets
+#                NEON_API_KEY y NEON_PROJECT_ID del repo.
+
+name: CI
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Sin .env.local: la validación de variables queda relajada (src/env.ts).
+  SKIP_ENV_VALIDATION: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+  # Los hooks de git no hacen falta en la CI.
+  HUSKY: "0"
+
+jobs:
+  checks:
+    name: Typecheck, lint, tests y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # El postinstall corre prisma generate.
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Formato
+        run: npm run format:check
+
+      - name: Tests unitarios y de componentes, con cobertura
+        run: npm run test:coverage
+
+      - name: Build
+        run: npm run build
+
+  integration:
+    name: Integración (branch efímera de Neon)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Migraciones, sincronía del esquema y tests de integración
+        run: npm run test:int
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}

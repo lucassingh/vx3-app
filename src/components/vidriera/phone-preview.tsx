@@ -15,7 +15,7 @@ export function PhonePreview({ vista }: { vista: VidrieraVistaProducto }) {
     <figure className="space-y-3">
       <div className="mx-auto w-full max-w-[19.5rem] rounded-[2.4rem] border-[9px] border-foreground bg-foreground shadow-popover">
         <div inert className="overflow-hidden rounded-[1.8rem] bg-surface">
-          <div className="flex items-center justify-center gap-1.5 bg-muted px-4 pb-2 pt-3 text-[11px] text-muted-foreground">
+          <div className="flex items-center justify-center gap-1.5 bg-muted px-4 pt-3 pb-2 text-[11px] text-muted-foreground">
             <Lock aria-hidden className="size-3" />
             {vista.link}
           </div>
@@ -23,20 +23,23 @@ export function PhonePreview({ vista }: { vista: VidrieraVistaProducto }) {
           <div className="relative">
             <ProductThumb sku={vista.sku} colors={vista.colores} size="lg" className="rounded-none border-0" />
             {vista.quedanPocas && (
-              <span className="absolute left-3 top-3 rounded-full bg-surface/95 px-2 py-0.5 text-[11px] font-semibold text-warning shadow-card">
+              <span className="absolute top-3 left-3 rounded-full bg-surface/95 px-2 py-0.5 text-[11px] font-semibold text-warning shadow-card">
                 Quedan pocas
               </span>
             )}
-            <span className="absolute bottom-7 right-3 flex gap-1" aria-hidden>
+            <span className="absolute right-3 bottom-7 flex gap-1" aria-hidden>
               {[0, 1, 2, 3].map((dot) => (
-                <span key={dot} className={dot === 0 ? "size-1.5 rounded-full bg-white" : "size-1.5 rounded-full bg-white/50"} />
+                <span
+                  key={dot}
+                  className={dot === 0 ? "size-1.5 rounded-full bg-white" : "size-1.5 rounded-full bg-white/50"}
+                />
               ))}
             </span>
           </div>
 
           <div className="space-y-3 p-4">
             <div className="space-y-1">
-              <p className="text-[15px] font-semibold leading-snug">{vista.nombre}</p>
+              <p className="text-[15px] leading-snug font-semibold">{vista.nombre}</p>
               <p className="text-xs text-muted-foreground first-letter:uppercase">
                 {vista.aclaracion} · curva {vista.talles}
               </p>
@@ -73,7 +76,9 @@ export function PhonePreview({ vista }: { vista: VidrieraVistaProducto }) {
                 valueText={`${formatCurrency(vista.carrito)} de ${formatCurrency(vista.minimo)}`}
               />
               <p className="text-[11px] text-muted-foreground">
-                {falta > 0 ? `Te faltan ${formatCurrency(falta)} para el mínimo mayorista` : "Llegaste al mínimo mayorista"}
+                {falta > 0
+                  ? `Te faltan ${formatCurrency(falta)} para el mínimo mayorista`
+                  : "Llegaste al mínimo mayorista"}
               </p>
             </div>
 
@@ -100,7 +105,7 @@ export function LinkPreview({ vista }: { vista: VidrieraVistaProducto }) {
           <div className="flex gap-3 p-2">
             <ProductThumb sku={vista.sku} colors={vista.colores} size="md" className="size-16" />
             <div className="min-w-0 space-y-0.5 py-0.5">
-              <p className="line-clamp-2 text-[13px] font-semibold leading-snug">{vista.nombre}</p>
+              <p className="line-clamp-2 text-[13px] leading-snug font-semibold">{vista.nombre}</p>
               <p className="text-xs text-muted-foreground">
                 {formatCurrency(vista.precio)} la {vista.presentacion.toLowerCase()}
               </p>
@@ -108,8 +113,9 @@ export function LinkPreview({ vista }: { vista: VidrieraVistaProducto }) {
             </div>
           </div>
         </div>
-        <p className="px-2 pb-1 pt-2 text-[13px]">
-          Te dejo el link para verlo completo: <span className="font-medium underline underline-offset-2">{vista.link}</span>
+        <p className="px-2 pt-2 pb-1 text-[13px]">
+          Te dejo el link para verlo completo:{" "}
+          <span className="font-medium underline underline-offset-2">{vista.link}</span>
         </p>
         <p className="flex items-center justify-end gap-1 px-2 pb-1 text-[11px] text-muted-foreground">
           11:42

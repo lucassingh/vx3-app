@@ -37,7 +37,7 @@ export function ProductThumb({
       {stripes.map((color, index) => (
         <span key={`${color}-${index}`} className="h-full flex-1" style={{ background: swatchFor(color) }} />
       ))}
-      <span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/55 to-transparent px-1 pb-0.5 pt-3 text-center font-mono font-semibold leading-none tracking-tight text-white">
+      <span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/55 to-transparent px-1 pt-3 pb-0.5 text-center font-mono leading-none font-semibold tracking-tight text-white">
         {sku}
       </span>
     </span>

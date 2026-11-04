@@ -51,13 +51,7 @@ export function UrlSearch({ label, placeholder, param = "q", debounceMs = 300 }:
   };
 
   return (
-    <SearchField
-      value={value}
-      onChange={onChange}
-      pending={pending}
-      aria-label={label}
-      placeholder={placeholder}
-    />
+    <SearchField value={value} onChange={onChange} pending={pending} aria-label={label} placeholder={placeholder} />
   );
 }
 
@@ -73,7 +67,7 @@ export function SearchField({
     <div className={className ?? "relative w-full sm:w-64"}>
       <Icon
         aria-hidden
-        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground data-[pending=true]:animate-spin"
+        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground data-[pending=true]:animate-spin"
         data-pending={pending}
       />
       <Input type="search" aria-busy={pending} className="pl-9" placeholder="Buscar" {...props} />

@@ -28,15 +28,7 @@ export function diasLabel(dias: number) {
   return `Hace ${dias} días`;
 }
 
-export function PageLink({
-  href,
-  disabled,
-  children,
-}: {
-  href: string;
-  disabled: boolean;
-  children: React.ReactNode;
-}) {
+export function PageLink({ href, disabled, children }: { href: string; disabled: boolean; children: React.ReactNode }) {
   if (disabled) {
     return (
       <Button variant="outline" size="sm" disabled>

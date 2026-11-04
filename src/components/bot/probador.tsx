@@ -66,9 +66,12 @@ export function Probador({ nombre }: { nombre: string }) {
         ref={logRef}
         role="log"
         aria-label="Chat de prueba"
-        className="scrollbar-thin h-80 space-y-3 overflow-y-auto border-y border-border bg-canvas/60 px-4 py-4"
+        className="h-80 scrollbar-thin space-y-3 overflow-y-auto border-y border-border bg-canvas/60 px-4 py-4"
       >
-        <BotBubble nombre={nombre} texto={`¡Hola! Soy ${nombre}. Escribime como si fueras una clienta y te muestro qué respondería.`} />
+        <BotBubble
+          nombre={nombre}
+          texto={`¡Hola! Soy ${nombre}. Escribime como si fueras una clienta y te muestro qué respondería.`}
+        />
         {turnos.map((turno) => (
           <div key={turno.id} className="space-y-3">
             <div className="flex justify-end">
@@ -91,7 +94,11 @@ export function Probador({ nombre }: { nombre: string }) {
                       <span className="sr-only">: {herramienta.detalle}</span>
                     </span>
                   ))}
-                  {turno.prueba.derivaria && <Badge variant="warning" dot>Derivaría a una persona</Badge>}
+                  {turno.prueba.derivaria && (
+                    <Badge variant="warning" dot>
+                      Derivaría a una persona
+                    </Badge>
+                  )}
                 </div>
               </div>
             ) : (

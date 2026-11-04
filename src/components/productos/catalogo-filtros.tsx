@@ -15,7 +15,11 @@ function filtrosDe(facetas: CatalogoFacetas): Filtro[] {
   return [
     { param: "rubro", label: "Rubro", options: facetas.rubros.map((value) => ({ value, label: value })) },
     { param: "marca", label: "Marca", options: facetas.marcas.map((value) => ({ value, label: value })) },
-    { param: "proveedor", label: "Proveedor", options: facetas.proveedores.map(({ id, nombre }) => ({ value: id, label: nombre })) },
+    {
+      param: "proveedor",
+      label: "Proveedor",
+      options: facetas.proveedores.map(({ id, nombre }) => ({ value: id, label: nombre })),
+    },
     {
       param: "estado",
       label: "Estado",
@@ -52,7 +56,11 @@ export function CatalogoFiltros({ facetas }: { facetas: CatalogoFacetas }) {
     <div className="flex w-full flex-col gap-3" aria-busy={pending}>
       <div className="flex flex-wrap items-center gap-2">
         <UrlSearch label="Buscar productos" placeholder="SKU, nombre o marca" />
-        <div role="group" aria-label="Vista" className="ml-auto inline-flex rounded-lg border border-border bg-muted p-0.5">
+        <div
+          role="group"
+          aria-label="Vista"
+          className="ml-auto inline-flex rounded-lg border border-border bg-muted p-0.5"
+        >
           {(["grilla", "lista"] as const).map((value) => {
             const Icon = value === "grilla" ? LayoutGrid : List;
             const active = vista === value;

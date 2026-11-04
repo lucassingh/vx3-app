@@ -4,7 +4,7 @@ import { ChevronDown, LogOut } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useId, useState } from "react";
+import { Suspense, useId, useMemo, useState } from "react";
 import { Logo } from "@/components/brand/logo";
 import { useSidebar } from "@/components/layout/sidebar-provider";
 import { Badge } from "@/components/ui/badge";
@@ -16,25 +16,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  navigation,
-  type NavGroup,
-  type NavLink,
-  type NavSection,
-} from "@/config/navigation";
+import { navigation, type NavGroup, type NavLink, type NavSection } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
 import { useSignOut } from "@/hooks/use-sign-out";
-import { isMockApi } from "@/lib/api/config";
+import { useCurrentUser } from "@/lib/auth";
 import { isActivePath } from "@/lib/navigation";
+import { navegacionPara } from "@/modules/platform/access";
 import { cn } from "@/lib/utils";
+import { useDemoData } from "./demo-data";
 
 const itemClass =
   "group/item relative flex h-9 w-full min-w-0 items-center gap-3 overflow-hidden whitespace-nowrap rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:-outline-offset-2";
 
 const itemActiveClass = "bg-primary/10 text-foreground hover:bg-primary/10";
 
-const iconClass =
-  "size-4 shrink-0 text-muted-foreground transition-colors group-hover/item:text-foreground";
+const iconClass = "size-4 shrink-0 text-muted-foreground transition-colors group-hover/item:text-foreground";
 
 /** Texto que se desvanece cuando el aside se reduce a íconos. */
 const fadeClass = "truncate transition-opacity duration-200 sidebar-collapsed:opacity-0";
@@ -60,47 +56,30 @@ type SidebarContentProps = {
   headerAction?: React.ReactNode;
 };
 
-export function SidebarContent({
-  rail = false,
-  onNavigate,
-  headerAction,
-}: SidebarContentProps) {
+export function SidebarContent({ rail = false, onNavigate, headerAction }: SidebarContentProps) {
   const { collapsed } = useSidebar();
   const iconOnly = rail && collapsed;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
-        <Link
-          href="/"
-          onClick={onNavigate}
-          className="flex min-w-0 items-center gap-3 rounded-lg"
-        >
+        <Link href="/" onClick={onNavigate} className="flex min-w-0 items-center gap-3 rounded-lg">
           <Logo />
           <span className={cn("flex min-w-0 flex-col", fadeClass)}>
-            <span className="truncate text-sm font-semibold leading-5 tracking-tight">
-              {siteConfig.name}
-            </span>
-            <span className="truncate text-xs leading-4 text-muted-foreground">
-              {siteConfig.tagline}
-            </span>
+            <span className="truncate text-sm leading-5 font-semibold tracking-tight">{siteConfig.name}</span>
+            <span className="truncate text-xs leading-4 text-muted-foreground">{siteConfig.tagline}</span>
           </span>
         </Link>
         {headerAction && <div className="ml-auto">{headerAction}</div>}
       </div>
 
-      <nav
-        aria-label="Principal"
-        className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-4"
-      >
+      <nav aria-label="Principal" className="min-h-0 flex-1 scrollbar-thin overflow-x-hidden overflow-y-auto px-3 py-4">
         {/*
           La ruta actual es dato de la URL: en rutas con parámetros dinámicos
           (ej. /clientes/[id]) se resuelve recién en el request. Mientras tanto
           se muestra el mismo menú sin item activo, y el layout sigue estático.
         */}
-        <Suspense
-          fallback={<NavSections pathname={null} iconOnly={iconOnly} onNavigate={onNavigate} />}
-        >
+        <Suspense fallback={<NavSections pathname={null} iconOnly={iconOnly} onNavigate={onNavigate} />}>
           <ActiveNavSections iconOnly={iconOnly} onNavigate={onNavigate} />
         </Suspense>
       </nav>
@@ -122,21 +101,20 @@ function ActiveNavSections(props: Omit<ItemProps, "pathname">) {
 }
 
 function NavSections(props: ItemProps) {
+  // El menú muestra solo lo que el rol puede ver (la protección real está en cada página y en la API).
+  const { role } = useCurrentUser();
+  const sections = useMemo(() => navegacionPara(role, navigation), [role]);
+
   return (
     <div className="flex flex-col gap-5">
-      {navigation.map((section) => (
+      {sections.map((section) => (
         <NavSectionBlock key={section.label} section={section} {...props} />
       ))}
     </div>
   );
 }
 
-function NavSectionBlock({
-  section,
-  pathname,
-  iconOnly,
-  onNavigate,
-}: ItemProps & { section: NavSection }) {
+function NavSectionBlock({ section, pathname, iconOnly, onNavigate }: ItemProps & { section: NavSection }) {
   const labelId = useId();
 
   return (
@@ -144,35 +122,22 @@ function NavSectionBlock({
       <div className="relative flex h-7 items-center px-3">
         <p
           id={labelId}
-          className={cn(
-            "text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground",
-            fadeClass,
-          )}
+          className={cn("text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase", fadeClass)}
         >
           {section.label}
         </p>
         <span
           aria-hidden
-          className="absolute left-1/2 top-1/2 h-px w-4 -translate-x-1/2 bg-border-strong opacity-0 transition-opacity duration-200 sidebar-collapsed:opacity-100"
+          className="absolute top-1/2 left-1/2 h-px w-4 -translate-x-1/2 bg-border-strong opacity-0 transition-opacity duration-200 sidebar-collapsed:opacity-100"
         />
       </div>
       <ul aria-labelledby={labelId} className="flex flex-col gap-0.5">
         {section.items.map((item) => (
           <li key={item.title}>
             {item.items ? (
-              <NavGroupItem
-                group={item}
-                pathname={pathname}
-                iconOnly={iconOnly}
-                onNavigate={onNavigate}
-              />
+              <NavGroupItem group={item} pathname={pathname} iconOnly={iconOnly} onNavigate={onNavigate} />
             ) : (
-              <NavLinkItem
-                link={item}
-                pathname={pathname}
-                iconOnly={iconOnly}
-                onNavigate={onNavigate}
-              />
+              <NavLinkItem link={item} pathname={pathname} iconOnly={iconOnly} onNavigate={onNavigate} />
             )}
           </li>
         ))}
@@ -181,12 +146,7 @@ function NavSectionBlock({
   );
 }
 
-function NavLinkItem({
-  link,
-  pathname,
-  iconOnly,
-  onNavigate,
-}: ItemProps & { link: NavLink }) {
+function NavLinkItem({ link, pathname, iconOnly, onNavigate }: ItemProps & { link: NavLink }) {
   const active = isActivePath(pathname, link.href);
   const Icon = link.icon;
 
@@ -207,7 +167,7 @@ function NavLinkItem({
             </Badge>
             <span
               aria-hidden
-              className="absolute left-6 top-2 size-1.5 rounded-full bg-accent opacity-0 ring-2 ring-surface sidebar-collapsed:opacity-100"
+              className="absolute top-2 left-6 size-1.5 rounded-full bg-accent opacity-0 ring-2 ring-surface sidebar-collapsed:opacity-100"
             />
           </>
         )}
@@ -216,12 +176,7 @@ function NavLinkItem({
   );
 }
 
-function NavGroupItem({
-  group,
-  pathname,
-  iconOnly,
-  onNavigate,
-}: ItemProps & { group: NavGroup }) {
+function NavGroupItem({ group, pathname, iconOnly, onNavigate }: ItemProps & { group: NavGroup }) {
   const listId = useId();
   const childActive = group.items.some((child) => isActivePath(pathname, child.href));
   const [open, setOpen] = useState(childActive);
@@ -237,20 +192,14 @@ function NavGroupItem({
   const trigger = (
     <button
       type="button"
-      className={cn(
-        itemClass,
-        childActive && "text-foreground sidebar-collapsed:bg-primary/10",
-      )}
+      className={cn(itemClass, childActive && "text-foreground sidebar-collapsed:bg-primary/10")}
       {...(!iconOnly && {
         onClick: () => setOpen((value) => !value),
         "aria-expanded": open,
         "aria-controls": open ? listId : undefined,
       })}
     >
-      <Icon
-        aria-hidden
-        className={cn(iconClass, childActive && "sidebar-collapsed:text-primary")}
-      />
+      <Icon aria-hidden className={cn(iconClass, childActive && "sidebar-collapsed:text-primary")} />
       <span className={fadeClass}>{group.title}</span>
       <ChevronDown
         aria-hidden
@@ -275,11 +224,7 @@ function NavGroupItem({
             const active = isActivePath(pathname, child.href);
             const ChildIcon = child.icon;
             return (
-              <DropdownMenuItem
-                key={child.href}
-                asChild
-                className={cn(active && "bg-primary/10 font-medium")}
-              >
+              <DropdownMenuItem key={child.href} asChild className={cn(active && "bg-primary/10 font-medium")}>
                 <Link href={child.href} aria-current={active ? "page" : undefined}>
                   {ChildIcon && <ChildIcon aria-hidden className={cn(active && "text-primary!")} />}
                   {child.title}
@@ -306,7 +251,7 @@ function NavGroupItem({
             transition={{ type: "spring", duration: 0.32, bounce: 0 }}
             className="overflow-hidden sidebar-collapsed:hidden"
           >
-            <ul className="ml-5 mt-0.5 flex flex-col gap-0.5 border-l border-border pb-1 pl-3">
+            <ul className="mt-0.5 ml-5 flex flex-col gap-0.5 border-l border-border pb-1 pl-3">
               {group.items.map((child) => (
                 <li key={child.href}>
                   <SubItemLink link={child} pathname={pathname} onNavigate={onNavigate} />
@@ -320,11 +265,7 @@ function NavGroupItem({
   );
 }
 
-function SubItemLink({
-  link,
-  pathname,
-  onNavigate,
-}: Omit<ItemProps, "iconOnly"> & { link: NavLink }) {
+function SubItemLink({ link, pathname, onNavigate }: Omit<ItemProps, "iconOnly"> & { link: NavLink }) {
   const active = isActivePath(pathname, link.href);
   const Icon = link.icon;
 
@@ -355,12 +296,13 @@ function SubItemLink({
 
 function SidebarFooter({ iconOnly }: { iconOnly: boolean }) {
   const { signOut, pending } = useSignOut();
+  const datosDeDemostracion = useDemoData();
 
   return (
     <div className="shrink-0">
       <p className="px-6 pb-2 font-mono text-[11px] text-muted-foreground sidebar-collapsed:hidden">
         {siteConfig.version}
-        {isMockApi() && " · datos de demostración"}
+        {datosDeDemostracion && " · datos de demostración"}
       </p>
       <div className="border-t border-border p-3">
         <RailTooltip label="Cerrar sesión" enabled={iconOnly}>
@@ -383,15 +325,7 @@ function SidebarFooter({ iconOnly }: { iconOnly: boolean }) {
 }
 
 /** Tooltip que solo se muestra con el aside colapsado. */
-function RailTooltip({
-  label,
-  enabled,
-  children,
-}: {
-  label: string;
-  enabled: boolean;
-  children: React.ReactNode;
-}) {
+function RailTooltip({ label, enabled, children }: { label: string; enabled: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
   return (

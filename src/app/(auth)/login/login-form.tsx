@@ -5,13 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { currentUser } from "@/lib/auth";
-import { signIn } from "@/lib/auth-actions";
+import { primerNombre } from "@/lib/format";
 import { toast } from "@/lib/toast";
-
-/** Precargadas mientras hay un solo usuario (ver src/lib/session.ts). */
-const DEFAULT_EMAIL = "eliasllaury@gmail.com";
-const DEFAULT_PASSWORD = "Admin123456!";
+import { signIn } from "@/modules/platform/auth/actions";
 
 export function LoginForm() {
   const router = useRouter();
@@ -25,31 +21,35 @@ export function LoginForm() {
     setError(null);
     startTransition(async () => {
       const result = await signIn({
-        email: String(data.get("email") ?? ""),
+        identifier: String(data.get("identifier") ?? ""),
         password: String(data.get("password") ?? ""),
       });
-      if (result.ok) {
-        toast.success("Sesión iniciada", {
-          description: `Hola de nuevo, ${currentUser.name.split(" ")[0]}.`,
-        });
-        router.replace("/");
-      } else {
-        setError(result.message);
+      if (!result.ok) {
+        setError(result.error.message);
+        return;
       }
+      if (result.data.mustChangePassword) {
+        router.replace("/cambiar-contrasena");
+        return;
+      }
+      toast.success("Sesión iniciada", { description: `Hola de nuevo, ${primerNombre(result.data.name)}.` });
+      router.replace("/");
     });
   };
 
   return (
     <form onSubmit={onSubmit} className="space-y-5" noValidate>
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="identifier">Email o usuario</Label>
         <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
+          id="identifier"
+          name="identifier"
+          type="text"
+          inputMode="email"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
           placeholder="nombre@empresa.com"
-          defaultValue={DEFAULT_EMAIL}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "login-error" : undefined}
           required
@@ -64,7 +64,6 @@ export function LoginForm() {
             name="password"
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
-            defaultValue={DEFAULT_PASSWORD}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "login-error" : undefined}
             required
@@ -77,11 +76,7 @@ export function LoginForm() {
             aria-pressed={showPassword}
             className="absolute inset-y-0 right-0 grid w-10 place-items-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:-outline-offset-2"
           >
-            {showPassword ? (
-              <EyeOff aria-hidden className="size-4" />
-            ) : (
-              <Eye aria-hidden className="size-4" />
-            )}
+            {showPassword ? <EyeOff aria-hidden className="size-4" /> : <Eye aria-hidden className="size-4" />}
           </button>
         </div>
       </div>

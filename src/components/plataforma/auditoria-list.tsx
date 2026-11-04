@@ -20,7 +20,10 @@ export type AuditoriaRow = {
   cuando: string;
 };
 
-export const CATEGORIA: Record<AuditoriaCategoria, { label: string; variant: "success" | "primary" | "accent" | "warning" | "neutral" }> = {
+export const CATEGORIA: Record<
+  AuditoriaCategoria,
+  { label: string; variant: "success" | "primary" | "accent" | "warning" | "neutral" }
+> = {
   plata: { label: "Plata", variant: "success" },
   precios: { label: "Precios", variant: "primary" },
   stock: { label: "Stock", variant: "accent" },
@@ -57,7 +60,7 @@ export function AuditoriaList({ rows, filtros = true }: { rows: AuditoriaRow[]; 
             <li key={row.id} className="flex gap-3 py-3.5 first:pt-0 last:pb-0">
               <Avatar name={row.usuario} className="mt-0.5 size-7" />
               <div className="min-w-0 flex-1 space-y-1">
-                <p className="text-pretty text-sm">{row.accion}</p>
+                <p className="text-sm text-pretty">{row.accion}</p>
                 {(row.antes || row.despues) && (
                   <p className="flex flex-wrap items-center gap-2 text-[13px] tabular-nums">
                     {row.antes && (

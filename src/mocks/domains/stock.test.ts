@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { beforeEach, describe, expect, it } from "vitest";
 import type { MargenControl, Recepcion, StockFila } from "@/lib/api/types";
 import { resetDb } from "../db";
@@ -17,7 +16,11 @@ describe("stock", () => {
   it("muestra el disponible en bultos con la equivalencia en prendas", async () => {
     const { body } = await call<StockFila[]>("/stock/espejo?q=CJATN14");
     // 84 prendas reales − 12 reservadas = 72 = 12 medias docenas.
-    expect(body[0]).toMatchObject({ disponiblePrendas: 72, disponibleBultos: 12, equivalencia: "72 prendas = 12 medias docenas" });
+    expect(body[0]).toMatchObject({
+      disponiblePrendas: 72,
+      disponibleBultos: 12,
+      equivalencia: "72 prendas = 12 medias docenas",
+    });
   });
 
   it("corregir el precio saca al producto de la lista de bajo el piso", async () => {
@@ -32,7 +35,14 @@ describe("stock", () => {
     const { body: recepcion } = await call<Recepcion>("/stock/recepcion");
     const carga = (firmadoPor: string) => ({
       method: "POST",
-      body: JSON.stringify({ firmadoPor, renglones: recepcion.renglones.map((r) => ({ id: r.id, contadoBultos: r.contadoBultos, costoDocenaNuevo: r.costoDocenaNuevo })) }),
+      body: JSON.stringify({
+        firmadoPor,
+        renglones: recepcion.renglones.map((r) => ({
+          id: r.id,
+          contadoBultos: r.contadoBultos,
+          costoDocenaNuevo: r.costoDocenaNuevo,
+        })),
+      }),
     });
 
     expect((await call("/stock/recepcion/cargar", carga("Juan"))).status).toBe(422);

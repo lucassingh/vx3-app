@@ -24,8 +24,7 @@ export function createApi(request: ApiRequest) {
     dashboard: dashboardEndpoints(request),
     notifications: {
       list: () => request<Notification[]>("/notifications"),
-      markAllRead: () =>
-        request<{ updated: number }>("/notifications/read-all", { method: "POST" }),
+      markAllRead: () => request<{ updated: number }>("/notifications/read-all", { method: "POST" }),
     },
     conversaciones: conversacionesEndpoints(request),
     bot: botEndpoints(request),

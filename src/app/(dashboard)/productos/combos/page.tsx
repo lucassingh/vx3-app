@@ -8,16 +8,14 @@ import { AsyncWidget } from "@/components/views/async-widget";
 import { CardSkeleton, SkeletonText } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/productos/combos";
 
 export const metadata = getRouteMetadata(HREF);
 
 async function CombosLoader() {
-  const [facetas, inicial] = await Promise.all([
-    api.catalogo.facetas(),
-    api.catalogo.combos({ modo: "margen" }),
-  ]);
+  const [facetas, inicial] = await Promise.all([api.catalogo.facetas(), api.catalogo.combos({ modo: "margen" })]);
   return <CombosGenerador rubros={facetas.rubros} inicial={inicial} />;
 }
 
@@ -45,7 +43,8 @@ function CombosSkeleton() {
 }
 
 /** M2 · Generador de combos sugeridos (RF-M2-13) y flyers (RF-M1-17). Reemplaza los del Hub. */
-export default function CombosPage() {
+export default async function CombosPage() {
+  await requirePageAccess("/productos/combos");
   const route = findRoute(HREF);
 
   return (

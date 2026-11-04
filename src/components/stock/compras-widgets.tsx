@@ -1,14 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CardSkeleton, SkeletonText, TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import type { CompraHistorial } from "@/lib/api/types";
@@ -22,10 +15,7 @@ import { RecepcionForm } from "./recepcion-form";
 export async function RecepcionLoader() {
   const recepcion = await api.stock.recepcion();
   return (
-    <RecepcionForm
-      recepcion={recepcion}
-      fechaLabel={formatDate(recepcion.fecha, { day: "numeric", month: "long" })}
-    />
+    <RecepcionForm recepcion={recepcion} fechaLabel={formatDate(recepcion.fecha, { day: "numeric", month: "long" })} />
   );
 }
 
@@ -103,7 +93,9 @@ export async function HistorialCard() {
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{compra.bultos}</TableCell>
                 <TableCell className="text-right tabular-nums">{formatCurrency(compra.monto)}</TableCell>
-                <TableCell className={cn("text-right tabular-nums", compra.faltantes > 0 && "font-medium text-warning")}>
+                <TableCell
+                  className={cn("text-right tabular-nums", compra.faltantes > 0 && "font-medium text-warning")}
+                >
                   {compra.faltantes > 0 ? compra.faltantes : "—"}
                 </TableCell>
                 <TableCell>

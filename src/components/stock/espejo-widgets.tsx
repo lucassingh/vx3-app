@@ -6,14 +6,7 @@ import { ProductThumb } from "@/components/kit/product-thumb";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel, Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SkeletonText, TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import type { StockEstado } from "@/lib/api/types";
@@ -50,8 +43,8 @@ export async function SyncCard() {
           </Badge>
         </h2>
         <p className="text-[13px] text-muted-foreground">
-          DUX no avisa los cambios: la app lo lee cada {sync.intervaloMin} minutos y nunca escribe stock a mano. Entra por
-          las compras y sale por las facturas, siempre por API.
+          DUX no avisa los cambios: la app lo lee cada {sync.intervaloMin} minutos y nunca escribe stock a mano. Entra
+          por las compras y sale por las facturas, siempre por API.
         </p>
       </div>
       <dl className="grid shrink-0 grid-cols-3 gap-x-6 gap-y-1 text-sm sm:text-right">
@@ -122,7 +115,13 @@ export async function StockTabla({ searchParams }: { searchParams: Promise<Searc
   });
 
   if (filas.length === 0) {
-    return <EmptyState icon={Warehouse} title="No hay productos con esos filtros" description="Probá con otro rubro o estado." />;
+    return (
+      <EmptyState
+        icon={Warehouse}
+        title="No hay productos con esos filtros"
+        description="Probá con otro rubro o estado."
+      />
+    );
   }
 
   return (
@@ -157,7 +156,11 @@ export async function StockTabla({ searchParams }: { searchParams: Promise<Searc
                 <span className="block text-xs text-muted-foreground">prendas</span>
               </TableCell>
               <TableCell className="text-right tabular-nums">
-                {fila.reservadoPrendas > 0 ? formatNumber(fila.reservadoPrendas) : <span className="text-muted-foreground">—</span>}
+                {fila.reservadoPrendas > 0 ? (
+                  formatNumber(fila.reservadoPrendas)
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 <span className="font-semibold">{formatNumber(fila.disponibleBultos)}</span>{" "}
@@ -166,7 +169,11 @@ export async function StockTabla({ searchParams }: { searchParams: Promise<Searc
               </TableCell>
               <TableCell className="text-right tabular-nums">{formatNumber(fila.ventas30dBultos)}</TableCell>
               <TableCell className="text-right tabular-nums">
-                {fila.diasStock === null ? <span className="text-muted-foreground">—</span> : `${formatNumber(fila.diasStock)} días`}
+                {fila.diasStock === null ? (
+                  <span className="text-muted-foreground">—</span>
+                ) : (
+                  `${formatNumber(fila.diasStock)} días`
+                )}
               </TableCell>
               <TableCell>
                 <Badge variant={estadoFila.tone} dot>
@@ -197,7 +204,9 @@ export async function StockTablaCard({ children }: { children: React.ReactNode }
       <CardHeader className="items-center pb-4">
         <div>
           <CardTitle>Stock por producto</CardTitle>
-          <CardDescription>Disponible = real − reservado, en bultos mayoristas. Primero lo que necesita atención</CardDescription>
+          <CardDescription>
+            Disponible = real − reservado, en bultos mayoristas. Primero lo que necesita atención
+          </CardDescription>
         </div>
         <Suspense fallback={<StockFiltrosFallback />}>
           <StockFiltros rubros={facetas.rubros} />
@@ -214,7 +223,9 @@ export function StockTablaCardSkeleton() {
       <CardHeader className="items-center pb-4">
         <div>
           <CardTitle>Stock por producto</CardTitle>
-          <CardDescription>Disponible = real − reservado, en bultos mayoristas. Primero lo que necesita atención</CardDescription>
+          <CardDescription>
+            Disponible = real − reservado, en bultos mayoristas. Primero lo que necesita atención
+          </CardDescription>
         </div>
         <StockFiltrosFallback />
       </CardHeader>
@@ -232,7 +243,8 @@ function DiferenciasFrame({ children }: { children: React.ReactNode }) {
         <div>
           <CardTitle>Diferencias en góndola</CardTitle>
           <CardDescription>
-            Lo que figura en DUX y no está cuando se arma un pedido. Así se va sanando el stock que se multiplicó el 10/10
+            Lo que figura en DUX y no está cuando se arma un pedido. Así se va sanando el stock que se multiplicó el
+            10/10
           </CardDescription>
         </div>
       </CardHeader>
@@ -245,9 +257,7 @@ export async function DiferenciasCard() {
   const diferencias = await api.stock.diferencias();
   return (
     <DiferenciasFrame>
-      <DiferenciasList
-        items={diferencias.map((item) => ({ ...item, cuando: formatRelativeTime(item.detectadoAt) }))}
-      />
+      <DiferenciasList items={diferencias.map((item) => ({ ...item, cuando: formatRelativeTime(item.detectadoAt) }))} />
     </DiferenciasFrame>
   );
 }

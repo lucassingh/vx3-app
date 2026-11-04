@@ -5,13 +5,15 @@ import { PageBody, PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/conversaciones";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M11 · Conversaciones: todas las charlas de WhatsApp en la app, junto a la clienta y su pedido. */
-export default function ConversacionesPage() {
+export default async function ConversacionesPage() {
+  await requirePageAccess("/conversaciones");
   const route = findRoute(HREF);
 
   return (

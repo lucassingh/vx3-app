@@ -20,10 +20,7 @@ export function Table({
 export function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
-      className={cn(
-        "border-y border-border bg-muted/60 text-left text-xs text-muted-foreground",
-        className,
-      )}
+      className={cn("border-y border-border bg-muted/60 text-left text-xs text-muted-foreground", className)}
       {...props}
     />
   );
@@ -32,10 +29,7 @@ export function TableHeader({ className, ...props }: React.ComponentProps<"thead
 export function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
   return (
     <tbody
-      className={cn(
-        "divide-y divide-border [&>tr]:transition-colors [&>tr:hover]:bg-muted/40",
-        className,
-      )}
+      className={cn("divide-y divide-border [&>tr]:transition-colors [&>tr:hover]:bg-muted/40", className)}
       {...props}
     />
   );
@@ -46,13 +40,7 @@ export function TableRow(props: React.ComponentProps<"tr">) {
 }
 
 export function TableHead({ className, ...props }: React.ComponentProps<"th">) {
-  return (
-    <th
-      scope="col"
-      className={cn("px-3 py-2.5 font-medium first:pl-5 last:pr-5", className)}
-      {...props}
-    />
-  );
+  return <th scope="col" className={cn("px-3 py-2.5 font-medium first:pl-5 last:pr-5", className)} {...props} />;
 }
 
 export function TableCell({ className, ...props }: React.ComponentProps<"td">) {

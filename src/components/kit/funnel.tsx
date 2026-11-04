@@ -19,7 +19,10 @@ export function Funnel({ steps }: { steps: FunnelStep[] }) {
         const previous = steps[index - 1];
         const rate = previous && previous.value > 0 ? step.value / previous.value : null;
         return (
-          <li key={step.id} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-sm sm:grid-cols-[minmax(0,11rem)_1fr_auto]">
+          <li
+            key={step.id}
+            className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-sm sm:grid-cols-[minmax(0,11rem)_1fr_auto]"
+          >
             <span className="truncate text-muted-foreground">{step.label}</span>
             <span aria-hidden className="h-7 overflow-hidden rounded-md bg-primary/8">
               <span

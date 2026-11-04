@@ -3,14 +3,7 @@ import { KpiGrid, KpiGridSkeleton } from "@/components/kit/kpi-grid";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import type { Kpi } from "@/lib/api/types";
@@ -28,10 +21,13 @@ export function AvisoConocimiento() {
         <UserRoundX aria-hidden className="size-5" />
       </span>
       <div className="space-y-1">
-        <h2 className="text-[15px] font-semibold tracking-tight">Lo que hoy sabe Juan, registrado antes de enero de 2027</h2>
-        <p className="max-w-3xl text-pretty text-[13px] text-muted-foreground">
-          La compra a proveedores casi no está en ningún sistema. Cada ficha guarda condiciones, frecuencias, plazos, qué se le
-          compra y lo que hay que saber de cada uno, para que el equipo pueda comprar sin depender de una persona.
+        <h2 className="text-[15px] font-semibold tracking-tight">
+          Lo que hoy sabe Juan, registrado antes de enero de 2027
+        </h2>
+        <p className="max-w-3xl text-[13px] text-pretty text-muted-foreground">
+          La compra a proveedores casi no está en ningún sistema. Cada ficha guarda condiciones, frecuencias, plazos,
+          qué se le compra y lo que hay que saber de cada uno, para que el equipo pueda comprar sin depender de una
+          persona.
         </p>
       </div>
     </Card>
@@ -44,9 +40,27 @@ export async function ProveedoresKpis() {
   const reclamables = proveedores.filter((item) => item.tipo !== "importador").length;
   const recientes = proveedores.filter((item) => item.ultimaCompraDias <= 15).length;
   const kpis: Kpi[] = [
-    { id: "proveedores", label: "Proveedores", value: proveedores.length, format: "number", hint: `${recientes} con compras en los últimos 15 días` },
-    { id: "compras", label: "Compras · 30 días", value: compras, format: "currency", hint: "Lo cargado en DUX desde la recepción" },
-    { id: "reclamables", label: "Se les reclama la falla", value: reclamables, format: "number", hint: "Fabricantes y mayoristas (RN-36)" },
+    {
+      id: "proveedores",
+      label: "Proveedores",
+      value: proveedores.length,
+      format: "number",
+      hint: `${recientes} con compras en los últimos 15 días`,
+    },
+    {
+      id: "compras",
+      label: "Compras · 30 días",
+      value: compras,
+      format: "currency",
+      hint: "Lo cargado en DUX desde la recepción",
+    },
+    {
+      id: "reclamables",
+      label: "Se les reclama la falla",
+      value: reclamables,
+      format: "number",
+      hint: "Fabricantes y mayoristas (RN-36)",
+    },
     {
       id: "plazo",
       label: "Plazo promedio de entrega",
@@ -122,7 +136,11 @@ export async function ProveedoresTabla() {
                 <TableCell className="max-w-56 text-[13px] text-muted-foreground">{proveedor.condiciones}</TableCell>
                 <TableCell className="text-muted-foreground">{haceDias(proveedor.ultimaCompraDias)}</TableCell>
                 <TableCell className="text-right tabular-nums">
-                  {proveedor.compras30d > 0 ? formatCurrencyCompact(proveedor.compras30d) : <span className="text-muted-foreground">—</span>}
+                  {proveedor.compras30d > 0 ? (
+                    formatCurrencyCompact(proveedor.compras30d)
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <ProveedorFicha

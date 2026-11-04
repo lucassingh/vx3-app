@@ -64,8 +64,7 @@ function applyTheme(preference: ThemePreference) {
   let freeze: HTMLStyleElement | null = null;
   if (changed) {
     freeze = document.createElement("style");
-    freeze.textContent =
-      "*:not([data-theme-transition]),*::before,*::after{transition:none!important}";
+    freeze.textContent = "*:not([data-theme-transition]),*::before,*::after{transition:none!important}";
     document.head.appendChild(freeze);
   }
 

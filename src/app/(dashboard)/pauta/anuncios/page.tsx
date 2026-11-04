@@ -17,13 +17,15 @@ import { PeriodoToggle } from "@/components/pauta/periodo-toggle";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/pauta/anuncios";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M9 · RM por anuncio con ventas verificadas y margen real (RF-M9-01 a 11). */
-export default function Page({ searchParams }: { searchParams: Promise<SearchParams> }) {
+export default async function Page({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  await requirePageAccess("/pauta/anuncios");
   const header = routeHeader(HREF);
 
   return (
@@ -60,7 +62,10 @@ export default function Page({ searchParams }: { searchParams: Promise<SearchPar
           <AsyncWidget title="el tipo de cambio" fallback={<ConfigCardSkeleton title="Tipo de cambio" />}>
             <TipoCambioCard />
           </AsyncWidget>
-          <AsyncWidget title="el envío de ventas a Meta" fallback={<ConfigCardSkeleton title="Ventas devueltas a Meta" />}>
+          <AsyncWidget
+            title="el envío de ventas a Meta"
+            fallback={<ConfigCardSkeleton title="Ventas devueltas a Meta" />}
+          >
             <ConversionesCard />
           </AsyncWidget>
         </div>

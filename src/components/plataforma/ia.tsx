@@ -1,13 +1,7 @@
 import { Coins, Layers, MessagesSquare, Wallet } from "lucide-react";
 import { BarList } from "@/components/kit/bar-list";
 import { ColumnChart, type ChartBar } from "@/components/kit/column-chart";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel, Skeleton } from "@/components/ui/skeleton";
 import { BarListSkeleton, ChartSkeleton, SkeletonText, StatGridSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
@@ -26,8 +20,18 @@ export async function IaStats() {
 
   return (
     <section aria-label="Consumo de la IA" className={statsClass}>
-      <StatCard icon={Wallet} label="Gasto · 30 días" value={usd2(consumo.costo30dUsd)} hint={`Proyección del mes: ${usd2(consumo.proyeccionMesUsd)}`} />
-      <StatCard icon={MessagesSquare} label="Conversaciones del bot" value={formatNumber(consumo.conversaciones30d)} hint="Atendidas en los últimos 30 días" />
+      <StatCard
+        icon={Wallet}
+        label="Gasto · 30 días"
+        value={usd2(consumo.costo30dUsd)}
+        hint={`Proyección del mes: ${usd2(consumo.proyeccionMesUsd)}`}
+      />
+      <StatCard
+        icon={MessagesSquare}
+        label="Conversaciones del bot"
+        value={formatNumber(consumo.conversaciones30d)}
+        hint="Atendidas en los últimos 30 días"
+      />
       <StatCard
         icon={Coins}
         label="Costo por conversación"
@@ -91,7 +95,9 @@ export async function GastoDiarioCard() {
   }));
 
   return (
-    <GastoFrame total={<p className="text-xl font-semibold leading-6 tracking-tight tabular-nums">{usd2(costo30dUsd)}</p>}>
+    <GastoFrame
+      total={<p className="text-xl leading-6 font-semibold tracking-tight tabular-nums">{usd2(costo30dUsd)}</p>}
+    >
       <ColumnChart bars={bars} max={max} ticks={[usd2(max), usd2(max / 2), "0"]} description="Gasto de la IA por día" />
     </GastoFrame>
   );
@@ -244,7 +250,10 @@ export async function AdminKeyCard() {
   const { adminKey } = await api.plataforma.ia.config();
   return (
     <AdminFrame>
-      <AdminKeyForm adminKey={adminKey} label={adminKey ? `${adminKey.cargadaPor} · ${cuando(adminKey.cargadaEn)}` : null} />
+      <AdminKeyForm
+        adminKey={adminKey}
+        label={adminKey ? `${adminKey.cargadaPor} · ${cuando(adminKey.cargadaEn)}` : null}
+      />
     </AdminFrame>
   );
 }

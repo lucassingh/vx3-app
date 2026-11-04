@@ -25,9 +25,7 @@ describe("ColumnChart", () => {
     expect(screen.getByRole("button", { name: "Ayer: 18 pedidos" })).toHaveFocus();
 
     await user.keyboard("{Home}");
-    expect(
-      screen.getByRole("button", { name: "miércoles, 21 de octubre: 4 pedidos" }),
-    ).toHaveFocus();
+    expect(screen.getByRole("button", { name: "miércoles, 21 de octubre: 4 pedidos" })).toHaveFocus();
   });
 
   it("deja una sola barra en el orden de tabulación", () => {

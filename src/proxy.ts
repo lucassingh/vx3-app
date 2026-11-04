@@ -1,24 +1,24 @@
+import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 /**
- * Protege todas las pantallas: sin sesión válida se va a /login, y con sesión
- * /login vuelve al inicio. Solo lee la cookie (chequeo optimista, sin base).
+ * Chequeo optimista (tecnica_doc §6.2): sin cookie de sesión, todas las
+ * pantallas van a /login. No consulta la base porque corre en cada request; la
+ * verificación real (sesión vigente, usuario activo, permisos) la hacen el
+ * layout, cada página, la API y cada Server Action.
+ *
+ * Con cookie no se saca a nadie de /login: si la sesión venció, la cookie
+ * sigue ahí y el login es justamente lo que hace falta.
  */
-export async function proxy(request: NextRequest) {
-  const session = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
-  const isLogin = request.nextUrl.pathname === "/login";
-
-  if (!session && !isLogin) {
+export function proxy(request: NextRequest) {
+  const hasSessionCookie = Boolean(getSessionCookie(request, { cookiePrefix: "vx3" }));
+  if (!hasSessionCookie && request.nextUrl.pathname !== "/login") {
     return NextResponse.redirect(new URL("/login", request.nextUrl));
-  }
-  if (session && isLogin) {
-    return NextResponse.redirect(new URL("/", request.nextUrl));
   }
   return NextResponse.next();
 }
 
 export const config = {
-  // La API simulada, los assets y las imágenes no pasan por acá.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icon.svg|logo.svg|brand/).*)"],
+  // La API, las rutas internas de los Workflows, los assets y las imágenes no pasan por acá.
+  matcher: ["/((?!api|\\.well-known/workflow/|_next/static|_next/image|favicon.ico|icon.svg|logo.svg|brand/).*)"],
 };

@@ -1,13 +1,4 @@
-import {
-  ArrowUpRight,
-  Clock,
-  HandCoins,
-  MessagesSquare,
-  Repeat,
-  ShoppingBag,
-  Target,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowUpRight, Clock, HandCoins, MessagesSquare, Repeat, ShoppingBag, Target, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { BarList } from "@/components/kit/bar-list";
 import { ColumnChart, type ChartBar } from "@/components/kit/column-chart";
@@ -16,28 +7,10 @@ import { Funnel } from "@/components/kit/funnel";
 import { KpiGrid, KpiGridSkeleton } from "@/components/kit/kpi-grid";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel, Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  BarListSkeleton,
-  ChartSkeleton,
-  SkeletonText,
-  TableSkeleton,
-} from "@/components/views/skeletons";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { BarListSkeleton, ChartSkeleton, SkeletonText, TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import type { CorteHorario, DailyPoint } from "@/lib/api/types";
 import { niceMax } from "@/lib/chart";
@@ -117,7 +90,7 @@ export async function CausasCard() {
                   {estado.label}
                 </Badge>
               </div>
-              <p className="mt-3 text-2xl font-semibold leading-none tracking-tight tabular-nums">
+              <p className="mt-3 text-2xl leading-none font-semibold tracking-tight tabular-nums">
                 {formatMetric(causa.value, causa.format)}
               </p>
               <p className="mt-2 flex-1 text-xs text-muted-foreground">{causa.detalle}</p>
@@ -195,7 +168,9 @@ export async function VentasCard() {
 
   return (
     <VentasFrame
-      total={<p className="text-xl font-semibold leading-6 tracking-tight tabular-nums">{formatCurrencyCompact(total)}</p>}
+      total={
+        <p className="text-xl leading-6 font-semibold tracking-tight tabular-nums">{formatCurrencyCompact(total)}</p>
+      }
     >
       <ColumnChart
         bars={toBars(points)}
@@ -248,8 +223,7 @@ export async function CanalesCard() {
         }))}
       />
       <p className="mt-5 border-t border-border pt-4 text-[13px] text-muted-foreground">
-        Total de la semana{" "}
-        <span className="font-medium text-foreground tabular-nums">{formatCurrency(total)}</span>
+        Total de la semana <span className="font-medium text-foreground tabular-nums">{formatCurrency(total)}</span>
       </p>
     </CanalesFrame>
   );
@@ -272,7 +246,9 @@ function EmbudoFrame({ children }: { children: React.ReactNode }) {
       <CardHeader>
         <div>
           <CardTitle>Embudo de la semana</CardTitle>
-          <CardDescription>De la conversación al despacho en los últimos 7 días, con la conversión de cada paso</CardDescription>
+          <CardDescription>
+            De la conversación al despacho en los últimos 7 días, con la conversión de cada paso
+          </CardDescription>
         </div>
         <Button variant="outline" size="sm" asChild>
           <Link href="/conversaciones">
@@ -366,7 +342,7 @@ export async function OperacionCard() {
             <span className="min-w-0 flex-1 truncate">
               {corte.label} <span className="text-muted-foreground tabular-nums">· {corte.hora}</span>
             </span>
-            <span className="text-xs tabular-nums text-muted-foreground">
+            <span className="text-xs text-muted-foreground tabular-nums">
               {corte.pendientes} {corte.pendientes === 1 ? "pedido" : "pedidos"}
             </span>
             <Badge variant={corteTone[corte.estado].variant}>{corteTone[corte.estado].label}</Badge>

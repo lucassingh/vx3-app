@@ -7,7 +7,13 @@ import { LoadingLabel } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CardSkeleton, SkeletonText, TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
-import type { CasoContraentrega, Kpi, LiquidacionTranstech, ReclamoTranstech, TipoCasoContraentrega } from "@/lib/api/types";
+import type {
+  CasoContraentrega,
+  Kpi,
+  LiquidacionTranstech,
+  ReclamoTranstech,
+  TipoCasoContraentrega,
+} from "@/lib/api/types";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CasosTabs } from "./casos-tabs";
@@ -31,15 +37,43 @@ export async function ContraentregaView() {
   const { totales } = data;
 
   const kpis: Kpi[] = [
-    { id: "total", label: "Plata en la calle", value: totales.total, format: "currency", hint: `${data.casos.length} pedidos al último corte` },
-    { id: "sin-rendir", label: "Entregados sin rendir", value: totales.entregadosSinRendir.monto, format: "currency", hint: `${totales.entregadosSinRendir.casos} pedidos` },
-    { id: "en-camino", label: "En camino", value: totales.enCamino.monto, format: "currency", hint: `${totales.enCamino.casos} pedidos` },
-    { id: "ausentes", label: "Ausentes", value: totales.ausentes.monto, format: "currency", hint: `${totales.ausentes.casos} pedidos` },
+    {
+      id: "total",
+      label: "Plata en la calle",
+      value: totales.total,
+      format: "currency",
+      hint: `${data.casos.length} pedidos al último corte`,
+    },
+    {
+      id: "sin-rendir",
+      label: "Entregados sin rendir",
+      value: totales.entregadosSinRendir.monto,
+      format: "currency",
+      hint: `${totales.entregadosSinRendir.casos} pedidos`,
+    },
+    {
+      id: "en-camino",
+      label: "En camino",
+      value: totales.enCamino.monto,
+      format: "currency",
+      hint: `${totales.enCamino.casos} pedidos`,
+    },
+    {
+      id: "ausentes",
+      label: "Ausentes",
+      value: totales.ausentes.monto,
+      format: "currency",
+      hint: `${totales.ausentes.casos} pedidos`,
+    },
   ];
 
   const grupos = [
     { value: "todos", label: "Todos", casos: data.casos },
-    { value: "entregado_sin_rendir", label: "Entregados sin rendir", casos: data.casos.filter((caso) => caso.grupo === "entregado_sin_rendir") },
+    {
+      value: "entregado_sin_rendir",
+      label: "Entregados sin rendir",
+      casos: data.casos.filter((caso) => caso.grupo === "entregado_sin_rendir"),
+    },
     { value: "en_camino", label: "En camino", casos: data.casos.filter((caso) => caso.grupo === "en_camino") },
     { value: "ausente", label: "Ausentes", casos: data.casos.filter((caso) => caso.grupo === "ausente") },
   ];
@@ -92,7 +126,9 @@ function CicloCard({ ciclo }: { ciclo: { id: string; label: string; cantidad: nu
       <CardHeader>
         <div>
           <CardTitle>Ciclo de la contraentrega · esta semana</CardTitle>
-          <CardDescription>Un estado único por pedido, de facturado a rendido, alimentado por DUX, Zupply y los cuatro bancos</CardDescription>
+          <CardDescription>
+            Un estado único por pedido, de facturado a rendido, alimentado por DUX, Zupply y los cuatro bancos
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="pt-5">
@@ -109,7 +145,7 @@ function CicloCard({ ciclo }: { ciclo: { id: string; label: string; cantidad: nu
           {devuelto && (
             <li className="flex items-center gap-2 sm:ml-auto">
               <div className="min-w-28 rounded-lg border border-danger/25 bg-danger/5 px-3 py-2.5">
-                <p className="text-xl font-semibold tabular-nums text-danger">{devuelto.cantidad}</p>
+                <p className="text-xl font-semibold text-danger tabular-nums">{devuelto.cantidad}</p>
                 <p className="text-xs text-muted-foreground">{devuelto.label}</p>
               </div>
             </li>
@@ -176,12 +212,16 @@ function ReclamoCard({ reclamo }: { reclamo: ReclamoTranstech }) {
           </Table>
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
                 Mensaje para Federico
               </p>
-              <CopyButton value={reclamo.mensaje} label="Copiar el mensaje para Federico" successMessage="Mensaje copiado" />
+              <CopyButton
+                value={reclamo.mensaje}
+                label="Copiar el mensaje para Federico"
+                successMessage="Mensaje copiado"
+              />
             </div>
-            <p className="whitespace-pre-line rounded-xl rounded-tl-sm bg-primary/8 px-3.5 py-3 text-[13px] leading-relaxed">
+            <p className="rounded-xl rounded-tl-sm bg-primary/8 px-3.5 py-3 text-[13px] leading-relaxed whitespace-pre-line">
               {reclamo.mensaje}
             </p>
           </div>
@@ -257,14 +297,19 @@ function LiquidacionesCard({ liquidaciones }: { liquidaciones: LiquidacionTranst
       <CardHeader className="pb-4">
         <div>
           <CardTitle>Historial de liquidaciones</CardTitle>
-          <CardDescription>Cada semana con sus diferencias y cómo se resolvieron: el registro que hoy está en la cabeza de Elías</CardDescription>
+          <CardDescription>
+            Cada semana con sus diferencias y cómo se resolvieron: el registro que hoy está en la cabeza de Elías
+          </CardDescription>
         </div>
       </CardHeader>
       <Table className="min-w-4xl">
         <TableHeader>
           <TableRow>
             {LIQUIDACION_COLUMNS.map((column) => (
-              <TableHead key={column} className={["Rendido", "Reclamado", "Recuperado"].includes(column) ? "text-right" : undefined}>
+              <TableHead
+                key={column}
+                className={["Rendido", "Reclamado", "Recuperado"].includes(column) ? "text-right" : undefined}
+              >
                 {column}
               </TableHead>
             ))}

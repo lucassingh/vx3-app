@@ -5,13 +5,15 @@ import { PageBody, PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/bot/configuracion";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M3 · Consola del bot: lo configuran los socios, con versiones y chat de prueba. */
-export default function BotConfiguracionPage() {
+export default async function BotConfiguracionPage() {
+  await requirePageAccess("/bot/configuracion");
   const route = findRoute(HREF);
 
   return (

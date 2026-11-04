@@ -180,7 +180,7 @@ function ReclamoRow({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-2.5">
-      <h3 className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{title}</h3>
+      <h3 className="text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">{title}</h3>
       {children}
     </section>
   );
@@ -217,13 +217,16 @@ function ReclamoDetalle({
             ) : (
               <span>
                 No hace falta el video de apertura
-                {evidencia.excepcion ? `: ${evidencia.excepcion.charAt(0).toLowerCase()}${evidencia.excepcion.slice(1)}.` : "."}
+                {evidencia.excepcion
+                  ? `: ${evidencia.excepcion.charAt(0).toLowerCase()}${evidencia.excepcion.slice(1)}.`
+                  : "."}
               </span>
             )}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Compra del pedido {formatCurrency(reclamo.compraPedido)} · últimos 30 días {formatCurrency(reclamo.compra30d)}
-            . Excepción si supera $ 100.000 en el pedido o $ 150.000 en 30 días (RN-52).
+            Compra del pedido {formatCurrency(reclamo.compraPedido)} · últimos 30 días{" "}
+            {formatCurrency(reclamo.compra30d)}. Excepción si supera $ 100.000 en el pedido o $ 150.000 en 30 días
+            (RN-52).
           </p>
         </div>
         <ul className="space-y-1.5 text-[13px]">
@@ -258,12 +261,12 @@ function ReclamoDetalle({
             La API de DUX no permite crearlas: la app deja el detalle exacto para cargarlo en segundos.
           </p>
           <div className="relative rounded-lg border border-border bg-muted/40 p-3 pr-10">
-            <p className="whitespace-pre-line font-mono text-xs leading-relaxed">{reclamo.notaCredito.detalle}</p>
+            <p className="font-mono text-xs leading-relaxed whitespace-pre-line">{reclamo.notaCredito.detalle}</p>
             <CopyButton
               value={reclamo.notaCredito.detalle}
               label="Copiar el detalle de la nota de crédito"
               successMessage="Detalle copiado"
-              className="absolute right-2 top-2"
+              className="absolute top-2 right-2"
             />
           </div>
           <Badge variant={reclamo.notaCredito.cargada ? "success" : "warning"} dot>
@@ -276,7 +279,8 @@ function ReclamoDetalle({
         {reclamo.estado === "resuelto" ? (
           <p className="flex items-center gap-2 text-sm">
             <CircleCheck aria-hidden className="size-4 text-success" />
-            Resuelto por {reclamo.responsable} · origen {reclamo.origen ? origenLabel[reclamo.origen].toLowerCase() : "sin determinar"}
+            Resuelto por {reclamo.responsable} · origen{" "}
+            {reclamo.origen ? origenLabel[reclamo.origen].toLowerCase() : "sin determinar"}
           </p>
         ) : (
           <ResolverReclamo
@@ -325,14 +329,18 @@ function CausasCard({ data }: { data: PostventaResumen }) {
                   <TableCell key={origen.id} className="text-center">
                     {cantidad > 0 ? (
                       <span
-                        className="inline-grid size-8 place-items-center rounded-md text-[13px] font-semibold tabular-nums text-foreground"
-                        style={{ backgroundColor: `color-mix(in oklab, var(--color-primary) ${Math.round((cantidad / max) * 45) + 8}%, transparent)` }}
+                        className="inline-grid size-8 place-items-center rounded-md text-[13px] font-semibold text-foreground tabular-nums"
+                        style={{
+                          backgroundColor: `color-mix(in oklab, var(--color-primary) ${Math.round((cantidad / max) * 45) + 8}%, transparent)`,
+                        }}
                       >
                         {cantidad}
                       </span>
                     ) : (
                       <>
-                        <span aria-hidden className="text-muted-foreground">·</span>
+                        <span aria-hidden className="text-muted-foreground">
+                          ·
+                        </span>
                         <span className="sr-only">Ninguno</span>
                       </>
                     )}

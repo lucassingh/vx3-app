@@ -1,21 +1,17 @@
 import { PageBody, PageHeader } from "@/components/layout/page-header";
 import { AlertasCard, AlertasSkeleton } from "@/components/plataforma/ajustes";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { ThemeSelector } from "@/components/views/theme-selector";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/ajustes";
 
 export const metadata = getRouteMetadata(HREF);
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  await requirePageAccess("/ajustes");
   const { link } = findRoute(HREF)!;
 
   return (

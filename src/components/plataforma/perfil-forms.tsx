@@ -2,17 +2,19 @@
 
 import { LaptopMinimal, LoaderCircle, LogOut, Save, Smartphone } from "lucide-react";
 import { useId, useState, useTransition } from "react";
+import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api/browser";
-import { currentUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/auth";
 import { toast } from "@/lib/toast";
 
 /* ---- Datos ------------------------------------------------------------------ */
 
 export function DatosForm() {
+  const currentUser = useCurrentUser();
   const id = useId();
   const [nombre, setNombre] = useState(currentUser.name);
   const [telefono, setTelefono] = useState("");
@@ -36,7 +38,12 @@ export function DatosForm() {
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor={`${id}-nombre`}>Nombre</Label>
-        <Input id={`${id}-nombre`} autoComplete="name" value={nombre} onChange={(event) => setNombre(event.target.value)} />
+        <Input
+          id={`${id}-nombre`}
+          autoComplete="name"
+          value={nombre}
+          onChange={(event) => setNombre(event.target.value)}
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor={`${id}-email`}>Email</Label>
@@ -83,12 +90,7 @@ export function DatosForm() {
 export function SeguridadForm({ dosFactores, passwordLabel }: { dosFactores: boolean; passwordLabel: string }) {
   const id = useId();
   const [activado, setActivado] = useState(dosFactores);
-  const [actual, setActual] = useState("");
-  const [nueva, setNueva] = useState("");
-  const [repetida, setRepetida] = useState("");
   const [actualizada, setActualizada] = useState(passwordLabel);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
   const [pending2fa, start2fa] = useTransition();
 
   const onToggle = (value: boolean) => {
@@ -106,35 +108,6 @@ export function SeguridadForm({ dosFactores, passwordLabel }: { dosFactores: boo
     });
   };
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (nueva.length < 10 || !/\d/.test(nueva)) {
-      setError("La nueva contraseña necesita al menos 10 caracteres y un número.");
-      return;
-    }
-    if (nueva !== repetida) {
-      setError("Las dos contraseñas nuevas no coinciden.");
-      return;
-    }
-    startTransition(async () => {
-      try {
-        await api.plataforma.perfil.cambiarPassword({ actual, nueva });
-        setActual("");
-        setNueva("");
-        setRepetida("");
-        setError(null);
-        setActualizada("recién");
-        toast.success("Contraseña actualizada", {
-          description: "En esta versión de demostración el ingreso sigue con la contraseña de siempre.",
-        });
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "No se pudo cambiar la contraseña.");
-      }
-    });
-  };
-
-  const errorProps = { "aria-invalid": error ? true : undefined, "aria-describedby": error ? `${id}-error` : undefined };
-
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-muted/50 p-3">
@@ -147,59 +120,15 @@ export function SeguridadForm({ dosFactores, passwordLabel }: { dosFactores: boo
         <Switch id={`${id}-2fa`} checked={activado} onCheckedChange={onToggle} disabled={pending2fa} />
       </div>
 
-      <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <section className="space-y-4" aria-labelledby={`${id}-password`}>
         <div className="flex items-baseline justify-between gap-3">
-          <h3 className="text-sm font-medium">Cambiar contraseña</h3>
+          <h3 id={`${id}-password`} className="text-sm font-medium">
+            Cambiar contraseña
+          </h3>
           <p className="text-xs text-muted-foreground first-letter:uppercase">Última actualización: {actualizada}</p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${id}-actual`}>Contraseña actual</Label>
-          <Input
-            id={`${id}-actual`}
-            type="password"
-            autoComplete="current-password"
-            value={actual}
-            onChange={(event) => setActual(event.target.value)}
-            {...errorProps}
-          />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-nueva`}>Nueva contraseña</Label>
-            <Input
-              id={`${id}-nueva`}
-              type="password"
-              autoComplete="new-password"
-              value={nueva}
-              onChange={(event) => setNueva(event.target.value)}
-              {...errorProps}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-repetida`}>Repetila</Label>
-            <Input
-              id={`${id}-repetida`}
-              type="password"
-              autoComplete="new-password"
-              value={repetida}
-              onChange={(event) => setRepetida(event.target.value)}
-              {...errorProps}
-            />
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground">Al menos 10 caracteres y un número.</p>
-        {error && (
-          <p id={`${id}-error`} role="alert" className="text-xs font-medium text-danger">
-            {error}
-          </p>
-        )}
-        <div className="flex justify-end border-t border-border pt-4">
-          <Button type="submit" size="sm" disabled={pending || !actual || !nueva || !repetida}>
-            {pending && <LoaderCircle aria-hidden className="animate-spin" />}
-            {pending ? "Guardando…" : "Cambiar contraseña"}
-          </Button>
-        </div>
-      </form>
+        <ChangePasswordForm onDone={() => setActualizada("recién")} />
+      </section>
     </div>
   );
 }

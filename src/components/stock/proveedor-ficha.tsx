@@ -77,10 +77,13 @@ export function ProveedorFicha({
 
           <section className="space-y-2">
             <h3 className="text-[13px] font-semibold">
-              Qué se le compra <span className="font-normal text-muted-foreground">· {proveedor.productos.length} productos</span>
+              Qué se le compra{" "}
+              <span className="font-normal text-muted-foreground">· {proveedor.productos.length} productos</span>
             </h3>
             {proveedor.productos.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Todavía no hay productos de este proveedor en el catálogo.</p>
+              <p className="text-sm text-muted-foreground">
+                Todavía no hay productos de este proveedor en el catálogo.
+              </p>
             ) : (
               <ul className="divide-y divide-border rounded-lg border border-border">
                 {proveedor.productos.map((producto) => (

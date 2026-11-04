@@ -94,8 +94,7 @@ export const navigation: NavSection[] = [
         title: "Conversaciones",
         href: "/conversaciones",
         icon: MessagesSquare,
-        description:
-          "El WhatsApp de ventas y el del local en una sola bandeja, con la ficha de la clienta al costado.",
+        description: "El WhatsApp de ventas y el del local en una sola bandeja, con la ficha de la clienta al costado.",
       },
       {
         title: "Clientas",
@@ -112,8 +111,7 @@ export const navigation: NavSection[] = [
             title: "Recompra del día",
             href: "/clientas/recompra",
             icon: Repeat,
-            description:
-              "Las clientas para reactivar hoy, con el mensaje sugerido en el tono de VX3.",
+            description: "Las clientas para reactivar hoy, con el mensaje sugerido en el tono de VX3.",
           },
         ],
       },
@@ -144,15 +142,13 @@ export const navigation: NavSection[] = [
             title: "Rendimiento",
             href: "/bot/rendimiento",
             icon: Activity,
-            description:
-              "Qué respondió el bot, cuándo derivó y por qué, y cuánto cuesta cada conversación.",
+            description: "Qué respondió el bot, cuándo derivó y por qué, y cuánto cuesta cada conversación.",
           },
           {
             title: "Configuración",
             href: "/bot/configuracion",
             icon: SlidersHorizontal,
-            description:
-              "Tono, reglas, preguntas frecuentes, palancas y derivación, con versiones y chat de prueba.",
+            description: "Tono, reglas, preguntas frecuentes, palancas y derivación, con versiones y chat de prueba.",
           },
         ],
       },
@@ -160,8 +156,7 @@ export const navigation: NavSection[] = [
         title: "Vidriera",
         href: "/vidriera",
         icon: Store,
-        description:
-          "El catálogo propio para la clienta: colecciones, destacados y lo que pasa en el embudo.",
+        description: "El catálogo propio para la clienta: colecciones, destacados y lo que pasa en el embudo.",
       },
     ],
   },
@@ -176,8 +171,7 @@ export const navigation: NavSection[] = [
             title: "Bandeja",
             href: "/pedidos/bandeja",
             icon: Inbox,
-            description:
-              "Todos los pedidos (bot, vidriera, local y Tienda Nube) en un solo lugar, con su estado.",
+            description: "Todos los pedidos (bot, vidriera, local y Tienda Nube) en un solo lugar, con su estado.",
           },
           {
             title: "Facturación",
@@ -202,8 +196,7 @@ export const navigation: NavSection[] = [
             title: "Cotizador",
             href: "/envios/cotizador",
             icon: Calculator,
-            description:
-              "Arma los bultos y cotiza bulto por bulto, con respaldo si el Correo no responde.",
+            description: "Arma los bultos y cotiza bulto por bulto, con respaldo si el Correo no responde.",
           },
         ],
       },
@@ -222,8 +215,7 @@ export const navigation: NavSection[] = [
             title: "Contraentrega",
             href: "/cobros/contraentrega",
             icon: HandCoins,
-            description:
-              "Cada pedido de facturado a rendido, y el reclamo semanal a Transtech armado solo.",
+            description: "Cada pedido de facturado a rendido, y el reclamo semanal a Transtech armado solo.",
           },
           {
             title: "Caja del día",
@@ -253,22 +245,19 @@ export const navigation: NavSection[] = [
             title: "Catálogo",
             href: "/productos/catalogo",
             icon: LayoutGrid,
-            description:
-              "La fuente única del producto: atributos, fotos, salud y dónde está publicado.",
+            description: "La fuente única del producto: atributos, fotos, salud y dónde está publicado.",
           },
           {
             title: "Alta de producto",
             href: "/productos/alta",
             icon: PackagePlus,
-            description:
-              "Un formulario con SKU, nombre y precios sugeridos. Publica en DUX y Tienda Nube en un clic.",
+            description: "Un formulario con SKU, nombre y precios sugeridos. Publica en DUX y Tienda Nube en un clic.",
           },
           {
             title: "Combos y flyers",
             href: "/productos/combos",
             icon: WandSparkles,
-            description:
-              "Combos sugeridos por margen y rotación, y los flyers para feed e historias.",
+            description: "Combos sugeridos por margen y rotación, y los flyers para feed e historias.",
           },
         ],
       },
@@ -280,29 +269,25 @@ export const navigation: NavSection[] = [
             title: "Stock",
             href: "/stock/espejo",
             icon: Warehouse,
-            description:
-              "El stock de DUX con lo reservado y lo disponible, en prendas y en bultos.",
+            description: "El stock de DUX con lo reservado y lo disponible, en prendas y en bultos.",
           },
           {
             title: "Margen y precios",
             href: "/stock/margen",
             icon: Percent,
-            description:
-              "Control de margen todos los días, productos bajo el piso y capas de costo por agotarse.",
+            description: "Control de margen todos los días, productos bajo el piso y capas de costo por agotarse.",
           },
           {
             title: "Compras",
             href: "/stock/compras",
             icon: ClipboardList,
-            description:
-              "Recepción digital de la mercadería: lo contado contra la boleta, costos y carga en DUX.",
+            description: "Recepción digital de la mercadería: lo contado contra la boleta, costos y carga en DUX.",
           },
           {
             title: "Proveedores",
             href: "/stock/proveedores",
             icon: Factory,
-            description:
-              "Condiciones, frecuencias y qué se le compra a cada uno: lo que hoy sabe Juan, registrado.",
+            description: "Condiciones, frecuencias y qué se le compra a cada uno: lo que hoy sabe Juan, registrado.",
           },
         ],
       },
@@ -322,15 +307,13 @@ export const navigation: NavSection[] = [
         title: "Integraciones",
         href: "/configuracion/integraciones",
         icon: Plug,
-        description:
-          "Estado de DUX, Meta, WhatsApp, Tienda Nube, Correo, Zupply y los bancos, con sus credenciales.",
+        description: "Estado de DUX, Meta, WhatsApp, Tienda Nube, Correo, Zupply y los bancos, con sus credenciales.",
       },
       {
         title: "IA y consumo",
         href: "/configuracion/ia",
         icon: Sparkles,
-        description:
-          "La API key de Claude, el modelo del bot y el consumo por día, por mes y por conversación.",
+        description: "La API key de Claude, el modelo del bot y el consumo por día, por mes y por conversación.",
       },
       {
         title: "Usuarios y roles",

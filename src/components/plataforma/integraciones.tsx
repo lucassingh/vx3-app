@@ -3,14 +3,7 @@ import { KpiGrid, KpiGridSkeleton } from "@/components/kit/kpi-grid";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CardSkeleton, SkeletonText, TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import type { SyncLogEntry } from "@/lib/api/types";
@@ -32,7 +25,13 @@ export async function IntegracionesResumen() {
       label="Estado de las integraciones"
       icons={{ ok: CircleCheck, avisos: TriangleAlert, pendientes: Clock }}
       items={[
-        { id: "ok", label: "Funcionando", value: ok.length, format: "number", hint: `de ${integraciones.length} conexiones` },
+        {
+          id: "ok",
+          label: "Funcionando",
+          value: ok.length,
+          format: "number",
+          hint: `de ${integraciones.length} conexiones`,
+        },
         {
           id: "avisos",
           label: "Con demoras o caídas",
@@ -61,9 +60,7 @@ export async function ProbarTodasLoader() {
   const integraciones = await api.plataforma.integraciones.list().catch(() => []);
   return (
     <ProbarTodas
-      integraciones={integraciones
-        .filter((item) => !item.importa)
-        .map(({ id, nombre }) => ({ id, nombre }))}
+      integraciones={integraciones.filter((item) => !item.importa).map(({ id, nombre }) => ({ id, nombre }))}
     />
   );
 }
@@ -126,7 +123,8 @@ function LogFrame({ children }: { children: React.ReactNode }) {
         <div>
           <CardTitle>Registro de sincronizaciones</CardTitle>
           <CardDescription>
-            Las últimas operaciones con cada sistema. Lo que falla se reintenta solo, con una referencia propia para no duplicar.
+            Las últimas operaciones con cada sistema. Lo que falla se reintenta solo, con una referencia propia para no
+            duplicar.
           </CardDescription>
         </div>
       </CardHeader>

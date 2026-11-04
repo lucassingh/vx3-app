@@ -1,0 +1,78 @@
+# Producción se despliega con un tag de versión (v0.1.0) sobre un commit de
+# main: mergear a main no despliega nada, el tag sí. Es la aprobación manual,
+# porque en un repo privado de una cuenta Free GitHub no ofrece entornos con
+# aprobación (tecnica_doc/fases/fase-1.3.md).
+#
+# El tag tiene que apuntar a un commit de main y coincidir con la versión de
+# package.json → CI → build → momento previo → migraciones de main → deploy →
+# prueba de salud con el commit nuevo.
+
+name: Deploy producción
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  PRODUCTION_URL: https://cli-vx3.vercel.app
+
+jobs:
+  version:
+    name: El tag es de main y coincide con package.json
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verificar el tag
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::El tag $GITHUB_REF_NAME no apunta a un commit de main."
+            exit 1
+          fi
+          version="v$(node -p "require('./package.json').version")"
+          if [ "$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::El tag es $GITHUB_REF_NAME pero package.json dice $version."
+            exit 1
+          fi
+
+  ci:
+    name: CI
+    needs: version
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  deploy:
+    name: Deploy a producción
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      NEXT_TELEMETRY_DISABLED: "1"
+      HUSKY: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: deploy
+        uses: ./.github/actions/deploy
+        with:
+          target: production
+          app-env: production
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          database-url-unpooled: ${{ secrets.PROD_DATABASE_URL_UNPOOLED }}
+          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          sentry-org: ${{ secrets.SENTRY_ORG }}
+
+      - name: Prueba de salud
+        run: node scripts/smoke.mjs "$PRODUCTION_URL" --commit "$GITHUB_SHA"

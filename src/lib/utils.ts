@@ -7,7 +7,10 @@ export function cn(...inputs: ClassValue[]) {
 
 /** Minúsculas y sin acentos, para comparar texto en búsquedas. */
 export function normalizeText(value: string) {
-  return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
 }
 
 export function getInitials(name: string) {

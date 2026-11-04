@@ -4,13 +4,15 @@ import { PageBody } from "@/components/layout/page-header";
 import { RouteHeader } from "@/components/pedidos/route-header";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { getRouteMetadata } from "@/lib/navigation";
+import { requirePageAccess } from "@/modules/platform/auth/session";
 
 const HREF = "/cobros/contraentrega";
 
 export const metadata = getRouteMetadata(HREF);
 
 /** M7 · Contraentrega con Transtech: de facturado a rendido (RF-M7-06 a RF-M7-09). */
-export default function Page() {
+export default async function Page() {
+  await requirePageAccess("/cobros/contraentrega");
   return (
     <>
       <RouteHeader

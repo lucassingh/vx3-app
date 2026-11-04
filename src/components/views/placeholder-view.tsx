@@ -4,13 +4,7 @@ import { PageBody, PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { findRoute } from "@/lib/navigation";
 
 /**
@@ -64,18 +58,10 @@ export function PlaceholderView({ href }: { href: string }) {
             <div className="grid min-h-64 place-items-center rounded-lg border border-dashed border-border-strong bg-canvas/60 px-6 py-12 text-center">
               <div className="flex max-w-md flex-col items-center gap-2">
                 <p className="text-sm font-medium">Esta pantalla está lista para construir</p>
-                <p className="text-pretty text-sm text-muted-foreground">
-                  Reemplazá este contenido editando
-                </p>
-                <div className="flex max-w-full items-center gap-1 rounded-md border border-border bg-surface py-0.5 pl-2 pr-0.5">
-                  <code className="font-mono text-xs text-foreground wrap-anywhere">
-                    {file}
-                  </code>
-                  <CopyButton
-                    value={file}
-                    label="Copiar ruta del archivo"
-                    successMessage="Ruta copiada"
-                  />
+                <p className="text-sm text-pretty text-muted-foreground">Reemplazá este contenido editando</p>
+                <div className="flex max-w-full items-center gap-1 rounded-md border border-border bg-surface py-0.5 pr-0.5 pl-2">
+                  <code className="font-mono text-xs wrap-anywhere text-foreground">{file}</code>
+                  <CopyButton value={file} label="Copiar ruta del archivo" successMessage="Ruta copiada" />
                 </div>
               </div>
             </div>

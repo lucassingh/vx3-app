@@ -3,22 +3,9 @@ import Link from "next/link";
 import { KpiGrid, KpiGridSkeleton } from "@/components/kit/kpi-grid";
 import { Meter } from "@/components/kit/meter";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SkeletonText, TableSkeleton } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import type { CoeficientePrecio } from "@/lib/api/types";
@@ -65,8 +52,8 @@ export async function BajoPisoCard() {
     <BajoPisoFrame
       description={
         <>
-          Último control automático <time dateTime={margen.revisadoAt}>{formatRelativeTime(margen.revisadoAt)}</time> sobre{" "}
-          {margen.productosControlados} productos. Si el costo sube, el precio se actualiza siempre (RN-16)
+          Último control automático <time dateTime={margen.revisadoAt}>{formatRelativeTime(margen.revisadoAt)}</time>{" "}
+          sobre {margen.productosControlados} productos. Si el costo sube, el precio se actualiza siempre (RN-16)
         </>
       }
     >
@@ -79,7 +66,11 @@ export function BajoPisoCardSkeleton() {
   return (
     <BajoPisoFrame description="Productos cuyo precio quedó por debajo del coeficiente piso">
       <LoadingLabel>Cargando el control de margen…</LoadingLabel>
-      <TableSkeleton columns={["Producto", "Costo de la docena", "Precio del bulto", "Margen", ""]} rows={3} className="min-w-4xl" />
+      <TableSkeleton
+        columns={["Producto", "Costo de la docena", "Precio del bulto", "Margen", ""]}
+        rows={3}
+        className="min-w-4xl"
+      />
     </BajoPisoFrame>
   );
 }
@@ -133,8 +124,8 @@ export async function CapasCard() {
               valueText={`Quedan ${capa.prendasRestantes} de ${capa.prendasIngresadas} prendas`}
             />
             <p className="text-xs text-muted-foreground">
-              Quedan {formatNumber(capa.prendasRestantes)} de {formatNumber(capa.prendasIngresadas)} prendas al costo viejo. La app
-              avisa cuando se vende la última.
+              Quedan {formatNumber(capa.prendasRestantes)} de {formatNumber(capa.prendasIngresadas)} prendas al costo
+              viejo. La app avisa cuando se vende la última.
             </p>
           </li>
         ))}
@@ -157,7 +148,7 @@ export function CapasCardSkeleton() {
 function CoeficientesTabla({ titulo, filas }: { titulo: string; filas: CoeficientePrecio[] }) {
   return (
     <Table>
-      <caption className="px-5 pb-2 pt-1 text-left text-[13px] font-semibold">{titulo}</caption>
+      <caption className="px-5 pt-1 pb-2 text-left text-[13px] font-semibold">{titulo}</caption>
       <TableHeader>
         <TableRow>
           <TableHead>Presentación</TableHead>

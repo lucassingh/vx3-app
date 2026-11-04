@@ -32,7 +32,8 @@ export type MensajeConversacion =
   | (MensajeBase & { tipo: "nota"; autorNombre: string; texto: string })
   | (MensajeBase & {
       tipo: "sistema";
-      evento: "anuncio" | "envio" | "pedido" | "derivacion" | "seguimiento" | "toma" | "vidriera" | "reclamo" | "cierre";
+      evento:
+        "anuncio" | "envio" | "pedido" | "derivacion" | "seguimiento" | "toma" | "vidriera" | "reclamo" | "cierre";
       texto: string;
     })
   | (MensajeBase & {
