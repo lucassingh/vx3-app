@@ -1,7 +1,7 @@
 import { ExternalServiceError } from "@/lib/errors";
 import { Money } from "@/lib/money";
-import type { ErpComprobante, ErpItem } from "@/modules/inventory/erp-gateway";
-import type { DuxFactura, DuxItem } from "./schemas";
+import type { ErpClienta, ErpComprobante, ErpItem, PaginaDeClientas } from "@/modules/inventory/erp-gateway";
+import type { DuxCliente, DuxFactura, DuxItem } from "./schemas";
 
 const centavos = (pesos: number) => Number(Money.fromPesos(pesos).cents);
 
@@ -72,4 +72,22 @@ export function aErpComprobante(factura: DuxFactura, sucursal: number): ErpCompr
       };
     }),
   };
+}
+
+export function aErpClienta(cliente: DuxCliente): ErpClienta {
+  return {
+    id: cliente.id_cliente,
+    nombre: cliente.full_name.trim(),
+    telefono: cliente.telefono?.trim() || cliente.cel?.trim() || null,
+    email: cliente.email?.trim() || null,
+    provincia: cliente.provincia?.trim() || null,
+    localidad: cliente.localidad?.trim() || null,
+    habilitada: cliente.habilitado,
+    creadaEl: cliente.fecha_creacion || null,
+  };
+}
+
+/** Sin un total en el que confiar, la última página es la primera incompleta. */
+export function aPaginaDeClientas({ datos }: { datos: DuxCliente[] }, porPagina: number): PaginaDeClientas {
+  return { clientas: datos.map(aErpClienta), hayMas: datos.length === porPagina };
 }

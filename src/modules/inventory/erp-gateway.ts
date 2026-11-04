@@ -62,7 +62,23 @@ export type PedidoDeComprobantes = { sucursal: number; desde: string; hasta: str
 
 export type PaginaDeComprobantes = { comprobantes: ErpComprobante[]; total: number; hayMas: boolean };
 
+/** Sin documento ni domicilio: no hacen falta y no entran a la app. */
+export type ErpClienta = {
+  id: number;
+  nombre: string;
+  telefono: string | null;
+  email: string | null;
+  provincia: string | null;
+  localidad: string | null;
+  habilitada: boolean;
+  /** "2025-10-09". */
+  creadaEl: string | null;
+};
+
+export type PaginaDeClientas = { clientas: ErpClienta[]; hayMas: boolean };
+
 export interface ErpGateway {
   listarItems(offset: number): Promise<PaginaDeItems>;
+  listarClientas(offset: number): Promise<PaginaDeClientas>;
   listarComprobantes(pedido: PedidoDeComprobantes): Promise<PaginaDeComprobantes>;
 }

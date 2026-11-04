@@ -1,0 +1,49 @@
+{
+  "datos": [
+    {
+      "id_cliente": 501,
+      "full_name": " NOMBRE PRIVADO ",
+      "apellido_razon_social": "APELLIDO PRIVADO",
+      "nombre": "NOMBRE PRIVADO",
+      "nombre_comercial": null,
+      "categoria_fiscal": "CONSUMIDOR_FINAL",
+      "tipo_doc": "DNI",
+      "nro_doc": 30111222,
+      "cuit_cuil": null,
+      "codigo": null,
+      "email": "privado@correo.prueba",
+      "vendedor": null,
+      "provincia": "BUENOS AIRES",
+      "localidad": "LOCALIDAD DE PRUEBA",
+      "barrio": null,
+      "domicilio": "CALLE PRIVADA 123",
+      "telefono": "+541144445555",
+      "cel": null,
+      "zona": null,
+      "fecha_creacion": "2026-01-15",
+      "persona_contacto": null,
+      "lugar_entrega_dflt": "ENTREGA PRIVADA 456",
+      "habilitado": true,
+      "id_provincia": 1,
+      "id_localidad": 2
+    },
+    {
+      "id_cliente": 502,
+      "full_name": "OTRO NOMBRE PRIVADO",
+      "apellido_razon_social": "OTRO APELLIDO PRIVADO",
+      "nombre": null,
+      "tipo_doc": null,
+      "nro_doc": null,
+      "email": "",
+      "provincia": null,
+      "localidad": null,
+      "domicilio": null,
+      "telefono": null,
+      "cel": "11-55556666",
+      "fecha_creacion": "2026-02-20",
+      "habilitado": false
+    }
+  ],
+  "paginacion": { "total": 50, "offset": 0, "limit": 50, "hay_mas": false },
+  "id_solicitud": "prueba"
+}

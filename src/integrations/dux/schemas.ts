@@ -81,3 +81,24 @@ export const duxPaginaFacturasSchema = z.object({
   results: z.array(duxFacturaSchema),
   paging: z.object({ total: z.number() }).nullish(),
 });
+
+/**
+ * Una clienta de la v2 de /clientes. Trae también el documento y los domicilios: no se
+ * piden acá, así que no entran a la app. La `paginacion` tampoco, porque en esta ruta
+ * miente: dice 50 y que no hay más en todas las páginas.
+ */
+export const duxClienteSchema = z.object({
+  id_cliente: z.number(),
+  full_name: z.string(),
+  email: z.string().nullish(),
+  provincia: z.string().nullish(),
+  localidad: z.string().nullish(),
+  telefono: z.string().nullish(),
+  cel: z.string().nullish(),
+  fecha_creacion: z.string().nullish(),
+  habilitado: z.boolean(),
+});
+
+export type DuxCliente = z.output<typeof duxClienteSchema>;
+
+export const duxPaginaClientesSchema = z.object({ datos: z.array(duxClienteSchema) });

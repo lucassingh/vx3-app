@@ -2,6 +2,7 @@ import { Writable } from "node:stream";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createLogger } from "@/lib/logger";
 import { createDuxClient, LIMITES_DUX } from "./client";
+import fixtureClientes from "./fixtures/clientes.json";
 import fixtureFacturas from "./fixtures/facturas.json";
 import fixtureItems from "./fixtures/items.json";
 
@@ -142,6 +143,41 @@ describe("listarFacturas", () => {
 
     await expect(cliente.listarFacturas(PEDIDO)).rejects.toThrow(/results\.0\.detalles\.0\.precio_uni/);
     expect(fetch).toHaveBeenCalledOnce();
+  });
+});
+
+describe("listarClientes", () => {
+  it("lee la v2, con Bearer y su límite", async () => {
+    const { cliente, pedido, limites } = armar([json(fixtureClientes)]);
+
+    const { datos } = await cliente.listarClientes(50);
+
+    expect(pedido(0)[0]).toBe("https://dux.prueba/rest/v2/clientes?offset=50&limit=50");
+    expect(pedido(0)[1].headers.Authorization).toBe(`Bearer ${TOKEN}`);
+    expect(limites.v2.turno).toHaveBeenCalledOnce();
+    expect(limites.v1.turno).not.toHaveBeenCalled();
+    expect(datos).toHaveLength(2);
+  });
+
+  it("no deja pasar el documento ni los domicilios", async () => {
+    const { cliente } = armar([json(fixtureClientes)]);
+
+    const texto = JSON.stringify((await cliente.listarClientes(0)).datos);
+
+    expect(texto).not.toContain("30111222");
+    expect(texto).not.toContain("CALLE PRIVADA");
+    expect(texto).not.toContain("ENTREGA PRIVADA");
+  });
+
+  it("si la forma no es la esperada, dice el campo pero no el dato", async () => {
+    const rota = structuredClone(fixtureClientes) as { datos: Record<string, unknown>[] };
+    rota.datos[0]!.habilitado = "NOMBRE PRIVADO";
+    const { cliente } = armar([json(rota)]);
+
+    const error = await cliente.listarClientes(0).catch((e: Error) => e);
+
+    expect((error as Error).message).toMatch(/datos\.0\.habilitado/);
+    expect((error as Error).message).not.toContain("PRIVADO");
   });
 });
 

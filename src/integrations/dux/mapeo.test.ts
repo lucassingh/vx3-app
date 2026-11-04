@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
+import fixtureClientes from "./fixtures/clientes.json";
 import fixtureFacturas from "./fixtures/facturas.json";
 import fixtureItems from "./fixtures/items.json";
-import { aErpComprobante, aErpItem, fechaDeDux } from "./mapeo";
-import { duxItemSchema, duxPaginaFacturasSchema, type DuxItem } from "./schemas";
+import { aErpClienta, aErpComprobante, aErpItem, aPaginaDeClientas, fechaDeDux } from "./mapeo";
+import { duxItemSchema, duxPaginaClientesSchema, duxPaginaFacturasSchema, type DuxItem } from "./schemas";
 
 const delFixture = (codigo: string): DuxItem =>
   duxItemSchema.parse(fixtureItems.datos.find((item) => item.cod_item === codigo));
@@ -136,5 +137,46 @@ describe("aErpComprobante", () => {
   it("una nota de crédito sin detalle y una anulada", () => {
     expect(aErpComprobante(results[1]!, 1)).toMatchObject({ tipo: "NOTA_CREDITO", lineas: [], pedido: null });
     expect(aErpComprobante(results[2]!, 1)).toMatchObject({ anulado: true });
+  });
+});
+
+describe("aErpClienta", () => {
+  const { datos } = duxPaginaClientesSchema.parse(fixtureClientes);
+
+  it("traduce una clienta, sin documento ni domicilio", () => {
+    const clienta = aErpClienta(datos[0]!);
+
+    expect(clienta).toEqual({
+      id: 501,
+      nombre: "NOMBRE PRIVADO",
+      telefono: "+541144445555",
+      email: "privado@correo.prueba",
+      provincia: "BUENOS AIRES",
+      localidad: "LOCALIDAD DE PRUEBA",
+      habilitada: true,
+      creadaEl: "2026-01-15",
+    });
+    expect(JSON.stringify(clienta)).not.toContain("30111222");
+    expect(JSON.stringify(clienta)).not.toContain("CALLE PRIVADA");
+    expect(JSON.stringify(clienta)).not.toContain("ENTREGA PRIVADA");
+  });
+
+  it("toma el celular si no tiene teléfono, y lo vacío queda vacío", () => {
+    expect(aErpClienta(datos[1]!)).toMatchObject({ telefono: "11-55556666", email: null, provincia: null });
+  });
+});
+
+describe("aPaginaDeClientas", () => {
+  const { datos } = duxPaginaClientesSchema.parse(fixtureClientes);
+  const llena = Array.from({ length: 50 }, () => datos[0]!);
+
+  it("una página llena sigue, aunque DUX diga que no hay más", () => {
+    expect(fixtureClientes.paginacion.hay_mas).toBe(false);
+    expect(aPaginaDeClientas({ datos: llena }, 50).hayMas).toBe(true);
+  });
+
+  it("una página incompleta, o vacía, es la última", () => {
+    expect(aPaginaDeClientas({ datos: llena.slice(0, 49) }, 50).hayMas).toBe(false);
+    expect(aPaginaDeClientas({ datos: [] }, 50).hayMas).toBe(false);
   });
 });

@@ -5,7 +5,7 @@ import { limiteCompartido } from "@/lib/rate-limit";
 import { leerCredencial } from "@/modules/platform/credentials/service";
 import type { ErpGateway } from "@/modules/inventory/erp-gateway";
 import { createDuxClient, LIMITES_DUX, POR_PAGINA } from "./client";
-import { aErpComprobante, aErpItem } from "./mapeo";
+import { aErpComprobante, aErpItem, aPaginaDeClientas } from "./mapeo";
 
 export const POR_PAGINA_DUX = POR_PAGINA;
 
@@ -49,6 +49,7 @@ export function sucursalesDux(): number[] {
 export async function erpGateway(opciones: Opciones = {}): Promise<ErpGateway> {
   const cliente = await duxClient(opciones);
   return {
+    listarClientas: async (offset) => aPaginaDeClientas(await cliente.listarClientes(offset), POR_PAGINA),
     listarComprobantes: async (pedido) => {
       const { results, paging } = await cliente.listarFacturas(pedido);
       return {

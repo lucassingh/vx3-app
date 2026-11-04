@@ -6,7 +6,7 @@ import { createHttpClient, type HttpClientOptions } from "@/lib/http-client";
 import type { LimiteDeTasa } from "@/lib/rate-limit";
 import type { PedidoDeComprobantes } from "@/modules/inventory/erp-gateway";
 import { clasificarRespuestaDux } from "./respuesta";
-import { duxPaginaFacturasSchema, duxPaginaItemsSchema } from "./schemas";
+import { duxPaginaClientesSchema, duxPaginaFacturasSchema, duxPaginaItemsSchema } from "./schemas";
 
 /**
  * Adaptador de la API de DUX (`solucion_doc/04` §1, `tecnica.md` §7). Solo lee: no
@@ -75,9 +75,15 @@ export function createDuxClient(config: DuxConfig, { limites, esperasMs = ESPERA
     return validar(duxPaginaFacturasSchema, (await v1.get(ruta)).cuerpo, ruta);
   };
 
+  const listarClientes = async (offset: number) => {
+    const ruta = `/v2/clientes?offset=${offset}&limit=${POR_PAGINA}`;
+    return validar(duxPaginaClientesSchema, (await v2.get(ruta)).cuerpo, ruta);
+  };
+
   return {
     listarItems,
     listarFacturas,
+    listarClientes,
 
     /**
      * Prueba las dos versiones, porque fallan por motivos distintos: la v1 es la única
