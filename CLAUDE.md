@@ -69,8 +69,8 @@ de pantalla en `src/components/kit/` (`KpiGrid`, `BarList`, `ColumnChart`,
   (`src/lib/api/real-routes.ts`) si figura en la variable, o a la API simulada
   (`src/mocks/`) si no. El servidor lo llama en proceso; el navegador, por fetch.
   Las rutas reales usan los mismos helpers y el mismo contrato que las simuladas
-  (`src/lib/api/route.ts`). Un dominio configurado como real sin implementación
-  responde 501. Ver `.env.example`.
+  (`src/lib/api/route.ts`). Lo que un dominio real todavía no tiene sigue saliendo
+  de la API simulada, ruta por ruta. Ver `.env.example`.
 - La API simulada: `mocks/seed/` es la semilla compartida (productos reales del
   Excel con el motor de precios, clientas, anuncios, pedidos con sus montos,
   equipo y proveedores), así una clienta o un pedido es el mismo en todas las
@@ -180,6 +180,11 @@ Las cards son blancas con borde fino (`Card`, `CardHeader`, `CardTitle`,
   Server Actions `signIn`/`signOut` en `src/lib/auth-actions.ts` y
   `src/proxy.ts` (el middleware de Next 16) que manda a `/login` sin sesión.
   `currentUser` (`src/lib/auth.ts`) es el usuario que muestran las pantallas.
+- Workflows (`src/workflows/`): el cuerpo de una función con `"use workflow"` corre sin
+  Node. Lo que use ahí no puede arrastrar Prisma, pino ni crypto (por eso
+  `integrations/dux/paginas.ts` está aparte); los pasos, con `"use step"`, sí pueden. Los
+  tests no lo ven, porque ahí las directivas no hacen nada: lo ve la compilación, y solo si
+  una ruta arranca el workflow.
 - Rutas inexistentes muestran el 404 dentro del dashboard
   (`(dashboard)/[...slug]` + `(dashboard)/not-found.tsx`).
 

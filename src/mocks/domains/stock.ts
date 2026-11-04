@@ -521,7 +521,8 @@ export const routes: Route[] = [
       const codigos = productos.reduce((sum, producto) => sum + presentacionesDe(producto).lista.length, 0);
       return Response.json({
         ultimaLectura: isoAgo(2, Date.now()),
-        intervaloMin: 3,
+        frecuencia: "Cada 3 minutos",
+        alDia: true,
         llamadas: Math.ceil(codigos / 50),
         codigos,
         duracionS: 1.4,
@@ -531,6 +532,11 @@ export const routes: Route[] = [
   },
   { method: "GET", pattern: /^\/stock\/kpis$/, handler: () => Response.json(stockKpis()) },
   { method: "GET", pattern: /^\/stock\/espejo$/, handler: ({ url }) => Response.json(espejo(url)) },
+  {
+    method: "GET",
+    pattern: /^\/stock\/rubros$/,
+    handler: () => Response.json([...new Set(productos.map(({ rubro }) => rubro))].toSorted()),
+  },
   { method: "GET", pattern: /^\/stock\/diferencias$/, handler: () => Response.json(getDiferencias()) },
   {
     method: "POST",

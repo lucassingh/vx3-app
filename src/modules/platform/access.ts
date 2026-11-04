@@ -44,7 +44,6 @@ const API: Tabla = [
   ["/stock/sync", "catalogo"],
   ["/stock", "compras"],
   ["/plataforma/reglas", "bot"],
-  ["/plataforma/integraciones", "plataforma"],
   ["/plataforma/ia", "plataforma"],
   ["/plataforma/usuarios", "plataforma"],
   ["/plataforma/auditoria", "plataforma"],

@@ -109,6 +109,205 @@ model LoginThrottle {
   @@map("login_throttles")
 }
 
+/// Credencial de una cuenta del cliente (token de DUX…), cifrada con AES-256-GCM (RF-M0-06).
+/// La clave maestra vive fuera de la base (CREDENTIALS_KEY): acá queda lo cifrado y la máscara.
+model IntegrationCredential {
+  id            String   @id @db.Uuid
+  integration   String   @unique
+  encrypted     String
+  mask          String
+  loadedById    String   @map("loaded_by_id") @db.Uuid
+  loadedByLabel String   @map("loaded_by_label")
+  loadedAt      DateTime @map("loaded_at") @db.Timestamptz(6)
+
+  @@map("integration_credentials")
+}
+
+/// Próximo turno libre para llamar a un proveedor, compartido entre instancias (src/lib/rate-limit.ts).
+model RateLimit {
+  key        String   @id
+  nextSlotAt DateTime @map("next_slot_at") @db.Timestamptz(6)
+
+  @@map("rate_limits")
+}
+
+// ---- Espejo de DUX (RF-M2-01, solucion_doc/06 §6) ----------------------------------
+// DUX manda: acá se guarda lo que dice, sin corregirlo. Nunca se edita a mano.
+// De los comprobantes no se guardan el nombre, el CUIT ni el documento de la clienta:
+// se llega a ella por su ID, y lo personal queda en una sola tabla (dux_customers).
+
+/// Cómo se lee un código (src/modules/catalog/codigos.ts).
+enum DuxItemKind {
+  prenda
+  pack
+  pack_viejo
+  combo
+  no_producto
+
+  @@map("dux_item_kind")
+}
+
+/// Un item de /v2/items: prenda, pack o combo, con su stock y sus precios.
+model DuxItem {
+  id             String      @id @db.Uuid
+  /// cod_item tal como viene de DUX ("LN 25"): sirve para volver a pedírselo.
+  code           String      @unique
+  /// El mismo código escrito igual en todas las fuentes ("LN25").
+  normalizedCode String      @map("normalized_code")
+  kind           DuxItemKind
+  /// La identidad del producto ("MSU2-1"): une la prenda con sus packs.
+  baseCode       String      @map("base_code")
+  packQuantity   Int?        @map("pack_quantity")
+  /// El -3 fuera de medias: la regla no lo prevé (solucion_doc/10 §8).
+  outOfRule      Boolean     @default(false) @map("out_of_rule")
+  name           String
+  category       String?
+  subcategory    String?
+  brand          String?
+  supplierId     Int?        @map("supplier_id")
+  supplier       String?
+  costCents      BigInt      @map("cost_cents")
+  /// Las 5 listas: [{ listId, list, cents }].
+  prices         Json
+  /// Sumados entre depósitos y variantes. Hasta 8 decimales, como DUX: un pack se calcula desde la prenda.
+  stockReal      Decimal     @map("stock_real") @db.Decimal(18, 8)
+  stockReserved  Decimal     @map("stock_reserved") @db.Decimal(18, 8)
+  stockAvailable Decimal     @map("stock_available") @db.Decimal(18, 8)
+  enabled        Boolean
+  externalCode   String?     @map("external_code")
+  imageUrl       String?     @map("image_url")
+  /// fecha_creacion en DUX.
+  createdOn      DateTime    @map("created_on") @db.Date
+  /// Huella de lo leído: si no cambió, no se reescribe la fila.
+  contentHash    String      @map("content_hash")
+  /// false: dejó de aparecer en /v2/items. No se borra: las ventas se leen contra esos códigos.
+  present        Boolean     @default(true)
+  firstSeenAt    DateTime    @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt     DateTime    @map("last_seen_at") @db.Timestamptz(6)
+  changedAt      DateTime    @map("changed_at") @db.Timestamptz(6)
+
+  @@index([baseCode])
+  @@index([normalizedCode])
+  @@map("dux_items")
+}
+
+/// Un comprobante de la v1 de /facturas. Incluye anulados y notas de crédito, marcados:
+/// no se suman a la venta, pero tienen que verse si cambian.
+model DuxInvoice {
+  id            String           @id @db.Uuid
+  duxId         Int              @unique @map("dux_id")
+  branchId      Int              @map("branch_id")
+  /// tipo_comp: COMPROBANTE_VENTA, NOTA_CREDITO…
+  type          String
+  letter        String
+  pointOfSale   String           @map("point_of_sale")
+  number        Int
+  issuedOn      DateTime         @map("issued_on") @db.Date
+  /// id_cliente en DUX. Sin clave foránea: el comprobante puede llegar antes que la clienta.
+  customerDuxId Int?             @map("customer_dux_id")
+  /// nro_pedido. Nunca se cruza por número (RN-91).
+  orderNumber   String?          @map("order_number")
+  /// Las notas de crédito vienen con total positivo: se filtran por tipo, no por signo.
+  totalCents    BigInt           @map("total_cents")
+  cancelled     Boolean
+  contentHash   String           @map("content_hash")
+  firstSeenAt   DateTime         @map("first_seen_at") @db.Timestamptz(6)
+  changedAt     DateTime         @map("changed_at") @db.Timestamptz(6)
+  items         DuxInvoiceItem[]
+
+  @@index([issuedOn])
+  @@index([customerDuxId])
+  @@map("dux_invoices")
+}
+
+/// Una línea de un comprobante. DUX no le da ID (tmp_det_facturacion_id viene en null): la
+/// identifica su posición. El costo es el congelado al vender, no el vigente (RN-109).
+model DuxInvoiceItem {
+  id             String      @id @db.Uuid
+  invoiceId      String      @map("invoice_id") @db.Uuid
+  invoice        DuxInvoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  line           Int
+  code           String
+  kind           DuxItemKind
+  baseCode       String      @map("base_code")
+  /// Unidades por presentación: del código o, en las ventas de antes del 10/10, del nombre (RN-120).
+  packQuantity   Int?        @map("pack_quantity")
+  name           String
+  quantity       Decimal     @db.Decimal(18, 8)
+  unitPriceCents BigInt      @map("unit_price_cents")
+  discountPct    Decimal     @map("discount_pct") @db.Decimal(7, 4)
+  vatPct         Decimal     @map("vat_pct") @db.Decimal(7, 4)
+  costCents      BigInt      @map("cost_cents")
+
+  @@unique([invoiceId, line])
+  @@index([baseCode])
+  @@map("dux_invoice_items")
+}
+
+/// Una clienta de DUX: la única tabla del espejo con datos personales. Fuera de producción
+/// se anonimizan al entrar (tecnica_doc/fases/fase-1.4.md, decisión 2). Del domicilio y el
+/// documento no se guarda nada: nada los usa todavía.
+model DuxCustomer {
+  id              String    @id @db.Uuid
+  duxId           Int       @unique @map("dux_id")
+  name            String
+  phone           String?
+  /// Los últimos 10 dígitos: la identidad de la clienta (RN-90).
+  normalizedPhone String?   @map("normalized_phone")
+  email           String?
+  province        String?
+  city            String?
+  enabled         Boolean
+  createdOn       DateTime? @map("created_on") @db.Date
+  contentHash     String    @map("content_hash")
+  firstSeenAt     DateTime  @map("first_seen_at") @db.Timestamptz(6)
+  changedAt       DateTime  @map("changed_at") @db.Timestamptz(6)
+
+  @@index([normalizedPhone])
+  @@map("dux_customers")
+}
+
+enum SyncRunStatus {
+  en_curso
+  ok
+  con_errores
+  error
+
+  @@map("sync_run_status")
+}
+
+/// Una corrida de sincronización: lo que muestra el panel de integraciones (RF-M0-04).
+/// Nunca dos sincronizaciones a la vez de una integración. Vence solo: si un Workflow
+/// muere sin soltarlo, no traba para siempre.
+model SyncLock {
+  integration String   @id
+  holder      String
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz(6)
+
+  @@map("sync_locks")
+}
+
+model SyncRun {
+  id          String        @id @db.Uuid
+  integration String
+  /// "items", "ventas", "clientas".
+  operation   String
+  status      SyncRunStatus
+  /// "cron" o "manual".
+  trigger     String
+  /// Quién apretó el botón; null si la disparó el cron.
+  triggeredBy String?       @map("triggered_by")
+  startedAt   DateTime      @map("started_at") @db.Timestamptz(6)
+  finishedAt  DateTime?     @map("finished_at") @db.Timestamptz(6)
+  calls       Int           @default(0)
+  records     Int           @default(0)
+  /// Qué pasó, para el panel. Sin datos personales.
+  detail      String?
+
+  @@index([integration, startedAt(sort: Desc)])
+  @@map("sync_runs")
+}
+
 /// Registro de acciones sensibles: quién hizo qué, sobre qué y cuándo (RF-M0-03).
 /// El actor puede ser una persona, el bot o un proceso, por eso no apunta a usuarios.
 model AuditLog {

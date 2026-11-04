@@ -9,6 +9,7 @@ import {
 } from "@/components/stock/compras-widgets";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
+import { DatosSimulados } from "@/components/views/datos-simulados";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
 import { requirePageAccess } from "@/modules/platform/auth/session";
 
@@ -28,12 +29,15 @@ export default async function ComprasPage() {
         title={route?.link.title ?? "Compras"}
         description={route?.link.description}
         actions={
-          <Button variant="outline" asChild>
-            <Link href="/stock/proveedores">
-              <Factory />
-              Proveedores
-            </Link>
-          </Button>
+          <>
+            <DatosSimulados pr="3.5" />
+            <Button variant="outline" asChild>
+              <Link href="/stock/proveedores">
+                <Factory />
+                Proveedores
+              </Link>
+            </Button>
+          </>
         }
       />
       <PageBody>

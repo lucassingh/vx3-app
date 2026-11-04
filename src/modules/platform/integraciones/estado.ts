@@ -1,0 +1,67 @@
+import type { IntegracionEstado } from "@/lib/api/types";
+
+/**
+ * Cómo está una integración, según sus últimas corridas (RF-M0-04). Sin base ni red.
+ */
+
+/** Lo que lee una sincronización completa con DUX, con el nombre que se le muestra a una persona. */
+export const LECTURAS_DUX: Record<string, string> = {
+  items: "Productos, stock y precios",
+  ventas: "Ventas",
+  clientas: "Clientas",
+};
+
+/** La corrida es diaria (vercel.json): con este margen, una que se atrasa un rato no alarma. */
+const ATRASO_MAXIMO_H = 26;
+const HORA_MS = 3_600_000;
+
+export function estaAlDia(terminada: Date | null, ahora: Date): boolean {
+  return terminada !== null && ahora.getTime() - terminada.getTime() < ATRASO_MAXIMO_H * HORA_MS;
+}
+
+/** QA y local no tienen cron: ahí solo corre con el botón (`fase-1.4`, decisión 2). */
+export function frecuenciaDeDux(ambiente = process.env.APP_ENV): string {
+  return ambiente === "production" ? "Una vez por día, y con el botón" : "Solo con el botón en este ambiente";
+}
+
+export type UltimaCorrida = {
+  operation: string;
+  status: "ok" | "con_errores" | "error";
+  finishedAt: Date | null;
+  detail: string | null;
+};
+
+type Entrada = { tieneCredencial: boolean; ultimas: UltimaCorrida[]; ahora: Date };
+
+export function estadoDeDux({ tieneCredencial, ultimas, ahora }: Entrada): {
+  estado: IntegracionEstado;
+  motivo: string;
+} {
+  if (!tieneCredencial) {
+    return { estado: "pendiente", motivo: "Todavía no se cargó el token: cargalo para empezar a sincronizar." };
+  }
+  if (ultimas.length === 0) {
+    return { estado: "pendiente", motivo: "El token está cargado, pero todavía no se sincronizó." };
+  }
+
+  const fallidas = ultimas.filter(({ status }) => status !== "ok");
+  const primera = fallidas[0];
+  if (primera) {
+    const todasCaidas = fallidas.length === Object.keys(LECTURAS_DUX).length && fallidas.every(soloError);
+    const nombre = LECTURAS_DUX[primera.operation] ?? primera.operation;
+    const motivo = `${nombre}: ${primera.detail ?? "falló la última lectura."}`;
+    return { estado: todasCaidas ? "caido" : "degradado", motivo };
+  }
+
+  const faltante = Object.keys(LECTURAS_DUX).find((operacion) => !ultimas.some((u) => u.operation === operacion));
+  if (faltante) return { estado: "degradado", motivo: `${LECTURAS_DUX[faltante]}: todavía no se leyó.` };
+
+  const ultima = Math.max(...ultimas.map(({ finishedAt }) => finishedAt?.getTime() ?? 0));
+  const horas = Math.floor((ahora.getTime() - ultima) / HORA_MS);
+  if (horas >= ATRASO_MAXIMO_H) {
+    return { estado: "degradado", motivo: `La última sincronización terminó hace ${horas} horas.` };
+  }
+  return { estado: "ok", motivo: "Productos, stock, precios, ventas y clientas al día. Solo lectura." };
+}
+
+const soloError = ({ status }: UltimaCorrida) => status === "error";

@@ -18,7 +18,6 @@ import {
   VentasCard,
   VentasCardSkeleton,
 } from "@/components/inicio/widgets";
-import { DuxProbeButton } from "@/components/inicio/dux-probe-button";
 import { PageBody, PageHeader } from "@/components/layout/page-header";
 import { TodayLabel } from "@/components/layout/today-label";
 import { Button } from "@/components/ui/button";
@@ -41,8 +40,6 @@ export default async function HomePage() {
         description="Qué pasó hoy, qué está trabado y dónde se está perdiendo plata, con los datos de todos los sistemas cruzados por clienta y por pedido."
         actions={
           <>
-            {/* PROVISORIO: prueba la API real de DUX (respuestas en la consola, F12). */}
-            {process.env.NODE_ENV === "development" && <DuxProbeButton />}
             <Button variant="outline" asChild>
               <Link href="/pedidos/facturacion">
                 <ReceiptText />

@@ -33,6 +33,13 @@ describe("serverEnv", () => {
     expect(() => serverEnv({ ...desarrollo, DATABASE_URL: "https://neon.tech" })).toThrow(/conexión de Postgres/);
   });
 
+  it("la clave de las credenciales es opcional, pero tiene que ser de 32 bytes en base64url", () => {
+    const clave = Buffer.alloc(32, 7).toString("base64url");
+    expect(serverEnv(desarrollo).CREDENTIALS_KEY).toBeUndefined();
+    expect(serverEnv({ ...desarrollo, CREDENTIALS_KEY: clave }).CREDENTIALS_KEY).toBe(clave);
+    expect(() => serverEnv({ ...desarrollo, CREDENTIALS_KEY: "corta" })).toThrow(/CREDENTIALS_KEY: .*32 bytes/);
+  });
+
   it("al arrancar en producción exige AUTH_SECRET, y de al menos 32 caracteres", () => {
     const produccion = { ...desarrollo, NODE_ENV: "production" };
     expect(() => serverEnv(produccion)).toThrow(/AUTH_SECRET: falta, y es obligatoria en produccion/);
@@ -53,7 +60,7 @@ describe("serverEnv", () => {
   });
 
   it("toma una variable vacía (CLAVE=) como no cargada", () => {
-    expect(serverEnv({ ...desarrollo, AUTH_SECRET: "", DUX_TOKEN: "" }).DUX_TOKEN).toBeUndefined();
+    expect(serverEnv({ ...desarrollo, AUTH_SECRET: "", DUX_API_URL: "" }).DUX_API_URL).toBeUndefined();
   });
 
   it("convierte los IDs de DUX a número y rechaza los que no lo son", () => {

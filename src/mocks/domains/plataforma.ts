@@ -7,14 +7,12 @@ import {
   type CanalAlerta,
   type IaConfig,
   type IaConsumo,
-  type Integracion,
   type ReglaGrupo,
   type ReglaNegocio,
   type ReglaTipo,
   type ReglaValor,
   type SeguridadCuenta,
   type SesionAbierta,
-  type SyncLogEntry,
   type UsuarioEquipo,
 } from "@/lib/api/contracts/plataforma";
 import { defineStore } from "../db";
@@ -33,7 +31,7 @@ import {
   TIPO_CAMBIO_USD,
 } from "../seed";
 
-/** M0 · Plataforma: reglas, integraciones, IA, usuarios, auditoría y cuenta. */
+/** M0 · Plataforma: reglas, IA, usuarios, auditoría y cuenta. */
 
 /** Usuario de la sesión (hay uno solo, ver src/lib/session.ts). */
 /** La persona que usa la demo: la primera del equipo semilla. */
@@ -606,287 +604,6 @@ const historialSeed: (Omit<CambioRegla, "en"> & { haceMin: number })[] = [
 
 const CARGA_INICIAL_MIN = 10 * DAY;
 
-/* ---- Integraciones --------------------------------------------------------- */
-
-type IntegracionSeed = Omit<Integracion, "ultimoSync" | "credencial"> & {
-  syncHaceMin: number | null;
-  credencial: { mascara: string; por: string; haceMin: number } | null;
-};
-
-const integracionesSeed: IntegracionSeed[] = [
-  {
-    id: "dux",
-    nombre: "DUX",
-    tipo: "ERP · API v2",
-    estado: "ok",
-    detalle: "Stock y precios espejados; pedidos, facturas, cobros y compras por API.",
-    frecuencia: "Stock y precios cada 3 min",
-    syncHaceMin: 2,
-    metricas: [
-      { label: "SKUs espejados", value: "1.052" },
-      { label: "Llamadas hoy", value: "2.418" },
-      { label: "Reintentos hoy", value: "2" },
-    ],
-    credencial: { mascara: "••••7c1e", por: "Más Uno", haceMin: 6 * DAY },
-  },
-  {
-    id: "meta",
-    nombre: "Meta Ads",
-    tipo: "Marketing API",
-    estado: "ok",
-    detalle: "Campañas, conjuntos y anuncios con sus métricas. Los últimos 28 días se re-sincronizan cada noche.",
-    frecuencia: "Insights cada 15 min",
-    syncHaceMin: 9,
-    metricas: [
-      { label: "Anuncios activos", value: "9" },
-      { label: "Gasto de hoy", value: "US$ 24" },
-      { label: "Compras enviadas", value: "18" },
-    ],
-    credencial: { mascara: "••••a91d", por: "Elías Llaury", haceMin: 6 * DAY },
-  },
-  {
-    id: "whatsapp",
-    nombre: "WhatsApp Cloud API",
-    tipo: "Mensajería · webhook",
-    estado: "ok",
-    detalle: "Número de ventas y número del local en la misma bandeja. Webhook con firma verificada.",
-    frecuencia: "En tiempo real",
-    syncHaceMin: 0,
-    metricas: [
-      { label: "Números", value: "Ventas y local" },
-      { label: "Plantillas aprobadas", value: "12" },
-      { label: "Mensajes hoy", value: "1.386" },
-    ],
-    credencial: { mascara: "••••4f2a", por: "Más Uno", haceMin: 5 * DAY },
-  },
-  {
-    id: "tiendanube",
-    nombre: "Tienda Nube",
-    tipo: "App de VX3",
-    estado: "ok",
-    detalle:
-      "Producto, fotos y descripción por API. El stock y el precio los sigue empujando la integración nativa de DUX.",
-    frecuencia: "Al publicar y cada 30 min",
-    syncHaceMin: 21,
-    metricas: [
-      { label: "Productos publicados", value: "418" },
-      { label: "Pedidos hoy", value: "1" },
-      { label: "Errores", value: "0" },
-    ],
-    credencial: { mascara: "••••b03c", por: "Más Uno", haceMin: 5 * DAY },
-  },
-  {
-    id: "correo",
-    nombre: "MiCorreo",
-    tipo: "Correo Argentino · cotizador",
-    estado: "degradado",
-    detalle:
-      "La API respondió lento: 3 cotizaciones de hoy salieron con la tabla de respaldo, avisando que eran estimadas.",
-    frecuencia: "En cada cotización",
-    syncHaceMin: 14,
-    metricas: [
-      { label: "Cotizaciones hoy", value: "14" },
-      { label: "Con respaldo", value: "3" },
-      { label: "Respuesta media", value: "4,2 s" },
-    ],
-    credencial: { mascara: "••••e8d0", por: "Más Uno", haceMin: 4 * DAY },
-  },
-  {
-    id: "zupply",
-    nombre: "Zupply · Transtech",
-    tipo: "Mensajería AMBA",
-    estado: "pendiente",
-    detalle: "Sin API confirmada todavía (prueba S-6): se importa el export de envíos y se cruza con DUX y los bancos.",
-    frecuencia: "Import diario",
-    syncHaceMin: DAY - 2 * HOUR,
-    importa: true,
-    metricas: [
-      { label: "Último import", value: "27 envíos" },
-      { label: "Sin rendir", value: "11" },
-      { label: "Estados dudosos", value: "4" },
-    ],
-    credencial: null,
-  },
-  {
-    id: "santander",
-    nombre: "Santander",
-    tipo: "Extracto bancario",
-    estado: "ok",
-    detalle: "Extracto importado. Los movimientos nuevos ya están en la conciliación.",
-    frecuencia: "Import diario",
-    syncHaceMin: 5 * HOUR,
-    importa: true,
-    metricas: [
-      { label: "Movimientos", value: "18" },
-      { label: "Conciliados", value: "15" },
-    ],
-    credencial: null,
-  },
-  {
-    id: "supervielle",
-    nombre: "Supervielle",
-    tipo: "Extracto bancario",
-    estado: "ok",
-    detalle: "Extracto importado. Los movimientos nuevos ya están en la conciliación.",
-    frecuencia: "Import diario",
-    syncHaceMin: 5 * HOUR + 10,
-    importa: true,
-    metricas: [
-      { label: "Movimientos", value: "11" },
-      { label: "Conciliados", value: "9" },
-    ],
-    credencial: null,
-  },
-  {
-    id: "provincia",
-    nombre: "Provincia",
-    tipo: "Extracto bancario",
-    estado: "degradado",
-    detalle: "El último extracto es de hace 2 días: subí el de hoy para que entren las transferencias nuevas.",
-    frecuencia: "Import diario",
-    syncHaceMin: 2 * DAY + 3 * HOUR,
-    importa: true,
-    metricas: [
-      { label: "Movimientos", value: "7" },
-      { label: "Conciliados", value: "7" },
-    ],
-    credencial: null,
-  },
-  {
-    id: "nacion",
-    nombre: "Nación",
-    tipo: "Extracto bancario",
-    estado: "ok",
-    detalle: "Extracto importado. Los movimientos nuevos ya están en la conciliación.",
-    frecuencia: "Import diario",
-    syncHaceMin: 3 * HOUR,
-    importa: true,
-    metricas: [
-      { label: "Movimientos", value: "6" },
-      { label: "Conciliados", value: "6" },
-    ],
-    credencial: null,
-  },
-  {
-    id: "anthropic",
-    nombre: "Anthropic · Claude",
-    tipo: "IA del bot",
-    estado: "ok",
-    detalle: "API key de la cuenta de VX3. El bot usa Claude Haiku 5.5 con caché del prompt.",
-    frecuencia: "En cada mensaje",
-    syncHaceMin: 1,
-    metricas: [
-      { label: "Llamadas hoy", value: "1.912" },
-      { label: "Gasto de hoy", value: "US$ 0,41" },
-    ],
-    credencial: { mascara: "sk-ant-••••Hq4w", por: "Elías Llaury", haceMin: 5 * DAY },
-    enlace: { label: "Ver consumo", href: "/configuracion/ia" },
-  },
-];
-
-const logSeed: (Omit<SyncLogEntry, "en"> & { haceMin: number })[] = [
-  {
-    id: "sl-12",
-    integracionId: "dux",
-    integracion: "DUX",
-    operacion: "Espejo de stock y precios",
-    resultado: "ok",
-    detalle: "1.052 SKUs leídos en 22 llamadas",
-    duracionMs: 4_380,
-    haceMin: 2,
-  },
-  {
-    id: "sl-11",
-    integracionId: "whatsapp",
-    integracion: "WhatsApp Cloud API",
-    operacion: "Webhook de mensajes",
-    resultado: "ok",
-    detalle: "Firma verificada · referral con el ID del anuncio",
-    duracionMs: 120,
-    haceMin: 3,
-  },
-  {
-    id: "sl-10",
-    integracionId: "meta",
-    integracion: "Meta Ads",
-    operacion: "Insights del día",
-    resultado: "ok",
-    detalle: "9 anuncios actualizados",
-    duracionMs: 2_140,
-    haceMin: 9,
-  },
-  {
-    id: "sl-9",
-    integracionId: "correo",
-    integracion: "MiCorreo",
-    operacion: "Cotización V-1059",
-    resultado: "error",
-    detalle: "Sin respuesta en 8 s: se usó la tabla de respaldo",
-    duracionMs: 8_000,
-    haceMin: 14,
-  },
-  {
-    id: "sl-8",
-    integracionId: "dux",
-    integracion: "DUX",
-    operacion: "POST /v2/facturas (V-1051)",
-    resultado: "reintento",
-    detalle: "Timeout: se reintentó con la misma referencia, sin duplicar",
-    duracionMs: 6_920,
-    haceMin: 3 * HOUR + 20,
-  },
-  {
-    id: "sl-7",
-    integracionId: "tiendanube",
-    integracion: "Tienda Nube",
-    operacion: "Publicación de CJATN31-6",
-    resultado: "ok",
-    detalle: "Bulto con 4 fotos y descripción",
-    duracionMs: 1_870,
-    haceMin: 21,
-  },
-  {
-    id: "sl-6",
-    integracionId: "meta",
-    integracion: "Meta Ads",
-    operacion: "Conversions API · Purchase",
-    resultado: "ok",
-    detalle: "V-1050 enviado con su ctwa_clid",
-    duracionMs: 410,
-    haceMin: 3 * HOUR + 45,
-  },
-  {
-    id: "sl-5",
-    integracionId: "santander",
-    integracion: "Santander",
-    operacion: "Import de extracto",
-    resultado: "ok",
-    detalle: "18 movimientos, 3 nuevos para conciliar",
-    duracionMs: 980,
-    haceMin: 5 * HOUR,
-  },
-  {
-    id: "sl-4",
-    integracionId: "dux",
-    integracion: "DUX",
-    operacion: "POST /v2/cobros (V-1045)",
-    resultado: "ok",
-    detalle: "Imputado en Supervielle con la fecha del banco",
-    duracionMs: 1_220,
-    haceMin: DAY,
-  },
-  {
-    id: "sl-3",
-    integracionId: "zupply",
-    integracion: "Zupply · Transtech",
-    operacion: "Import del export de envíos",
-    resultado: "ok",
-    detalle: "27 envíos · 4 con estado dudoso para revisar",
-    duracionMs: 1_640,
-    haceMin: DAY - 2 * HOUR,
-  },
-];
-
 /* ---- IA -------------------------------------------------------------------- */
 
 /** Gasto diario del bot en centavos de dólar; el último es hoy, hasta ahora. */
@@ -999,14 +716,6 @@ const getState = defineStore("plataforma", (now) => {
     };
   });
 
-  const integraciones: Integracion[] = integracionesSeed.map(({ syncHaceMin, credencial, ...integracion }) => ({
-    ...integracion,
-    ultimoSync: syncHaceMin === null ? null : isoAgo(syncHaceMin, now),
-    credencial: credencial
-      ? { mascara: credencial.mascara, cargadaPor: credencial.por, cargadaEn: isoAgo(credencial.haceMin, now) }
-      : null,
-  }));
-
   const usuarios: UsuarioEquipo[] = equipo.map((usuario) => {
     const acceso = accesosSeed[usuario.id];
     return {
@@ -1081,8 +790,6 @@ const getState = defineStore("plataforma", (now) => {
   return {
     reglas,
     historial,
-    integraciones,
-    log: logSeed.map(({ haceMin, ...entrada }) => ({ ...entrada, en: isoAgo(haceMin, now) })) as SyncLogEntry[],
     ia,
     consumo: consumoIa(now),
     usuarios,
@@ -1099,35 +806,7 @@ function nextId(prefix: string) {
   return `${prefix}-${state.secuencia}`;
 }
 
-function registrarSync(
-  integracion: Integracion,
-  operacion: string,
-  resultado: SyncLogEntry["resultado"],
-  detalle: string,
-  duracionMs: number,
-) {
-  getState().log.unshift({
-    id: nextId("sl"),
-    integracionId: integracion.id,
-    integracion: integracion.nombre,
-    operacion,
-    resultado,
-    detalle,
-    duracionMs,
-    en: new Date().toISOString(),
-  });
-}
-
 const byNewest = <T extends { en: string }>(rows: T[]) => rows.toSorted((a, b) => b.en.localeCompare(a.en));
-
-const LATENCIA: Record<string, number> = {
-  dux: 640,
-  meta: 310,
-  whatsapp: 180,
-  tiendanube: 420,
-  correo: 3_900,
-  anthropic: 260,
-};
 
 /* ---- Rutas ----------------------------------------------------------------- */
 
@@ -1178,75 +857,6 @@ export const routes: Route[] = [
         nuevos.push(registro);
       }
       return Response.json({ reglas: state.reglas, cambios: nuevos });
-    },
-  },
-  {
-    method: "GET",
-    pattern: /^\/plataforma\/integraciones$/,
-    handler: () => Response.json(getState().integraciones),
-  },
-  {
-    method: "GET",
-    pattern: /^\/plataforma\/integraciones\/log$/,
-    handler: () => Response.json(byNewest(getState().log).slice(0, 12)),
-  },
-  {
-    method: "POST",
-    pattern: /^\/plataforma\/integraciones\/([^/]+)\/probar$/,
-    handler: ({ params: [id] }) => {
-      const integracion = getState().integraciones.find((item) => item.id === decodeURIComponent(id));
-      if (!integracion) return errorResponse(404, `No existe la integración ${id}.`);
-      if (integracion.importa) {
-        return Response.json({
-          ok: true,
-          latenciaMs: 0,
-          mensaje: "Se alimenta importando el archivo: no hay conexión que probar.",
-        });
-      }
-      if (integracion.estado === "caido" || !integracion.credencial) {
-        registrarSync(integracion, "Prueba de conexión", "error", "No respondió", 8_000);
-        return Response.json({ ok: false, latenciaMs: 8_000, mensaje: `${integracion.nombre} no respondió.` });
-      }
-      const latenciaMs = LATENCIA[integracion.id] ?? 500;
-      registrarSync(integracion, "Prueba de conexión", "ok", `Respondió en ${latenciaMs} ms`, latenciaMs);
-      return Response.json({ ok: true, latenciaMs, mensaje: `${integracion.nombre} respondió en ${latenciaMs} ms.` });
-    },
-  },
-  {
-    method: "POST",
-    pattern: /^\/plataforma\/integraciones\/([^/]+)\/reintentar$/,
-    handler: ({ params: [id] }) => {
-      const integracion = getState().integraciones.find((item) => item.id === decodeURIComponent(id));
-      if (!integracion) return errorResponse(404, `No existe la integración ${id}.`);
-      if (integracion.estado === "pendiente") {
-        return errorResponse(409, "Esta integración todavía no tiene una conexión para reintentar.");
-      }
-      integracion.estado = "ok";
-      integracion.ultimoSync = new Date().toISOString();
-      if (integracion.id === "correo") {
-        integracion.detalle = "La API volvió a responder rápido. Las próximas cotizaciones salen con la tarifa real.";
-        integracion.metricas = integracion.metricas.map((metrica) =>
-          metrica.label === "Respuesta media" ? { ...metrica, value: "1,1 s" } : metrica,
-        );
-      }
-      registrarSync(integracion, "Reintento manual", "ok", "Sincronizado", 1_100);
-      return Response.json(integracion);
-    },
-  },
-  {
-    method: "POST",
-    pattern: /^\/plataforma\/integraciones\/([^/]+)\/importar$/,
-    handler: ({ params: [id] }) => {
-      const integracion = getState().integraciones.find((item) => item.id === decodeURIComponent(id));
-      if (!integracion?.importa) return errorResponse(404, `La integración ${id} no se alimenta con archivos.`);
-      const importados = integracion.id === "zupply" ? 31 : 6;
-      integracion.estado = integracion.estado === "degradado" ? "ok" : integracion.estado;
-      integracion.ultimoSync = new Date().toISOString();
-      if (integracion.id === "provincia") {
-        integracion.detalle = "Extracto importado. Los movimientos nuevos ya están en la conciliación.";
-      }
-      registrarSync(integracion, "Import de archivo", "ok", `${importados} registros nuevos`, 1_300);
-      return Response.json({ importados });
     },
   },
   { method: "GET", pattern: /^\/plataforma\/ia$/, handler: () => Response.json(getState().ia) },

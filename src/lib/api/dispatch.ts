@@ -25,8 +25,9 @@ export function realDomains(): readonly ApiDomain[] {
  * Atiende un request de la API (/api/v1/<dominio>/…). Primero valida que el
  * usuario pueda ver (GET) o editar (lo demás) el área de esa ruta
  * (src/modules/platform/access.ts); después, si el dominio está en
- * API_REAL_DOMAINS va a su implementación real y si no, a la API simulada. Lo
- * usan el endpoint del navegador y, en el mismo proceso, los Server Components.
+ * API_REAL_DOMAINS y tiene esa ruta, va a su implementación real; todo lo demás,
+ * a la API simulada. Lo usan el endpoint del navegador y, en el mismo proceso, los
+ * Server Components.
  */
 export async function dispatchApiRequest(request: Request, opciones: Opciones): Promise<Response> {
   const url = new URL(request.url);
@@ -44,15 +45,9 @@ export async function dispatchApiRequest(request: Request, opciones: Opciones): 
   if (!dominio || !reales.includes(dominio)) return handleMockRequest(request, path);
 
   const rutas = (opciones.realRoutes ?? rutasReales)[dominio] ?? [];
-  if (rutas.length === 0) {
-    return errorResponse(
-      501,
-      `El dominio ${dominio} está configurado como real (API_REAL_DOMAINS) pero todavía no tiene implementación.`,
-    );
-  }
   for (const route of rutas) {
     const match = route.method === request.method ? path.match(route.pattern) : null;
     if (match) return route.handler({ url, params: routeParams(match), request });
   }
-  return errorResponse(404, `No existe ${request.method} ${path} en la API de ${dominio}.`);
+  return handleMockRequest(request, path);
 }

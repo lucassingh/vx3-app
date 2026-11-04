@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel, Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DatosSimulados } from "@/components/views/datos-simulados";
 import { SkeletonText, TableSkeleton } from "@/components/views/skeletons";
+import { MAXIMO_FILAS_ESPEJO } from "@/lib/api/contracts/stock";
 import { api } from "@/lib/api/server";
 import type { StockEstado } from "@/lib/api/types";
 import { formatNumber, formatRelativeTime } from "@/lib/format";
@@ -38,20 +40,23 @@ export async function SyncCard() {
       <div className="min-w-0 flex-1 space-y-1">
         <h2 className="flex flex-wrap items-center gap-2 text-[15px] font-semibold tracking-tight">
           Espejo de DUX
-          <Badge variant="success" dot>
-            Al día
+          <Badge variant={sync.alDia ? "success" : "warning"} dot>
+            {sync.alDia ? "Al día" : "Atrasado"}
           </Badge>
         </h2>
         <p className="text-[13px] text-muted-foreground">
-          DUX no avisa los cambios: la app lo lee cada {sync.intervaloMin} minutos y nunca escribe stock a mano. Entra
-          por las compras y sale por las facturas, siempre por API.
+          DUX no avisa los cambios: la app lo lee y nunca escribe stock a mano. {sync.frecuencia}.
         </p>
       </div>
       <dl className="grid shrink-0 grid-cols-3 gap-x-6 gap-y-1 text-sm sm:text-right">
         <div>
           <dt className="text-xs text-muted-foreground">Última lectura</dt>
           <dd className="font-medium first-letter:uppercase">
-            <time dateTime={sync.ultimaLectura}>{formatRelativeTime(sync.ultimaLectura)}</time>
+            {sync.ultimaLectura ? (
+              <time dateTime={sync.ultimaLectura}>{formatRelativeTime(sync.ultimaLectura)}</time>
+            ) : (
+              "Nunca"
+            )}
           </dd>
         </div>
         <div>
@@ -125,66 +130,83 @@ export async function StockTabla({ searchParams }: { searchParams: Promise<Searc
   }
 
   return (
-    <Table className="min-w-4xl">
-      <TableHeader>
-        <TableRow>
-          {COLUMNS.map((column) => (
-            <TableHead key={column} className={cn(NUMERIC.has(column) && "text-right")}>
-              {column}
-            </TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {filas.map((fila) => {
-          const estadoFila = ESTADO_STOCK[fila.estado];
-          return (
-            <TableRow key={fila.sku}>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <ProductThumb sku={fila.sku} colors={fila.colores} size="sm" />
-                  <div className="min-w-0">
-                    <p className="max-w-72 truncate font-medium">{fila.nombre}</p>
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-mono">{fila.sku}</span> · {fila.rubro}
-                    </p>
+    <>
+      <Table className="min-w-4xl">
+        <TableHeader>
+          <TableRow>
+            {COLUMNS.map((column) => (
+              <TableHead key={column} className={cn(NUMERIC.has(column) && "text-right")}>
+                {column}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filas.map((fila) => {
+            const estadoFila = ESTADO_STOCK[fila.estado];
+            return (
+              <TableRow key={fila.sku}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <ProductThumb sku={fila.sku} colors={fila.colores} size="sm" />
+                    <div className="min-w-0">
+                      <p className="max-w-72 truncate font-medium">{fila.nombre}</p>
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-mono">{fila.sku}</span> · {fila.rubro}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </TableCell>
-              <TableCell className="text-right tabular-nums">
-                {formatNumber(fila.stockPrendas)}
-                <span className="block text-xs text-muted-foreground">prendas</span>
-              </TableCell>
-              <TableCell className="text-right tabular-nums">
-                {fila.reservadoPrendas > 0 ? (
-                  formatNumber(fila.reservadoPrendas)
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
-              </TableCell>
-              <TableCell className="text-right tabular-nums">
-                <span className="font-semibold">{formatNumber(fila.disponibleBultos)}</span>{" "}
-                <span className="text-muted-foreground">{fila.disponibleBultos === 1 ? "bulto" : "bultos"}</span>
-                <span className="block text-xs text-muted-foreground">{fila.equivalencia}</span>
-              </TableCell>
-              <TableCell className="text-right tabular-nums">{formatNumber(fila.ventas30dBultos)}</TableCell>
-              <TableCell className="text-right tabular-nums">
-                {fila.diasStock === null ? (
-                  <span className="text-muted-foreground">—</span>
-                ) : (
-                  `${formatNumber(fila.diasStock)} días`
-                )}
-              </TableCell>
-              <TableCell>
-                <Badge variant={estadoFila.tone} dot>
-                  {estadoFila.label}
-                </Badge>
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatNumber(fila.stockPrendas)}
+                  <span className="block text-xs text-muted-foreground">
+                    {fila.bultoLabel === "Combo" ? "unidades" : "prendas"}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {fila.reservadoPrendas > 0 ? (
+                    formatNumber(fila.reservadoPrendas)
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  <span className="font-semibold">{formatNumber(fila.disponibleBultos)}</span>{" "}
+                  <span className="text-muted-foreground">
+                    {fila.bultoLabel === "Combo"
+                      ? fila.disponibleBultos === 1
+                        ? "combo"
+                        : "combos"
+                      : fila.disponibleBultos === 1
+                        ? "bulto"
+                        : "bultos"}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">{fila.equivalencia}</span>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{formatNumber(fila.ventas30dBultos)}</TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {fila.diasStock === null ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : (
+                    `${formatNumber(fila.diasStock)} días`
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={estadoFila.tone} dot>
+                    {estadoFila.label}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+      {filas.length >= MAXIMO_FILAS_ESPEJO && (
+        <p className="border-t border-border px-6 py-3 text-center text-xs text-muted-foreground">
+          Se muestran los primeros {MAXIMO_FILAS_ESPEJO}. Buscá o filtrá por rubro o estado para ver el resto.
+        </p>
+      )}
+    </>
   );
 }
 
@@ -198,7 +220,7 @@ export function StockTablaSkeleton() {
 }
 
 export async function StockTablaCard({ children }: { children: React.ReactNode }) {
-  const facetas = await api.catalogo.facetas();
+  const rubros = await api.stock.rubros();
   return (
     <Card className="overflow-hidden">
       <CardHeader className="items-center pb-4">
@@ -209,7 +231,7 @@ export async function StockTablaCard({ children }: { children: React.ReactNode }
           </CardDescription>
         </div>
         <Suspense fallback={<StockFiltrosFallback />}>
-          <StockFiltros rubros={facetas.rubros} />
+          <StockFiltros rubros={rubros} />
         </Suspense>
       </CardHeader>
       {children}
@@ -247,6 +269,7 @@ function DiferenciasFrame({ children }: { children: React.ReactNode }) {
             10/10
           </CardDescription>
         </div>
+        <DatosSimulados pr="3.5" />
       </CardHeader>
       <div className="border-t border-border">{children}</div>
     </Card>
