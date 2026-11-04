@@ -1,11 +1,18 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { RotateCw } from "lucide-react";
+import { useEffect } from "react";
 import { PageBody } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 
 /** Error inesperado en una pantalla (los widgets tienen su propio boundary). */
 export default function DashboardError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+  // Los del servidor ya llegaron a Sentry por onRequestError (vienen con digest).
+  useEffect(() => {
+    if (!error.digest) Sentry.captureException(error);
+  }, [error]);
+
   return (
     <PageBody className="grid min-h-[calc(100dvh-3.5rem)] place-items-center">
       <div role="alert" className="max-w-md text-center">

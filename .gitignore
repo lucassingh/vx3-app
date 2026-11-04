@@ -46,3 +46,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# conexiones de los usuarios de base (npm run db:roles)
+/.secrets/
+
+# caché del compilador de los Workflows (las rutas que genera traen su propio .gitignore)
+/.swc

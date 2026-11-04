@@ -19,6 +19,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // La API, los assets y las imágenes no pasan por acá.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icon.svg|logo.svg|brand/).*)"],
+  // La API, las rutas internas de los Workflows, los assets y las imágenes no pasan por acá.
+  matcher: ["/((?!api|\\.well-known/workflow/|_next/static|_next/image|favicon.ico|icon.svg|logo.svg|brand/).*)"],
 };

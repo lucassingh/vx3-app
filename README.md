@@ -42,6 +42,7 @@ roles. Con la API simulada no hace falta ninguna otra credencial.
 | `npm run db:seed`           | Datos de referencia, idempotentes                                                 |
 | `npm run db:studio`         | Prisma Studio                                                                     |
 | `npm run db:dump`           | Copia local de la base con `pg_dump` (en `backups/`)                              |
+| `npm run db:roles`          | Usuarios `app` y `readonly` de una branch (`-- --branch develop`), idempotente    |
 | `npm run auth:create-admin` | Crea un admin con contraseña temporal (el primero de cada base)                   |
 
 ## Datos: API simulada y real
@@ -91,6 +92,11 @@ directa (`DATABASE_URL_UNPOOLED`, en `prisma.config.ts`). El esquema está en
 `prisma/schema.prisma`; el cliente se genera solo al instalar (`src/generated/`, fuera de
 git). Los IDs son uuid v7 generados en la app (`newId()` de `src/db/ids.ts`).
 
+Tres usuarios por branch (`src/db/roles.ts`): el dueño (`neondb_owner`) migra; `app`, el
+de la app en Vercel, lee y escribe datos pero no toca el esquema ni cambia la auditoría;
+`readonly` es para soporte y los backups. `npm run db:roles` los crea y deja las
+conexiones en `.secrets/neon-<branch>.env`, fuera de git.
+
 ## Estructura
 
 ```
@@ -115,6 +121,21 @@ src/
 - **Commits:** Conventional Commits en inglés, uno por ítem de la fase.
 - **PR:** de la fase hacia `develop`, con la descripción en español y la CI en
   verde. Merge commit, sin squash.
+
+## Ambientes y despliegue
+
+Todo lo despliega GitHub Actions, que migra la base antes de publicar:
+
+- **Preview:** cada PR a `develop`, con la URL comentada en la PR (`preview.yml`).
+- **QA:** cada push a `develop`, en `cli-vx3-qa.vercel.app` (`deploy-qa.yml`).
+- **Producción:** un tag `vX.Y.Z` sobre un commit de `main` que coincida con la versión
+  de `package.json` (`deploy-prod.yml`). Mergear a `main` no despliega nada: el tag es la
+  aprobación.
+
+Backup semanal cifrado (`backup.yml`), prueba de restauración (`restore-test.yml`),
+errores en Sentry y mantenimiento diario con Vercel Cron y un Workflow
+(`src/workflows/`). Qué hacer cuando algo se rompe, cómo volver atrás y cómo rotar
+un secreto: [`docs/operacion.md`](docs/operacion.md).
 
 Las convenciones de código (tokens de color, skeletons, toasts, tests) están en
 `CLAUDE.md`.

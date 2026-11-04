@@ -1,0 +1,59 @@
+# Cada push a develop (el merge de una fase) termina en QA sin pasos a mano:
+# CI → build → migraciones de develop → deploy → alias fijo de QA → prueba de
+# salud con el commit nuevo.
+
+name: Deploy QA
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+# Uno por vez y sin cortar uno que ya está migrando: si llegan dos, el último
+# espera (y reemplaza a otro que estuviera esperando).
+concurrency:
+  group: deploy-qa
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  QA_HOST: cli-vx3-qa.vercel.app
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  deploy:
+    name: Deploy a QA
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      NEXT_TELEMETRY_DISABLED: "1"
+      HUSKY: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: deploy
+        uses: ./.github/actions/deploy
+        with:
+          target: preview
+          app-env: qa
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          database-url-unpooled: ${{ secrets.QA_DATABASE_URL_UNPOOLED }}
+          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          sentry-org: ${{ secrets.SENTRY_ORG }}
+
+      - name: Alias de QA
+        run: vercel alias set "${{ steps.deploy.outputs.url }}" "$QA_HOST" --token="${{ secrets.VERCEL_TOKEN }}" --scope="$VERCEL_ORG_ID"
+
+      - name: Prueba de salud
+        run: node scripts/smoke.mjs "https://$QA_HOST" --commit "$GITHUB_SHA"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

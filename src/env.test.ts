@@ -40,6 +40,11 @@ describe("serverEnv", () => {
     expect(serverEnv({ ...produccion, AUTH_SECRET: SECRETO }).AUTH_SECRET).toBe(SECRETO);
   });
 
+  it("en producción no pide la conexión directa: es del dueño del esquema y solo migra", () => {
+    const produccion = { NODE_ENV: "production", DATABASE_URL: POOLER, AUTH_SECRET: SECRETO };
+    expect(() => serverEnv(produccion)).not.toThrow();
+  });
+
   it("durante next build, en los tests o con SKIP_ENV_VALIDATION no exige nada, pero sigue validando el formato", () => {
     expect(() => serverEnv({ NODE_ENV: "production", NEXT_PHASE: "phase-production-build" })).not.toThrow();
     expect(() => serverEnv({ NODE_ENV: "test" })).not.toThrow();

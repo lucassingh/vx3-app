@@ -4,5 +4,6 @@ coverage/
 package-lock.json
 next-env.d.ts
 src/generated/
+src/app/.well-known/workflow/
 # Semilla del mock: las filas son tablas de datos y se leen mejor en una línea.
 src/mocks/seed/

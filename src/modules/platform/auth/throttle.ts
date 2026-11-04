@@ -15,7 +15,7 @@ const VENTANA_MS = 15 * MINUTO;
 const BLOQUEO_BASE_MS = 15 * MINUTO;
 const BLOQUEO_MAXIMO_MS = 24 * 60 * MINUTO;
 /** Si pasó un día sin fallos, la espera vuelve a empezar de 15 minutos. */
-const OLVIDO_MS = 24 * 60 * MINUTO;
+export const OLVIDO_MS = 24 * 60 * MINUTO;
 
 export const LIMITE = { user: 5, ip: 20 } as const;
 

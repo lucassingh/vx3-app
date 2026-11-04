@@ -12,7 +12,8 @@ import { API_DOMAINS } from "@/lib/api/domains";
  *
  * Qué es obligatorio depende del modo:
  * - **desarrollo:** las conexiones a Neon.
- * - **producción** (al arrancar el servidor): además, `AUTH_SECRET`.
+ * - **producción** (al arrancar el servidor): la conexión con pooler y
+ *   `AUTH_SECRET`. La directa no: es del dueño del esquema y solo migra.
  * - **test, build o `SKIP_ENV_VALIDATION=1`:** nada obligatorio; solo se valida
  *   el formato de lo que esté cargado. `next build` corre con NODE_ENV=production
  *   y en la CI no tiene secretos.
@@ -59,6 +60,10 @@ const esquemaServidor = z.object({
   ),
   /** URL pública de la app, para Better Auth. En local, http://localhost:3000. */
   BETTER_AUTH_URL: opcional(z.url("tiene que ser una URL, como http://localhost:3000")),
+  /** La pone Vercel en cada deploy: el host del deploy, sin https://. */
+  VERCEL_URL: opcional(z.string()),
+  /** Vercel Cron lo manda en cada llamada a /api/cron/*. Sin él, esas rutas responden 401. */
+  CRON_SECRET: opcional(z.string().min(32, "tiene que tener al menos 32 caracteres")),
   DATABASE_URL: opcional(conexionNeon(true)),
   DATABASE_URL_UNPOOLED: opcional(conexionNeon(false)),
   NEON_API_KEY: opcional(z.string()),
@@ -100,7 +105,8 @@ const esquemaServidor = z.object({
 
 const OBLIGATORIAS: Record<Modo, (keyof z.infer<typeof esquemaServidor>)[]> = {
   desarrollo: ["DATABASE_URL", "DATABASE_URL_UNPOOLED"],
-  produccion: ["DATABASE_URL", "DATABASE_URL_UNPOOLED", "AUTH_SECRET"],
+  // La conexión directa es del dueño del esquema y solo la usan las migraciones: no va en Vercel.
+  produccion: ["DATABASE_URL", "AUTH_SECRET"],
   relajado: [],
 };
 

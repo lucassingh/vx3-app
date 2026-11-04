@@ -40,11 +40,21 @@ const authRoles = Object.fromEntries(
   ROLES.map((role) => [role, role === "admin" ? adminAc : sinAdministracion]),
 ) as Record<Role, typeof sinAdministracion>;
 
+/**
+ * Producción fija BETTER_AUTH_URL. En QA y en las previews la URL cambia en
+ * cada deploy y se toma la que pone Vercel; alcanza porque sin ruta HTTP
+ * Better Auth no compara orígenes, y con https la cookie sale `Secure`.
+ */
+function baseURL(env: ReturnType<typeof serverEnv>) {
+  if (env.BETTER_AUTH_URL) return env.BETTER_AUTH_URL;
+  return env.VERCEL_URL ? `https://${env.VERCEL_URL}` : "http://localhost:3000";
+}
+
 function createAuth() {
   const env = serverEnv();
   return betterAuth({
     appName: "VX3",
-    baseURL: env.BETTER_AUTH_URL ?? "http://localhost:3000",
+    baseURL: baseURL(env),
     secret: env.AUTH_SECRET ?? DEV_SECRET,
     database: prismaAdapter(getDb(), { provider: "postgresql" }),
     advanced: {

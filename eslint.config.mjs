@@ -33,6 +33,8 @@ const eslintConfig = defineConfig([
     // Cliente de Prisma generado.
     "src/generated/**",
     "coverage/**",
+    // Rutas que genera el compilador de los Workflows en cada build.
+    "src/app/.well-known/workflow/**",
   ]),
 ]);
 
