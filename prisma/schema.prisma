@@ -277,6 +277,16 @@ enum SyncRunStatus {
 }
 
 /// Una corrida de sincronización: lo que muestra el panel de integraciones (RF-M0-04).
+/// Nunca dos sincronizaciones a la vez de una integración. Vence solo: si un Workflow
+/// muere sin soltarlo, no traba para siempre.
+model SyncLock {
+  integration String   @id
+  holder      String
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz(6)
+
+  @@map("sync_locks")
+}
+
 model SyncRun {
   id          String        @id @db.Uuid
   integration String

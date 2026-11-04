@@ -4,10 +4,9 @@ import { ExternalServiceError } from "@/lib/errors";
 import { limiteCompartido } from "@/lib/rate-limit";
 import { leerCredencial } from "@/modules/platform/credentials/service";
 import type { ErpGateway } from "@/modules/inventory/erp-gateway";
-import { createDuxClient, LIMITES_DUX, POR_PAGINA } from "./client";
+import { createDuxClient, LIMITES_DUX } from "./client";
 import { aErpComprobante, aErpItem, aPaginaDeClientas } from "./mapeo";
-
-export const POR_PAGINA_DUX = POR_PAGINA;
+import { POR_PAGINA_DUX } from "./paginas";
 
 const URL_POR_DEFECTO = "https://erp.duxsoftware.com.ar/WSERP/rest/services";
 
@@ -49,14 +48,14 @@ export function sucursalesDux(): number[] {
 export async function erpGateway(opciones: Opciones = {}): Promise<ErpGateway> {
   const cliente = await duxClient(opciones);
   return {
-    listarClientas: async (offset) => aPaginaDeClientas(await cliente.listarClientes(offset), POR_PAGINA),
+    listarClientas: async (offset) => aPaginaDeClientas(await cliente.listarClientes(offset), POR_PAGINA_DUX),
     listarComprobantes: async (pedido) => {
       const { results, paging } = await cliente.listarFacturas(pedido);
       return {
         comprobantes: results.map((factura) => aErpComprobante(factura, pedido.sucursal)),
         total: paging?.total ?? pedido.offset + results.length,
         // Una página incompleta es la última: `paging.total` no siempre viene.
-        hayMas: results.length === POR_PAGINA && pedido.offset + POR_PAGINA < (paging?.total ?? Infinity),
+        hayMas: results.length === POR_PAGINA_DUX && pedido.offset + POR_PAGINA_DUX < (paging?.total ?? Infinity),
       };
     },
     listarItems: async (offset) => {

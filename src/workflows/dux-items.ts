@@ -1,4 +1,5 @@
-import { erpGateway, POR_PAGINA_DUX } from "@/integrations/dux";
+import { erpGateway } from "@/integrations/dux";
+import { POR_PAGINA_DUX } from "@/integrations/dux/paginas";
 import { isAppError } from "@/lib/errors";
 import { formatNumber } from "@/lib/format";
 import { logger } from "@/lib/logger";

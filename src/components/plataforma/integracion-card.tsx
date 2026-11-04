@@ -11,6 +11,7 @@ import {
   MessageCircle,
   Package,
   PlugZap,
+  RefreshCw,
   RotateCw,
   ShoppingBag,
   Sparkles,
@@ -26,7 +27,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { api } from "@/lib/api/browser";
 import type { Integracion, IntegracionEstado } from "@/lib/api/types";
 import { toast } from "@/lib/toast";
-import { probarIntegracion } from "@/modules/platform/credentials/actions";
+import { probarIntegracion, sincronizarIntegracion } from "@/modules/platform/credentials/actions";
 import { usaCredencial } from "@/modules/platform/credentials/integraciones";
 import { CargarCredencial } from "./cargar-credencial";
 
@@ -93,6 +94,23 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
         .unwrap()
         .catch(() => {});
       router.refresh();
+    });
+  };
+
+  const onSincronizar = () => {
+    const { id, nombre } = integracion;
+    if (!usaCredencial(id)) return;
+    startTransition(async () => {
+      try {
+        const result = await sincronizarIntegracion({ integracion: id });
+        if (!result.ok) throw new Error(result.error.message);
+        toast.success(`${nombre} se está sincronizando`, { description: "Tarda unos minutos." });
+        router.refresh();
+      } catch (error) {
+        toast.error(`No se pudo sincronizar ${nombre}`, {
+          description: error instanceof Error ? error.message : undefined,
+        });
+      }
     });
   };
 
@@ -208,6 +226,12 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
           <Button variant="outline" size="sm" disabled={pending} onClick={onProbar}>
             {pending ? <LoaderCircle aria-hidden className="animate-spin" /> : <PlugZap />}
             Probar conexión
+          </Button>
+        )}
+        {usaCredencial(integracion.id) && (
+          <Button variant="outline" size="sm" disabled={pending} onClick={onSincronizar}>
+            {pending ? <LoaderCircle aria-hidden className="animate-spin" /> : <RefreshCw />}
+            Sincronizar ahora
           </Button>
         )}
         {usaCredencial(integracion.id) && (

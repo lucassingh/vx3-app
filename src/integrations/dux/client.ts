@@ -5,6 +5,7 @@ import { ExternalServiceError } from "@/lib/errors";
 import { createHttpClient, type HttpClientOptions } from "@/lib/http-client";
 import type { LimiteDeTasa } from "@/lib/rate-limit";
 import type { PedidoDeComprobantes } from "@/modules/inventory/erp-gateway";
+import { POR_PAGINA_DUX } from "./paginas";
 import { clasificarRespuestaDux } from "./respuesta";
 import { duxPaginaClientesSchema, duxPaginaFacturasSchema, duxPaginaItemsSchema } from "./schemas";
 
@@ -21,7 +22,6 @@ export const LIMITES_DUX = { v2: { clave: "dux:v2", intervaloMs: 250 }, v1: { cl
 
 /** 200 con "Formato desconocido" se arregló en todas las pruebas con la primera espera. */
 const ESPERAS_MS = [5_000, 15_000, 30_000];
-export const POR_PAGINA = 50;
 
 export type DuxConfig = {
   baseUrl: string;
@@ -57,7 +57,7 @@ export function createDuxClient(config: DuxConfig, { limites, esperasMs = ESPERA
   const v2 = createHttpClient({ ...base, headers: { Authorization: `Bearer ${config.token}` }, limite: limites.v2 });
   const v1 = createHttpClient({ ...base, headers: { Authorization: config.token }, limite: limites.v1 });
 
-  const listarItems = async (offset: number, limit = POR_PAGINA) => {
+  const listarItems = async (offset: number, limit = POR_PAGINA_DUX) => {
     const ruta = `/v2/items?offset=${offset}&limit=${limit}`;
     return validar(duxPaginaItemsSchema, (await v2.get(ruta)).cuerpo, ruta);
   };
@@ -69,14 +69,14 @@ export function createDuxClient(config: DuxConfig, { limites, esperasMs = ESPERA
       fechaDesde: desde,
       fechaHasta: hasta,
       offset: String(offset),
-      limit: String(POR_PAGINA),
+      limit: String(POR_PAGINA_DUX),
     });
     const ruta = `/facturas?${parametros}`;
     return validar(duxPaginaFacturasSchema, (await v1.get(ruta)).cuerpo, ruta);
   };
 
   const listarClientes = async (offset: number) => {
-    const ruta = `/v2/clientes?offset=${offset}&limit=${POR_PAGINA}`;
+    const ruta = `/v2/clientes?offset=${offset}&limit=${POR_PAGINA_DUX}`;
     return validar(duxPaginaClientesSchema, (await v2.get(ruta)).cuerpo, ruta);
   };
 

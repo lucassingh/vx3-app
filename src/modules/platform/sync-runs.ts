@@ -33,3 +33,36 @@ export async function cerrarCorrida(
 ) {
   await getDb().syncRun.update({ where: { id }, data: { ...resultado, finishedAt: new Date() } });
 }
+
+/** Con el bloqueo tomado o recién soltado, ninguna corrida puede estar andando: las abiertas quedaron colgadas. */
+async function cerrarColgadas(integration: string) {
+  await getDb().syncRun.updateMany({
+    where: { integration, status: "en_curso" },
+    data: { status: "error", finishedAt: new Date(), detail: "La corrida se cortó antes de terminar." },
+  });
+}
+
+/**
+ * Una sola sentencia, que la fila serializa: de dos pedidos simultáneos gana uno solo,
+ * y si el bloqueo venció, lo toma el que llega. Devuelve la llave para soltarlo, o null
+ * si está tomado.
+ */
+export async function tomarBloqueo(integration: string, duracionMs: number): Promise<string | null> {
+  const holder = newId();
+  const [fila] = await getDb().$queryRaw<{ holder: string }[]>`
+    INSERT INTO sync_locks (integration, holder, expires_at)
+    VALUES (${integration}, ${holder}, clock_timestamp() + make_interval(secs => ${duracionMs}::float8 / 1000))
+    ON CONFLICT (integration) DO UPDATE
+      SET holder = EXCLUDED.holder, expires_at = EXCLUDED.expires_at
+      WHERE sync_locks.expires_at < clock_timestamp()
+    RETURNING holder`;
+  if (!fila) return null;
+  await cerrarColgadas(integration);
+  return holder;
+}
+
+/** Si venció y ya lo tomó otra corrida, no le toca nada: ni su bloqueo ni sus corridas abiertas. */
+export async function soltarBloqueo(integration: string, holder: string) {
+  const { count } = await getDb().syncLock.deleteMany({ where: { integration, holder } });
+  if (count > 0) await cerrarColgadas(integration);
+}

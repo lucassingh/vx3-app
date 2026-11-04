@@ -4,14 +4,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Integracion } from "@/lib/api/types";
 import { IntegracionCard } from "./integracion-card";
 
-const { probarIntegracion, probarSimulada, refresh, toast } = vi.hoisted(() => ({
+const { probarIntegracion, sincronizarIntegracion, probarSimulada, refresh, toast } = vi.hoisted(() => ({
   probarIntegracion: vi.fn(),
+  sincronizarIntegracion: vi.fn(),
   probarSimulada: vi.fn(),
   refresh: vi.fn(),
   toast: { promise: vi.fn(), success: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock("@/modules/platform/credentials/actions", () => ({ probarIntegracion, cargarCredencial: vi.fn() }));
+vi.mock("@/modules/platform/credentials/actions", () => ({
+  probarIntegracion,
+  sincronizarIntegracion,
+  cargarCredencial: vi.fn(),
+}));
 vi.mock("@/lib/api/browser", () => ({ api: { plataforma: { integraciones: { probar: probarSimulada } } } }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
 vi.mock("next/link", () => ({ default: ({ children }: { children: React.ReactNode }) => children }));
@@ -87,5 +92,40 @@ describe("IntegracionCard", () => {
     render(<IntegracionCard integracion={integracion("dux", "DUX")} labels={LABELS} />);
 
     expect(screen.getByRole("button", { name: "Cargar credencial" })).toBeInTheDocument();
+  });
+});
+
+describe("Sincronizar ahora", () => {
+  const apretar = () => {
+    render(<IntegracionCard integracion={integracion("dux", "DUX")} labels={LABELS} />);
+    return userEvent.setup().click(screen.getByRole("button", { name: "Sincronizar ahora" }));
+  };
+
+  it("solo lo tiene lo que ya está conectado", () => {
+    render(<IntegracionCard integracion={integracion("meta", "Meta")} labels={LABELS} />);
+
+    expect(screen.queryByRole("button", { name: "Sincronizar ahora" })).toBeNull();
+  });
+
+  it("la lanza, lo confirma y refresca", async () => {
+    sincronizarIntegracion.mockResolvedValue({ ok: true, data: { runId: "wrun_01" } });
+
+    await apretar();
+
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("DUX se está sincronizando", expect.anything()));
+    expect(sincronizarIntegracion).toHaveBeenCalledWith({ integracion: "dux" });
+    expect(refresh).toHaveBeenCalled();
+  });
+
+  it("con una corrida en curso, avisa", async () => {
+    const message = "Ya hay una sincronización en curso: esperá a que termine.";
+    sincronizarIntegracion.mockResolvedValue({ ok: false, error: { code: "CONFLICT", message } });
+
+    await apretar();
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("No se pudo sincronizar DUX", { description: message }),
+    );
+    expect(toast.success).not.toHaveBeenCalled();
   });
 });

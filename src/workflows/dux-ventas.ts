@@ -1,4 +1,5 @@
-import { erpGateway, POR_PAGINA_DUX, sucursalesDux } from "@/integrations/dux";
+import { erpGateway, sucursalesDux } from "@/integrations/dux";
+import { POR_PAGINA_DUX } from "@/integrations/dux/paginas";
 import { getDb } from "@/db/client";
 import { businessTime } from "@/lib/dates";
 import { isAppError } from "@/lib/errors";

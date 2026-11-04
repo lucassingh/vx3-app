@@ -12,7 +12,6 @@ const erp = vi.hoisted(() => ({
 }));
 
 vi.mock("@/integrations/dux", () => ({
-  POR_PAGINA_DUX: 50,
   erpGateway: async ({ alIntentar }: { alIntentar?: () => void } = {}) => {
     erp.armar();
     return {

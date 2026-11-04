@@ -13,7 +13,6 @@ const paginas = vi.hoisted(() => ({
 }));
 
 vi.mock("@/integrations/dux", () => ({
-  POR_PAGINA_DUX: 50,
   erpGateway: async ({ alIntentar }: { alIntentar?: () => void }) => ({
     listarItems: async (offset: number) => {
       paginas.pedidas.push(offset);
