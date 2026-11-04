@@ -1,9 +1,7 @@
 "use client";
 
 import {
-  ArrowUpRight,
   Database,
-  FileUp,
   KeyRound,
   Landmark,
   LoaderCircle,
@@ -18,17 +16,15 @@ import {
   Truck,
   type LucideIcon,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useTransition } from "react";
+import { useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { api } from "@/lib/api/browser";
 import type { Integracion, IntegracionEstado } from "@/lib/api/types";
 import { toast } from "@/lib/toast";
 import { probarIntegracion, sincronizarIntegracion } from "@/modules/platform/credentials/actions";
-import { usaCredencial } from "@/modules/platform/credentials/integraciones";
+import { usaCredencial, type IntegracionConCredencial } from "@/modules/platform/credentials/integraciones";
 import { CargarCredencial } from "./cargar-credencial";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -58,36 +54,30 @@ export const ESTADO_INTEGRACION: Record<
 /** Textos de fecha armados en el servidor. */
 export type IntegracionLabels = { ultimoSync: string; credencial: string | null };
 
-/** Lo que ya está conectado se prueba de verdad; el resto, contra la API simulada. */
-async function pedirPrueba(id: string) {
-  if (!usaCredencial(id)) return api.plataforma.integraciones.probar(id);
+/** Prueba la conexión y la rechaza si la integración no respondió (para toast.promise). */
+async function probar(id: IntegracionConCredencial) {
   const result = await probarIntegracion({ integracion: id });
   if (!result.ok) throw new Error(result.error.message);
+  if (!result.data.ok) throw new Error(result.data.mensaje);
   return result.data;
-}
-
-/** Prueba la conexión y la rechaza si la integración no respondió (para toast.promise). */
-function probar(integracion: Pick<Integracion, "id">) {
-  return pedirPrueba(integracion.id).then((result) => {
-    if (!result.ok) throw new Error(result.mensaje);
-    return result;
-  });
 }
 
 export function IntegracionCard({ integracion, labels }: { integracion: Integracion; labels: IntegracionLabels }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const Icon = ICONS[integracion.id] ?? PlugZap;
+  const { id, nombre } = integracion;
+  const Icon = ICONS[id] ?? PlugZap;
   const estado = ESTADO_INTEGRACION[integracion.estado];
-  const puedeReintentar =
-    !integracion.importa && (integracion.estado === "degradado" || integracion.estado === "caido");
+  // Solo lo que ya está conectado tiene algo para mostrar y algo para hacer.
+  const conectada = usaCredencial(id) ? id : null;
+  const puedeReintentar = integracion.estado === "degradado" || integracion.estado === "caido";
 
   const onProbar = () => {
+    if (!conectada) return;
     startTransition(async () => {
       await toast
-        .promise(probar(integracion), {
-          loading: `Probando ${integracion.nombre}…`,
+        .promise(probar(conectada), {
+          loading: `Probando ${nombre}…`,
           success: (result) => result.mensaje,
           error: (error) => (error instanceof Error ? error.message : "No respondió."),
         })
@@ -98,11 +88,10 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
   };
 
   const onSincronizar = () => {
-    const { id, nombre } = integracion;
-    if (!usaCredencial(id)) return;
+    if (!conectada) return;
     startTransition(async () => {
       try {
-        const result = await sincronizarIntegracion({ integracion: id });
+        const result = await sincronizarIntegracion({ integracion: conectada });
         if (!result.ok) throw new Error(result.error.message);
         toast.success(`${nombre} se está sincronizando`, { description: "Tarda unos minutos." });
         router.refresh();
@@ -110,38 +99,6 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
         toast.error(`No se pudo sincronizar ${nombre}`, {
           description: error instanceof Error ? error.message : undefined,
         });
-      }
-    });
-  };
-
-  const onReintentar = () => {
-    startTransition(async () => {
-      try {
-        await api.plataforma.integraciones.reintentar(integracion.id);
-        toast.success(`${integracion.nombre} sincronizó de nuevo`);
-        router.refresh();
-      } catch (error) {
-        toast.error(`No se pudo reintentar ${integracion.nombre}`, {
-          description: error instanceof Error ? error.message : undefined,
-          action: { label: "Reintentar", onClick: onReintentar },
-        });
-      }
-    });
-  };
-
-  const onArchivo = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    startTransition(async () => {
-      try {
-        const { importados } = await api.plataforma.integraciones.importar(integracion.id);
-        toast.success(`${file.name} importado`, {
-          description: `${importados} registros nuevos de ${integracion.nombre} ya están para conciliar.`,
-        });
-        router.refresh();
-      } catch {
-        toast.error("No se pudo leer el archivo", { description: "Revisá que sea el export o el extracto del día." });
       }
     });
   };
@@ -154,7 +111,7 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
             <Icon aria-hidden className="size-5" />
           </span>
           <div className="min-w-0">
-            <CardTitle className="truncate">{integracion.nombre}</CardTitle>
+            <CardTitle className="truncate">{nombre}</CardTitle>
             <CardDescription className="truncate">{integracion.tipo}</CardDescription>
           </div>
         </div>
@@ -166,111 +123,83 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
       <CardContent className="flex flex-1 flex-col gap-4 pt-4">
         <p className="text-[13px] text-pretty text-muted-foreground">{integracion.detalle}</p>
 
-        <dl className="grid grid-cols-3 gap-3">
-          {integracion.metricas.map((metrica) => (
-            <div key={metrica.label} className="min-w-0">
-              <dt className="truncate text-xs text-muted-foreground">{metrica.label}</dt>
-              <dd className="mt-0.5 truncate text-sm font-medium tabular-nums">{metrica.value}</dd>
-            </div>
-          ))}
-        </dl>
+        {conectada && (
+          <>
+            <dl className="grid grid-cols-2 gap-3">
+              {integracion.metricas.map((metrica) => (
+                <div key={metrica.label} className="min-w-0">
+                  <dt className="truncate text-xs text-muted-foreground">{metrica.label}</dt>
+                  <dd className="mt-0.5 truncate text-sm font-medium tabular-nums">{metrica.value}</dd>
+                </div>
+              ))}
+            </dl>
 
-        <dl className="mt-auto space-y-2 rounded-lg border border-border bg-muted/50 p-3 text-xs">
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Frecuencia</dt>
-            <dd className="text-right">{integracion.frecuencia}</dd>
-          </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Último sync</dt>
-            <dd className="text-right first-letter:uppercase">{labels.ultimoSync}</dd>
-          </div>
-          <div className="flex justify-between gap-3">
-            <dt className="flex items-center gap-1.5 text-muted-foreground">
-              <KeyRound aria-hidden className="size-3.5" />
-              Credencial
-            </dt>
-            <dd className="min-w-0 text-right">
-              {integracion.credencial ? (
-                <>
-                  <span className="font-mono text-foreground">{integracion.credencial.mascara}</span>
-                  <span className="block text-muted-foreground">{labels.credencial}</span>
-                </>
-              ) : integracion.importa ? (
-                <span className="text-muted-foreground">No usa: se importa el archivo</span>
-              ) : (
-                <span className="text-muted-foreground">Falta el acceso</span>
-              )}
-            </dd>
-          </div>
-        </dl>
+            <dl className="mt-auto space-y-2 rounded-lg border border-border bg-muted/50 p-3 text-xs">
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Frecuencia</dt>
+                <dd className="text-right">{integracion.frecuencia}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Último sync</dt>
+                <dd className="text-right first-letter:uppercase">{labels.ultimoSync}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="flex items-center gap-1.5 text-muted-foreground">
+                  <KeyRound aria-hidden className="size-3.5" />
+                  Credencial
+                </dt>
+                <dd className="min-w-0 text-right">
+                  {integracion.credencial ? (
+                    <>
+                      <span className="font-mono text-foreground">{integracion.credencial.mascara}</span>
+                      <span className="block text-muted-foreground">{labels.credencial}</span>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">Falta cargarla</span>
+                  )}
+                </dd>
+              </div>
+            </dl>
+          </>
+        )}
       </CardContent>
 
-      <CardFooter className="flex-wrap">
-        {integracion.importa ? (
-          <>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".csv,.xls,.xlsx"
-              className="sr-only"
-              tabIndex={-1}
-              aria-hidden
-              onChange={onArchivo}
-            />
-            <Button variant="outline" size="sm" disabled={pending} onClick={() => fileRef.current?.click()}>
-              {pending ? <LoaderCircle aria-hidden className="animate-spin" /> : <FileUp />}
-              {integracion.id === "zupply" ? "Importar export" : "Importar extracto"}
-            </Button>
-          </>
-        ) : (
+      {conectada && (
+        <CardFooter className="flex-wrap">
           <Button variant="outline" size="sm" disabled={pending} onClick={onProbar}>
             {pending ? <LoaderCircle aria-hidden className="animate-spin" /> : <PlugZap />}
             Probar conexión
           </Button>
-        )}
-        {usaCredencial(integracion.id) && (
-          <Button variant="outline" size="sm" disabled={pending} onClick={onSincronizar}>
-            {pending ? <LoaderCircle aria-hidden className="animate-spin" /> : <RefreshCw />}
-            Sincronizar ahora
+          <Button variant="outline" size="sm" disabled={pending || !integracion.credencial} onClick={onSincronizar}>
+            {pending ? (
+              <LoaderCircle aria-hidden className="animate-spin" />
+            ) : puedeReintentar ? (
+              <RotateCw />
+            ) : (
+              <RefreshCw />
+            )}
+            {puedeReintentar ? "Reintentar" : "Sincronizar ahora"}
           </Button>
-        )}
-        {usaCredencial(integracion.id) && (
-          <CargarCredencial
-            integracion={integracion.id}
-            nombre={integracion.nombre}
-            yaCargada={Boolean(integracion.credencial)}
-          />
-        )}
-        {puedeReintentar && (
-          <Button variant="ghost" size="sm" disabled={pending} onClick={onReintentar}>
-            <RotateCw />
-            Reintentar
-          </Button>
-        )}
-        {integracion.enlace && (
-          <Button variant="ghost" size="sm" className="ml-auto" asChild>
-            <Link href={integracion.enlace.href}>
-              {integracion.enlace.label}
-              <ArrowUpRight />
-            </Link>
-          </Button>
-        )}
-      </CardFooter>
+          <CargarCredencial integracion={conectada} nombre={nombre} yaCargada={Boolean(integracion.credencial)} />
+        </CardFooter>
+      )}
     </Card>
   );
 }
 
-/** Acción del header: prueba todas las conexiones en paralelo. */
-export function ProbarTodas({ integraciones }: { integraciones: Pick<Integracion, "id" | "nombre">[] }) {
+/** Acción del header: prueba en paralelo todo lo que ya está conectado. */
+export function ProbarTodas({ integraciones }: { integraciones: { id: IntegracionConCredencial; nombre: string }[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   const onClick = () => {
     startTransition(async () => {
-      const results = await Promise.allSettled(integraciones.map((integracion) => probar(integracion)));
+      const results = await Promise.allSettled(integraciones.map(({ id }) => probar(id)));
       const fallidas = integraciones.filter((_, index) => results[index]?.status === "rejected");
       if (fallidas.length === 0) {
-        toast.success(`Las ${integraciones.length} conexiones respondieron`);
+        toast.success(
+          integraciones.length === 1 ? "La conexión respondió" : `Las ${integraciones.length} conexiones respondieron`,
+        );
       } else {
         toast.error(`${fallidas.length} sin respuesta`, {
           description: fallidas.map((integracion) => integracion.nombre).join(", "),

@@ -4,10 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Integracion } from "@/lib/api/types";
 import { IntegracionCard } from "./integracion-card";
 
-const { probarIntegracion, sincronizarIntegracion, probarSimulada, refresh, toast } = vi.hoisted(() => ({
+const { probarIntegracion, sincronizarIntegracion, refresh, toast } = vi.hoisted(() => ({
   probarIntegracion: vi.fn(),
   sincronizarIntegracion: vi.fn(),
-  probarSimulada: vi.fn(),
   refresh: vi.fn(),
   toast: { promise: vi.fn(), success: vi.fn(), error: vi.fn() },
 }));
@@ -17,12 +16,12 @@ vi.mock("@/modules/platform/credentials/actions", () => ({
   sincronizarIntegracion,
   cargarCredencial: vi.fn(),
 }));
-vi.mock("@/lib/api/browser", () => ({ api: { plataforma: { integraciones: { probar: probarSimulada } } } }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
-vi.mock("next/link", () => ({ default: ({ children }: { children: React.ReactNode }) => children }));
 vi.mock("@/lib/toast", () => ({ toast }));
 
-const integracion = (id: string, nombre: string): Integracion => ({
+const CREDENCIAL = { mascara: "••••7c1e", cargadaPor: "Lucas", cargadaEn: "2026-11-04T12:00:00.000Z" };
+
+const integracion = (id: string, nombre: string, cambios: Partial<Integracion> = {}): Integracion => ({
   id,
   nombre,
   tipo: "ERP",
@@ -32,6 +31,7 @@ const integracion = (id: string, nombre: string): Integracion => ({
   ultimoSync: null,
   metricas: [],
   credencial: null,
+  ...cambios,
 });
 
 const LABELS = { ultimoSync: "Nunca", credencial: null };
@@ -57,14 +57,13 @@ beforeEach(() => {
 });
 
 describe("IntegracionCard", () => {
-  it("DUX se prueba de verdad, no contra la API simulada", async () => {
+  it("DUX se prueba de verdad", async () => {
     probarIntegracion.mockResolvedValue({ ok: true, data: { ok: true, latenciaMs: 900, mensaje: "DUX respondió." } });
 
     await probar(integracion("dux", "DUX"));
 
     expect(await promesaDelToast()).toMatchObject({ mensaje: "DUX respondió." });
     expect(probarIntegracion).toHaveBeenCalledWith({ integracion: "dux" });
-    expect(probarSimulada).not.toHaveBeenCalled();
   });
 
   it("si DUX no respondió bien, el aviso es de error y lleva el motivo", async () => {
@@ -78,14 +77,35 @@ describe("IntegracionCard", () => {
     await expect(promesaDelToast()).rejects.toThrow("Todavía no se cargó el token de DUX.");
   });
 
-  it("lo que todavía no está conectado sigue con la API simulada, y sin botón de credencial", async () => {
-    probarSimulada.mockResolvedValue({ ok: true, latenciaMs: 300, mensaje: "Meta respondió." });
+  it("lo que todavía no está conectado solo dice cuándo entra: nada para hacer ni datos que mostrar", () => {
+    const meta = integracion("meta", "Meta Ads", {
+      estado: "pendiente",
+      detalle: "Se conecta en la PR 1.6.",
+    });
 
-    await probar(integracion("meta", "Meta Ads"));
+    render(<IntegracionCard integracion={meta} labels={LABELS} />);
 
-    await expect(promesaDelToast()).resolves.toMatchObject({ mensaje: "Meta respondió." });
-    expect(probarIntegracion).not.toHaveBeenCalled();
-    expect(screen.queryByRole("button", { name: "Cargar credencial" })).not.toBeInTheDocument();
+    expect(screen.getByText("Se conecta en la PR 1.6.")).toBeInTheDocument();
+    expect(screen.getByText("Pendiente")).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.queryByText("Último sync")).not.toBeInTheDocument();
+  });
+
+  it("sin credencial cargada dice que falta, y no deja sincronizar", () => {
+    render(<IntegracionCard integracion={integracion("dux", "DUX", { estado: "pendiente" })} labels={LABELS} />);
+
+    expect(screen.getByText("Falta cargarla")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sincronizar ahora" })).toBeDisabled();
+  });
+
+  it("muestra la máscara de la credencial cargada y quién la cargó", () => {
+    const labels = { ultimoSync: "Hace 1 hora", credencial: "Lucas · hace 2 días" };
+
+    render(<IntegracionCard integracion={integracion("dux", "DUX", { credencial: CREDENCIAL })} labels={labels} />);
+
+    expect(screen.getByText("••••7c1e")).toBeInTheDocument();
+    expect(screen.getByText("Lucas · hace 2 días")).toBeInTheDocument();
+    expect(screen.getByText("Hace 1 hora")).toBeInTheDocument();
   });
 
   it("DUX ofrece cargar la credencial", () => {
@@ -97,7 +117,7 @@ describe("IntegracionCard", () => {
 
 describe("Sincronizar ahora", () => {
   const apretar = () => {
-    render(<IntegracionCard integracion={integracion("dux", "DUX")} labels={LABELS} />);
+    render(<IntegracionCard integracion={integracion("dux", "DUX", { credencial: CREDENCIAL })} labels={LABELS} />);
     return userEvent.setup().click(screen.getByRole("button", { name: "Sincronizar ahora" }));
   };
 
@@ -115,6 +135,17 @@ describe("Sincronizar ahora", () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("DUX se está sincronizando", expect.anything()));
     expect(sincronizarIntegracion).toHaveBeenCalledWith({ integracion: "dux" });
     expect(refresh).toHaveBeenCalled();
+  });
+
+  it.each(["degradado", "caido"] as const)("si está %s, el botón ofrece reintentar y hace lo mismo", async (estado) => {
+    sincronizarIntegracion.mockResolvedValue({ ok: true, data: { runId: "wrun_01" } });
+    const dux = integracion("dux", "DUX", { estado, credencial: CREDENCIAL });
+
+    render(<IntegracionCard integracion={dux} labels={LABELS} />);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Reintentar" }));
+
+    await waitFor(() => expect(sincronizarIntegracion).toHaveBeenCalledWith({ integracion: "dux" }));
+    expect(screen.queryByRole("button", { name: "Sincronizar ahora" })).toBeNull();
   });
 
   it("con una corrida en curso, avisa", async () => {

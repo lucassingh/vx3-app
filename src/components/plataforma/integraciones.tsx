@@ -1,20 +1,27 @@
 import { CircleCheck, Clock, TriangleAlert } from "lucide-react";
+import { connection } from "next/server";
 import { KpiGrid, KpiGridSkeleton } from "@/components/kit/kpi-grid";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CardSkeleton, SkeletonText, TableSkeleton } from "@/components/views/skeletons";
-import { api } from "@/lib/api/server";
-import type { SyncLogEntry } from "@/lib/api/types";
 import { formatNumber } from "@/lib/format";
+import { usaCredencial, type IntegracionConCredencial } from "@/modules/platform/credentials/integraciones";
+import {
+  listarIntegraciones,
+  registroDeSincronizaciones,
+  type FilaDelRegistro,
+} from "@/modules/platform/integraciones/service";
 import { IntegracionCard, ProbarTodas } from "./integracion-card";
 import { cuando } from "./shared";
 
 /* ---- Resumen ---------------------------------------------------------------- */
 
 export async function IntegracionesResumen() {
-  const integraciones = await api.plataforma.integraciones.list();
+  // Con cacheComponents, sin esto Next intentaría resolverlo en el build.
+  await connection();
+  const integraciones = await listarIntegraciones();
   const ok = integraciones.filter((item) => item.estado === "ok");
   const avisos = integraciones.filter((item) => item.estado === "degradado" || item.estado === "caido");
   const pendientes = integraciones.filter((item) => item.estado === "pendiente");
@@ -44,7 +51,7 @@ export async function IntegracionesResumen() {
           label: "Pendientes",
           value: pendientes.length,
           format: "number",
-          hint: pendientes.length ? pendientes.map((item) => item.nombre).join(" · ") : "Ninguna",
+          hint: pendientes.length ? "Todavía sin conectar" : "Ninguna",
         },
       ]}
     />
@@ -57,12 +64,12 @@ export function IntegracionesResumenSkeleton() {
 
 /** Acción del header: necesita la lista para probar todas. Si la API falla, queda deshabilitada. */
 export async function ProbarTodasLoader() {
-  const integraciones = await api.plataforma.integraciones.list().catch(() => []);
-  return (
-    <ProbarTodas
-      integraciones={integraciones.filter((item) => !item.importa).map(({ id, nombre }) => ({ id, nombre }))}
-    />
+  await connection();
+  const integraciones = await listarIntegraciones().catch(() => []);
+  const conectadas = integraciones.flatMap(({ id, nombre }) =>
+    usaCredencial(id) ? [{ id: id as IntegracionConCredencial, nombre }] : [],
   );
+  return <ProbarTodas integraciones={conectadas} />;
 }
 
 /* ---- Tarjetas --------------------------------------------------------------- */
@@ -70,7 +77,8 @@ export async function ProbarTodasLoader() {
 const gridClass = "grid gap-6 md:grid-cols-2 2xl:grid-cols-3";
 
 export async function IntegracionesGrid() {
-  const integraciones = await api.plataforma.integraciones.list();
+  await connection();
+  const integraciones = await listarIntegraciones();
 
   return (
     <section aria-label="Integraciones" className={gridClass}>
@@ -105,10 +113,14 @@ export function IntegracionesGridSkeleton() {
 
 /* ---- Log -------------------------------------------------------------------- */
 
-const RESULTADO: Record<SyncLogEntry["resultado"], { label: string; variant: "success" | "warning" | "danger" }> = {
+const RESULTADO: Record<
+  FilaDelRegistro["resultado"],
+  { label: string; variant: "success" | "warning" | "danger" | "neutral" }
+> = {
   ok: { label: "OK", variant: "success" },
-  reintento: { label: "Reintentado", variant: "warning" },
+  con_errores: { label: "Con errores", variant: "warning" },
   error: { label: "Error", variant: "danger" },
+  en_curso: { label: "En curso", variant: "neutral" },
 };
 
 const LOG_COLUMNS = ["Operación", "Resultado", "Detalle", "Duración", "Cuándo"];
@@ -123,8 +135,7 @@ function LogFrame({ children }: { children: React.ReactNode }) {
         <div>
           <CardTitle>Registro de sincronizaciones</CardTitle>
           <CardDescription>
-            Las últimas operaciones con cada sistema. Lo que falla se reintenta solo, con una referencia propia para no
-            duplicar.
+            Las últimas lecturas de cada sistema: qué trajeron, cuánto tardaron y quién las lanzó.
           </CardDescription>
         </div>
       </CardHeader>
@@ -134,7 +145,8 @@ function LogFrame({ children }: { children: React.ReactNode }) {
 }
 
 export async function SyncLog() {
-  const log = await api.plataforma.integraciones.log();
+  await connection();
+  const log = await registroDeSincronizaciones();
 
   return (
     <LogFrame>
@@ -149,11 +161,20 @@ export async function SyncLog() {
           </TableRow>
         </TableHeader>
         <TableBody>
+          {log.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={LOG_COLUMNS.length} className="py-8 text-center text-muted-foreground">
+                Todavía no hay sincronizaciones.
+              </TableCell>
+            </TableRow>
+          )}
           {log.map((entrada) => (
             <TableRow key={entrada.id}>
               <TableCell>
                 <p className="font-medium">{entrada.operacion}</p>
-                <p className="text-xs text-muted-foreground">{entrada.integracion}</p>
+                <p className="text-xs text-muted-foreground">
+                  {entrada.integracion} · {entrada.origen}
+                </p>
               </TableCell>
               <TableCell>
                 <Badge variant={RESULTADO[entrada.resultado].variant} dot>
@@ -161,7 +182,9 @@ export async function SyncLog() {
                 </Badge>
               </TableCell>
               <TableCell className="max-w-80 text-muted-foreground">{entrada.detalle}</TableCell>
-              <TableCell className="text-right tabular-nums">{duracion(entrada.duracionMs)}</TableCell>
+              <TableCell className="text-right tabular-nums">
+                {entrada.duracionMs === null ? "—" : duracion(entrada.duracionMs)}
+              </TableCell>
               <TableCell className="whitespace-nowrap text-muted-foreground first-letter:uppercase">
                 <time dateTime={entrada.en}>{cuando(entrada.en)}</time>
               </TableCell>

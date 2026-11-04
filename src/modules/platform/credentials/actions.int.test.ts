@@ -2,12 +2,14 @@ import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDb } from "@/db/client";
 import { getAuth } from "../auth/auth";
-import { cargarCredencial, probarIntegracion } from "./actions";
+import { cargarCredencial, probarIntegracion, sincronizarIntegracion } from "./actions";
 import { credencialEnmascarada, leerCredencial } from "./service";
 
 // Las acciones leen la sesión de los headers del request: acá, los del usuario de prueba.
 const request = vi.hoisted(() => ({ headers: new Headers() }));
 vi.mock("next/headers", () => ({ headers: async () => request.headers }));
+const workflow = vi.hoisted(() => ({ start: vi.fn() }));
+vi.mock("workflow/api", () => workflow);
 
 const db = getDb();
 const sufijo = Date.now();
@@ -115,6 +117,46 @@ describe("cargar una credencial", () => {
       error: { message: expect.stringContaining("CREDENTIALS_KEY") },
     });
     expect(await db.integrationCredential.count()).toBe(0);
+  });
+});
+
+describe("sincronizar", () => {
+  beforeEach(async () => {
+    await db.syncLock.deleteMany();
+    workflow.start.mockReset();
+    workflow.start.mockResolvedValue({ runId: "wrun_01" });
+  });
+
+  it("un admin la lanza, y queda como corrida manual a su nombre", async () => {
+    expect(await sincronizarIntegracion({ integracion: "dux" })).toMatchObject({
+      ok: true,
+      data: { runId: "wrun_01" },
+    });
+
+    const [, [origen]] = workflow.start.mock.calls[0] as [unknown, [unknown]];
+    expect(origen).toEqual({ trigger: "manual", triggeredBy: "Prueba admin" });
+    await db.syncLock.deleteMany();
+  });
+
+  it("con una corrida en curso avisa, y no lanza otra", async () => {
+    await sincronizarIntegracion({ integracion: "dux" });
+
+    expect(await sincronizarIntegracion({ integracion: "dux" })).toMatchObject({
+      ok: false,
+      error: { code: "CONFLICT", message: expect.stringContaining("en curso") },
+    });
+    expect(workflow.start).toHaveBeenCalledOnce();
+    await db.syncLock.deleteMany();
+  });
+
+  it("un rol sin permiso no puede lanzarla", async () => {
+    request.headers = operaciones;
+
+    expect(await sincronizarIntegracion({ integracion: "dux" })).toMatchObject({
+      ok: false,
+      error: { code: "FORBIDDEN" },
+    });
+    expect(workflow.start).not.toHaveBeenCalled();
   });
 });
 

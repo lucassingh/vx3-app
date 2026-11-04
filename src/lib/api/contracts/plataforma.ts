@@ -79,22 +79,6 @@ export type Integracion = {
   ultimoSync: string | null;
   metricas: { label: string; value: string }[];
   credencial: CredencialEnmascarada | null;
-  /** Se alimenta importando un archivo (extractos, export de Zupply). */
-  importa?: boolean;
-  /** Pantalla relacionada ("Ver consumo"). */
-  enlace?: { label: string; href: string };
-};
-
-export type SyncLogEntry = {
-  id: string;
-  integracionId: string;
-  integracion: string;
-  operacion: string;
-  resultado: "ok" | "reintento" | "error";
-  detalle: string;
-  duracionMs: number;
-  /** Fecha y hora ISO. */
-  en: string;
 };
 
 export type PruebaConexion = { ok: boolean; latenciaMs: number; mensaje: string };
@@ -288,22 +272,6 @@ export function plataformaEndpoints(request: ApiRequest) {
       historial: () => request<CambioRegla[]>("/plataforma/reglas/historial"),
       actualizar: (cambios: CambioReglaInput[]) =>
         request<{ reglas: ReglaNegocio[]; cambios: CambioRegla[] }>("/plataforma/reglas", json("PATCH", { cambios })),
-    },
-    integraciones: {
-      list: () => request<Integracion[]>("/plataforma/integraciones"),
-      log: () => request<SyncLogEntry[]>("/plataforma/integraciones/log"),
-      probar: (id: string) =>
-        request<PruebaConexion>(`/plataforma/integraciones/${encodeURIComponent(id)}/probar`, {
-          method: "POST",
-        }),
-      reintentar: (id: string) =>
-        request<Integracion>(`/plataforma/integraciones/${encodeURIComponent(id)}/reintentar`, {
-          method: "POST",
-        }),
-      importar: (id: string) =>
-        request<{ importados: number }>(`/plataforma/integraciones/${encodeURIComponent(id)}/importar`, {
-          method: "POST",
-        }),
     },
     ia: {
       config: () => request<IaConfig>("/plataforma/ia"),
