@@ -5,6 +5,36 @@ Lo que cambia en cada versión de producción. Cada versión es un tag `vX.Y.Z` 
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones,
 [SemVer](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+Entran los primeros datos reales: la app lee de DUX los productos, el stock, los precios,
+las ventas y las clientas, y los guarda en su base. Solo lee: no escribe nada en DUX.
+
+### Stock
+
+- El espejo de stock muestra lo que dice DUX: una fila por producto, con la relación entre
+  prendas y bultos ("81 prendas = 13 medias docenas y 3 sueltas") y lo vendido en 30 días.
+- Primero aparece lo que necesita atención: un producto agotado que se vende va arriba, y
+  uno que nadie compra, al final.
+- Margen, compras, proveedores y las diferencias en góndola siguen simulados, y ahora lo
+  dicen en pantalla.
+
+### Integraciones
+
+- Configuración → Integraciones muestra el estado real de DUX, el motivo si algo falla, sus
+  números y el registro de cada corrida. Lo que todavía no está conectado aparece como
+  pendiente, con la PR en la que entra, y sin datos inventados.
+- Un admin carga el token de DUX desde la pantalla: queda cifrado, y nunca vuelve al navegador.
+- **Sincronizar ahora** lanza una lectura completa. Nunca hay dos a la vez.
+
+### Sincronización
+
+- Una vez por día en producción: productos, stock y precios, ventas de los últimos 35 días,
+  para ver anulaciones y notas de crédito tardías, y clientas.
+- El historial de 12 meses de ventas se dispara a mano, y si se corta, retoma.
+- Fuera de producción, las clientas se anonimizan antes de guardarse, y las previews no se
+  conectan a DUX.
+
 ## [0.1.0] - 2026-11-03
 
 Primera versión en producción: las 25 pantallas de la maqueta, con datos de

@@ -180,6 +180,11 @@ Las cards son blancas con borde fino (`Card`, `CardHeader`, `CardTitle`,
   Server Actions `signIn`/`signOut` en `src/lib/auth-actions.ts` y
   `src/proxy.ts` (el middleware de Next 16) que manda a `/login` sin sesión.
   `currentUser` (`src/lib/auth.ts`) es el usuario que muestran las pantallas.
+- Workflows (`src/workflows/`): el cuerpo de una función con `"use workflow"` corre sin
+  Node. Lo que use ahí no puede arrastrar Prisma, pino ni crypto (por eso
+  `integrations/dux/paginas.ts` está aparte); los pasos, con `"use step"`, sí pueden. Los
+  tests no lo ven, porque ahí las directivas no hacen nada: lo ve la compilación, y solo si
+  una ruta arranca el workflow.
 - Rutas inexistentes muestran el 404 dentro del dashboard
   (`(dashboard)/[...slug]` + `(dashboard)/not-found.tsx`).
 

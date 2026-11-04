@@ -2,7 +2,7 @@
 
 Qué hacer cuando algo se rompe a las 2 de la mañana. Cada caso dice cómo darse
 cuenta, qué hacer y cómo verificar que quedó bien. Los secretos están en
-1Password, bóveda **"Cliente · VX3"**; nunca se pegan en un chat ni en un ticket.
+`.env.local` y `.secrets/`; nunca se pegan en un chat ni en un ticket.
 
 | Ambiente   | Web                             | Base (Neon `cli-vx3`) | Se despliega con           |
 | ---------- | ------------------------------- | --------------------- | -------------------------- |
@@ -81,7 +81,7 @@ prueba de salud. El paso que falló dice qué quedó hecho.
   otra hasta resolverla.
   1. Leer el error en el log del paso "Migraciones".
   2. Con la conexión directa del dueño (`PROD_DATABASE_URL_UNPOOLED`, en
-     1Password) en `DATABASE_URL_UNPOOLED`, ver qué quedó: `npx prisma migrate status`.
+     `.secrets/`) en `DATABASE_URL_UNPOOLED`, ver qué quedó: `npx prisma migrate status`.
   3. Si la migración no llegó a cambiar nada, o se deshizo a mano lo que cambió:
      `npx prisma migrate resolve --rolled-back <nombre_de_la_migracion>`.
      Si se terminó de aplicar a mano: `npx prisma migrate resolve --applied <nombre>`.
@@ -112,9 +112,13 @@ Run workflow; producción con Re-run all jobs del último Deploy producción.
 | `VERCEL_TOKEN`                        | GitHub y `.env.local`                     | Vercel → Account Settings → Tokens (scope: la cuenta del proyecto) → crear, actualizar, borrar el viejo                                 | Ninguno                                      |
 | `SENTRY_AUTH_TOKEN`                   | GitHub                                    | Sentry → Settings → Auth Tokens                                                                                                         | Ninguno                                      |
 | Claves del bucket (`BACKUP_S3_*`)     | GitHub                                    | Panel del bucket → nuevo par con permiso solo sobre `backups/vx3/` → actualizar → borrar el viejo                                       | Ninguno                                      |
-| `BACKUP_PASSPHRASE`                   | GitHub y 1Password                        | Generarla como `AUTH_SECRET` y actualizar el secret                                                                                     | Las copias viejas siguen con la frase vieja  |
+| `BACKUP_PASSPHRASE`                   | GitHub y `.secrets/`                      | Generarla como `AUTH_SECRET` y actualizar el secret                                                                                     | Las copias viejas siguen con la frase vieja  |
 
-**La frase de los backups vieja no se borra de 1Password**: se renombra con
+**La clave maestra (`CREDENTIALS_KEY`) no se cambia y listo:** lo que está cifrado con
+la vieja deja de leerse. Se sigue el mismo camino que si se perdiera: ver "Si DUX falla",
+en el §8.
+
+**La frase de los backups vieja no se borra de `.secrets/`**: se renombra con
 las fechas en que se usó. Sin ella, las copias de esas semanas no se pueden leer.
 
 ## 6. Accesos de usuarios de la app
@@ -137,7 +141,7 @@ las fechas en que se usó. Sin ella, las copias de esas semanas no se pueden lee
 - **Probar que sirven:** Actions → Prueba de restauración → Run workflow (vacío
   = la última copia). La restaura en una branch efímera, cuenta las filas por
   tabla en el resumen del job y la borra. Se corre una vez por mes, en la rutina.
-- **Leer una copia a mano** (necesita la frase de 1Password y gpg):
+- **Leer una copia a mano** (necesita la frase de `.secrets/` y gpg):
   ```bash
   gpg --decrypt AAAA-MM-DD.sql.gz.gpg | gunzip > vx3.sql
   ```
@@ -158,8 +162,51 @@ las fechas en que se usó. Sin ella, las copias de esas semanas no se pueden lee
   curl -H "Authorization: Bearer $CRON_SECRET" https://cli-vx3.vercel.app/api/cron/mantenimiento
   ```
   Responde `{ ok: true, runId }`. Sin el secreto responde 401.
+- **La sincronización con DUX** (productos, stock y precios, las ventas de los últimos
+  35 días y las clientas) corre a las 05:00 de Argentina y con el botón **Sincronizar
+  ahora** de Configuración → Integraciones. Son unos 190 requests y menos de 4 minutos.
+  Nunca hay dos a la vez: la segunda avisa y no arranca. La frecuencia se cambia en la
+  línea de `/api/cron/dux` en `vercel.json` (y el texto en
+  `src/modules/platform/integraciones/estado.ts`). Solo lee: la app no escribe en DUX.
+- **El historial de 12 meses de ventas** se dispara a mano, una vez por ambiente y
+  **avisándole antes a Elías**: son unos 150 requests y 15 minutos sobre el límite de la v1
+  que comparten sus scripts. Si se corta, volver a llamarlo solo trae los meses que faltan.
+  ```bash
+  curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://cli-vx3.vercel.app/api/cron/dux/historial
+  ```
+  Responde `{ ok: true, runId }`, o 409 si hay una sincronización en curso.
 - **Vercel Cron solo corre en producción.** En QA se prueba llamando a la ruta
-  como arriba, con el `CRON_SECRET` de Preview.
+  como arriba, con el `CRON_SECRET` de Preview, o con el botón.
+
+### Si DUX falla
+
+La tarjeta de DUX en Configuración → Integraciones dice el estado y el motivo; el registro
+de abajo tiene cada corrida. Un fallo de DUX no rompe nada: la app sigue mostrando la
+última lectura, y la próxima corrida vuelve a intentar.
+
+| Lo que dice                                            | Qué hacer                                                                                                        |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| "DUX rechazó el token"                                 | Sacar uno nuevo en DUX (Configuración → General → Empresa → API) y cargarlo en la tarjeta                        |
+| "Todavía no se cargó el token"                         | Cargarlo en la tarjeta                                                                                           |
+| "Falta la clave maestra (CREDENTIALS_KEY)"             | Cargar la variable en Vercel y desplegar de nuevo. En una preview es lo esperado: no se conectan a DUX           |
+| "Faltan DUX_ID_…"                                      | Cargar la variable en Vercel (ver abajo) y desplegar de nuevo                                                    |
+| "Formato desconocido" o "DUX no respondió bien"        | Es pasajero: ya se reintentó solo. Apretar **Reintentar**. Si sigue, DUX está caído: esperar                     |
+| "DUX salteó N de M filas al paginar"                   | Faltan esas clientas. Reintentar; si se repite, `/v2/clientes` cambió de comportamiento: revisarlo               |
+| "DUX respondió con una forma que no esperábamos en …"  | Cambió la API de DUX. Dice qué campo: ajustar `src/integrations/dux/schemas.ts`. No se guardó nada de esa página |
+| "La corrida se cortó antes de terminar"                | Un Workflow murió a la mitad. Reintentar. Mirar Observability → Workflows para saber por qué                     |
+| "Ya hay una sincronización en curso", y no hay ninguna | El bloqueo de una corrida que murió vence solo: a los 30 minutos, o a las 2 horas si era el historial            |
+
+**Si se pierde la clave maestra, o hay que cambiarla:** no se pierden datos. Solo está
+cifrado el token, y el token se saca de nuevo de DUX.
+
+1. Generar una: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`.
+2. Reemplazar `CREDENTIALS_KEY` en Vercel (y en `.env.local` y `.secrets/`), y desplegar de nuevo.
+3. Volver a cargar el token de DUX en la tarjeta. Local y QA comparten la base: alcanza con una vez.
+4. **Probar conexión** tiene que responder bien.
+
+**Las clientas fuera de producción están anonimizadas**, y la corrida lo dice en su
+detalle. Si en producción aparece "Anonimizadas", el build no recibió
+`APP_ENV=production`: ver `.github/actions/deploy`.
 
 ## 9. Comprobar que Sentry recibe errores
 
@@ -175,7 +222,7 @@ en la rutina mensual (`tecnica_doc/infraestructura.md` §11 y §12).
 
 - [ ] 2FA en GitHub, Vercel, Neon, Sentry y el bucket, para todas las personas con acceso.
 - [ ] Segundo owner en GitHub (o el repo en la org de la agencia), Vercel y Neon.
-- [ ] La frase de los backups en 1Password, junto con las viejas.
+- [ ] La frase de los backups en `.secrets/`, junto con las viejas.
 - [ ] Alertas de Sentry y del monitor al mail de la agencia.
 - [ ] Spend Management de Vercel con alerta, y el plan de Neon que corresponde.
 - [ ] El último backup existe, pesa lo esperado y la prueba de restauración del mes pasó.
@@ -184,13 +231,22 @@ en la rutina mensual (`tecnica_doc/infraestructura.md` §11 y §12).
 
 **Vercel** (Settings → Environment Variables):
 
-| Variable                 | Production                   | Preview (QA y previews)        |
-| ------------------------ | ---------------------------- | ------------------------------ |
-| `DATABASE_URL`           | `app` de `main`, con pooler  | `app` de `develop`, con pooler |
-| `AUTH_SECRET`            | propio de producción         | propio de QA                   |
-| `BETTER_AUTH_URL`        | `https://cli-vx3.vercel.app` | — (toma la URL de cada deploy) |
-| `CRON_SECRET`            | propio de producción         | propio de QA                   |
-| `NEXT_PUBLIC_SENTRY_DSN` | el DSN de `cli-vx3`          | el mismo                       |
+| Variable                    | Production                   | Preview (QA y previews)        |
+| --------------------------- | ---------------------------- | ------------------------------ |
+| `DATABASE_URL`              | `app` de `main`, con pooler  | `app` de `develop`, con pooler |
+| `AUTH_SECRET`               | propio de producción         | propio de QA                   |
+| `BETTER_AUTH_URL`           | `https://cli-vx3.vercel.app` | — (toma la URL de cada deploy) |
+| `CRON_SECRET`               | propio de producción         | propio de QA                   |
+| `NEXT_PUBLIC_SENTRY_DSN`    | el DSN de `cli-vx3`          | el mismo                       |
+| `CREDENTIALS_KEY`           | propia de producción         | la de `.env.local`             |
+| `API_REAL_DOMAINS`          | `stock`                      | `stock`                        |
+| `DUX_ID_EMPRESA`            | `9432`                       | `9432`                         |
+| `DUX_ID_SUCURSAL_ECOMMERCE` | `1`                          | `1`                            |
+| `DUX_ID_SUCURSAL_LOCAL`     | `2`                          | `2`                            |
+
+Las previews ven las variables de QA, pero ignoran `CREDENTIALS_KEY`: con
+`APP_ENV=preview` no se conectan a DUX. El token de DUX no es una variable: está cifrado
+en la base de cada ambiente, y se carga desde la pantalla.
 
 **GitHub** (Settings → Secrets and variables → Actions, a nivel de repo):
 `NEON_API_KEY`, `NEON_PROJECT_ID`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
