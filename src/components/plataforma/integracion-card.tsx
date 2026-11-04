@@ -26,6 +26,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { api } from "@/lib/api/browser";
 import type { Integracion, IntegracionEstado } from "@/lib/api/types";
 import { toast } from "@/lib/toast";
+import { probarIntegracion } from "@/modules/platform/credentials/actions";
 import { usaCredencial } from "@/modules/platform/credentials/integraciones";
 import { CargarCredencial } from "./cargar-credencial";
 
@@ -56,9 +57,17 @@ export const ESTADO_INTEGRACION: Record<
 /** Textos de fecha armados en el servidor. */
 export type IntegracionLabels = { ultimoSync: string; credencial: string | null };
 
+/** Lo que ya está conectado se prueba de verdad; el resto, contra la API simulada. */
+async function pedirPrueba(id: string) {
+  if (!usaCredencial(id)) return api.plataforma.integraciones.probar(id);
+  const result = await probarIntegracion({ integracion: id });
+  if (!result.ok) throw new Error(result.error.message);
+  return result.data;
+}
+
 /** Prueba la conexión y la rechaza si la integración no respondió (para toast.promise). */
 function probar(integracion: Pick<Integracion, "id">) {
-  return api.plataforma.integraciones.probar(integracion.id).then((result) => {
+  return pedirPrueba(integracion.id).then((result) => {
     if (!result.ok) throw new Error(result.mensaje);
     return result;
   });

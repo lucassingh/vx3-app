@@ -123,6 +123,14 @@ model IntegrationCredential {
   @@map("integration_credentials")
 }
 
+/// Próximo turno libre para llamar a un proveedor, compartido entre instancias (src/lib/rate-limit.ts).
+model RateLimit {
+  key        String   @id
+  nextSlotAt DateTime @map("next_slot_at") @db.Timestamptz(6)
+
+  @@map("rate_limits")
+}
+
 /// Registro de acciones sensibles: quién hizo qué, sobre qué y cuándo (RF-M0-03).
 /// El actor puede ser una persona, el bot o un proceso, por eso no apunta a usuarios.
 model AuditLog {

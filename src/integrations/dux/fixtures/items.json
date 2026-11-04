@@ -1,0 +1,448 @@
+{
+  "datos": [
+    {
+      "cod_item": "HB2",
+      "item": "BOXER DE ALGODON UOMO ADULTO CURVA DE TALLES M-4XL - UNIDAD",
+      "codigos_barra": ["0000000000"],
+      "rubro": {
+        "id": 217255,
+        "nombre": "HOMBRE"
+      },
+      "sub_rubro": {
+        "id": 1,
+        "nombre": "BOXER"
+      },
+      "marca": {
+        "codigo_marca": "UO",
+        "marca": "UOMO"
+      },
+      "proveedor": {
+        "id_proveedor": 1000,
+        "proveedor": "PROVEEDOR DE PRUEBA",
+        "tipo_doc": null,
+        "nro_doc": null,
+        "provincia": "BUENOS AIRES",
+        "localidad": null,
+        "domicilio": null,
+        "barrio": null,
+        "cod_postal": null,
+        "telefono": null,
+        "fax": null,
+        "compania_celular": null,
+        "cel": "1100000000",
+        "persona_contacto": null,
+        "email": null,
+        "pagina_web": null
+      },
+      "costo": 1000,
+      "porc_iva": 0,
+      "precios": [
+        {
+          "id": 71695,
+          "nombre": "MAYORISTA EF/TR",
+          "precio": 2000
+        },
+        {
+          "id": 71697,
+          "nombre": "LOCAL EF/TR",
+          "precio": 0
+        },
+        {
+          "id": 71698,
+          "nombre": "MAYORISTA TARJETA/QR",
+          "precio": 2000
+        },
+        {
+          "id": 71699,
+          "nombre": "MAYORISTA WEB",
+          "precio": 0
+        },
+        {
+          "id": 71707,
+          "nombre": "LOCAL TARJETA/QR",
+          "precio": 2000
+        }
+      ],
+      "stock": [
+        {
+          "id": 18516,
+          "nombre": "DEPOSITO TEMPERLEY",
+          "stock_real": 94,
+          "stock_reservado": 13,
+          "stock_disponible": 81,
+          "id_det_item": null,
+          "cod_barra_detalle": null,
+          "talle": null,
+          "color": null
+        }
+      ],
+      "habilitado": true,
+      "codigo_externo": "",
+      "fecha_creacion": "2025-08-11",
+      "imagen_url": "https://erp.duxsoftware.com.ar/servicioimagenes/images/?id=ITEM-0000-PRUEBA",
+      "ctd_unidades_por_bulto": 0
+    },
+    {
+      "cod_item": "HB2-6",
+      "item": "BOXER DE ALGODON UOMO ADULTO CURVA DE TALLES M-4XL - MEDIA DOCENA",
+      "codigos_barra": null,
+      "rubro": {
+        "id": 217255,
+        "nombre": "HOMBRE"
+      },
+      "sub_rubro": {
+        "id": 1,
+        "nombre": "BOXER"
+      },
+      "marca": {
+        "codigo_marca": "UO",
+        "marca": "UOMO"
+      },
+      "proveedor": null,
+      "costo": 1100,
+      "porc_iva": 0,
+      "precios": [
+        {
+          "id": 71695,
+          "nombre": "MAYORISTA EF/TR",
+          "precio": 2100
+        },
+        {
+          "id": 71697,
+          "nombre": "LOCAL EF/TR",
+          "precio": 0
+        },
+        {
+          "id": 71698,
+          "nombre": "MAYORISTA TARJETA/QR",
+          "precio": 2100
+        },
+        {
+          "id": 71699,
+          "nombre": "MAYORISTA WEB",
+          "precio": 0
+        },
+        {
+          "id": 71707,
+          "nombre": "LOCAL TARJETA/QR",
+          "precio": 2100
+        }
+      ],
+      "stock": [
+        {
+          "id": 18516,
+          "nombre": "DEPOSITO TEMPERLEY",
+          "stock_real": 13.5,
+          "stock_reservado": 0,
+          "stock_disponible": 13.5,
+          "id_det_item": null,
+          "cod_barra_detalle": null,
+          "talle": null,
+          "color": null
+        }
+      ],
+      "habilitado": true,
+      "codigo_externo": null,
+      "fecha_creacion": "2026-10-08",
+      "imagen_url": "https://erp.duxsoftware.com.ar/servicioimagenes/images/?id=ITEM-0000-PRUEBA",
+      "ctd_unidades_por_bulto": 0
+    },
+    {
+      "cod_item": "COMBO1",
+      "item": "COMBO1 - PROMO DE SOQUETES - 120 PARES DE MEDIAS - 10 DOCENAS DE SOQUETES",
+      "codigos_barra": ["0000000000"],
+      "rubro": {
+        "id": 217276,
+        "nombre": "COMBOS"
+      },
+      "sub_rubro": {
+        "id": 1,
+        "nombre": "MEDIAS"
+      },
+      "marca": null,
+      "proveedor": null,
+      "costo": 1200,
+      "porc_iva": 0,
+      "precios": [
+        {
+          "id": 71695,
+          "nombre": "MAYORISTA EF/TR",
+          "precio": 2200
+        },
+        {
+          "id": 71697,
+          "nombre": "LOCAL EF/TR",
+          "precio": 0
+        },
+        {
+          "id": 71698,
+          "nombre": "MAYORISTA TARJETA/QR",
+          "precio": 2200
+        },
+        {
+          "id": 71699,
+          "nombre": "MAYORISTA WEB",
+          "precio": 0
+        },
+        {
+          "id": 71707,
+          "nombre": "LOCAL TARJETA/QR",
+          "precio": 2200
+        }
+      ],
+      "stock": [
+        {
+          "id": 18516,
+          "nombre": "DEPOSITO TEMPERLEY",
+          "stock_real": 25,
+          "stock_reservado": 0,
+          "stock_disponible": 25,
+          "id_det_item": null,
+          "cod_barra_detalle": null,
+          "talle": null,
+          "color": null
+        }
+      ],
+      "habilitado": true,
+      "codigo_externo": "",
+      "fecha_creacion": "2025-08-13",
+      "imagen_url": "https://erp.duxsoftware.com.ar/servicioimagenes/images/?id=ITEM-0000-PRUEBA",
+      "ctd_unidades_por_bulto": 0
+    },
+    {
+      "cod_item": "COMBO32",
+      "item": "COMBO MAYORISTA 32 - CORPIÑO ARMADO + BOMBACHA DE NENA DE ALGODON + TENIS DE SEGUNDA + BOXER DE ALGODON + BOXER JUVENIL DE ALGODON",
+      "codigos_barra": null,
+      "rubro": null,
+      "sub_rubro": null,
+      "marca": null,
+      "proveedor": null,
+      "costo": 1300,
+      "porc_iva": 0,
+      "precios": [
+        {
+          "id": 71695,
+          "nombre": "MAYORISTA EF/TR",
+          "precio": 2300
+        },
+        {
+          "id": 71697,
+          "nombre": "LOCAL EF/TR",
+          "precio": 0
+        },
+        {
+          "id": 71698,
+          "nombre": "MAYORISTA TARJETA/QR",
+          "precio": 2300
+        },
+        {
+          "id": 71699,
+          "nombre": "MAYORISTA WEB",
+          "precio": 0
+        },
+        {
+          "id": 71707,
+          "nombre": "LOCAL TARJETA/QR",
+          "precio": 2300
+        }
+      ],
+      "stock": [
+        {
+          "id": 18516,
+          "nombre": "DEPOSITO TEMPERLEY",
+          "stock_real": 0,
+          "stock_reservado": 0,
+          "stock_disponible": 0,
+          "id_det_item": null,
+          "cod_barra_detalle": null,
+          "talle": null,
+          "color": null
+        }
+      ],
+      "habilitado": true,
+      "codigo_externo": null,
+      "fecha_creacion": "2026-08-15",
+      "imagen_url": "https://erp.duxsoftware.com.ar/servicioimagenes/images/?id=ITEM-0000-PRUEBA",
+      "ctd_unidades_por_bulto": 0
+    },
+    {
+      "cod_item": "LN 25",
+      "item": "LESS REGULABLE LISA DE MORLEY CON DETALLE DE ROSA EN FRENTE - UNIDAD",
+      "codigos_barra": ["0000000000"],
+      "rubro": {
+        "id": 217234,
+        "nombre": "LESS"
+      },
+      "sub_rubro": {
+        "id": 1,
+        "nombre": "TALLES NORMALES"
+      },
+      "marca": null,
+      "proveedor": {
+        "id_proveedor": 1004,
+        "proveedor": "PROVEEDOR DE PRUEBA",
+        "tipo_doc": null,
+        "nro_doc": null,
+        "provincia": "BUENOS AIRES",
+        "localidad": null,
+        "domicilio": null,
+        "barrio": null,
+        "cod_postal": null,
+        "telefono": null,
+        "fax": null,
+        "compania_celular": null,
+        "cel": "1100000000",
+        "persona_contacto": null,
+        "email": null,
+        "pagina_web": null
+      },
+      "costo": 1400,
+      "porc_iva": 0,
+      "precios": [
+        {
+          "id": 71695,
+          "nombre": "MAYORISTA EF/TR",
+          "precio": 2400
+        },
+        {
+          "id": 71697,
+          "nombre": "LOCAL EF/TR",
+          "precio": 0
+        },
+        {
+          "id": 71698,
+          "nombre": "MAYORISTA TARJETA/QR",
+          "precio": 2400
+        },
+        {
+          "id": 71699,
+          "nombre": "MAYORISTA WEB",
+          "precio": 0
+        },
+        {
+          "id": 71707,
+          "nombre": "LOCAL TARJETA/QR",
+          "precio": 2400
+        }
+      ],
+      "stock": [
+        {
+          "id": 18516,
+          "nombre": "DEPOSITO TEMPERLEY",
+          "stock_real": 0,
+          "stock_reservado": 0,
+          "stock_disponible": 0,
+          "id_det_item": null,
+          "cod_barra_detalle": null,
+          "talle": null,
+          "color": null
+        }
+      ],
+      "habilitado": true,
+      "codigo_externo": "",
+      "fecha_creacion": "2025-08-10",
+      "imagen_url": "https://erp.duxsoftware.com.ar/servicioimagenes/images/?id=ITEM-0000-PRUEBA",
+      "ctd_unidades_por_bulto": 0
+    },
+    {
+      "cod_item": "MTNU3",
+      "item": "MEDIA TENIS 3/4 DOCENA MISMO DISEÑO - UNA DOCENA",
+      "codigos_barra": ["0000000000"],
+      "rubro": {
+        "id": 217250,
+        "nombre": "MEDIAS"
+      },
+      "sub_rubro": {
+        "id": 9,
+        "nombre": "MEDIAS TENIS UNISEX"
+      },
+      "marca": {
+        "codigo_marca": "NACIONAL",
+        "marca": "NACIONAL"
+      },
+      "proveedor": {
+        "id_proveedor": 1005,
+        "proveedor": "PROVEEDOR DE PRUEBA",
+        "tipo_doc": null,
+        "nro_doc": null,
+        "provincia": "BUENOS AIRES",
+        "localidad": null,
+        "domicilio": null,
+        "barrio": null,
+        "cod_postal": null,
+        "telefono": null,
+        "fax": null,
+        "compania_celular": null,
+        "cel": "1100000000",
+        "persona_contacto": null,
+        "email": null,
+        "pagina_web": null
+      },
+      "costo": 1500,
+      "porc_iva": 0,
+      "precios": [
+        {
+          "id": 71695,
+          "nombre": "MAYORISTA EF/TR",
+          "precio": 2500
+        },
+        {
+          "id": 71697,
+          "nombre": "LOCAL EF/TR",
+          "precio": 0
+        },
+        {
+          "id": 71698,
+          "nombre": "MAYORISTA TARJETA/QR",
+          "precio": 2500
+        },
+        {
+          "id": 71699,
+          "nombre": "MAYORISTA WEB",
+          "precio": 0
+        },
+        {
+          "id": 71707,
+          "nombre": "LOCAL TARJETA/QR",
+          "precio": 2500
+        }
+      ],
+      "stock": [
+        {
+          "id": 18516,
+          "nombre": "DEPOSITO TEMPERLEY",
+          "stock_real": 0,
+          "stock_reservado": 0,
+          "stock_disponible": 0,
+          "id_det_item": 8,
+          "cod_barra_detalle": "0000001207",
+          "talle": "003 - ADIDAS BLANCAS LOGO Y RAYAS NEGRO",
+          "color": "ELEGIR MODELO"
+        },
+        {
+          "id": 18516,
+          "nombre": "DEPOSITO TEMPERLEY",
+          "stock_real": 0,
+          "stock_reservado": 0,
+          "stock_disponible": 0,
+          "id_det_item": 9,
+          "cod_barra_detalle": "0000001208",
+          "talle": "004 - NIKE BLANCAS LOGO NEGRO",
+          "color": "ELEGIR MODELO"
+        }
+      ],
+      "habilitado": true,
+      "codigo_externo": null,
+      "fecha_creacion": "2026-09-28",
+      "imagen_url": "https://erp.duxsoftware.com.ar/servicioimagenes/images/?id=ITEM-0000-PRUEBA",
+      "ctd_unidades_por_bulto": 0
+    }
+  ],
+  "paginacion": {
+    "total": 2488,
+    "offset": 0,
+    "limit": 50,
+    "hay_mas": true
+  },
+  "id_solicitud": "req_prueba"
+}

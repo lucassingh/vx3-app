@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDb } from "@/db/client";
 import { getAuth } from "../auth/auth";
-import { cargarCredencial } from "./actions";
+import { cargarCredencial, probarIntegracion } from "./actions";
 import { credencialEnmascarada, leerCredencial } from "./service";
 
 // Las acciones leen la sesión de los headers del request: acá, los del usuario de prueba.
@@ -115,6 +115,43 @@ describe("cargar una credencial", () => {
       error: { message: expect.stringContaining("CREDENTIALS_KEY") },
     });
     expect(await db.integrationCredential.count()).toBe(0);
+  });
+});
+
+describe("probar la conexión", () => {
+  beforeEach(() => {
+    vi.stubEnv("DUX_ID_EMPRESA", "9432");
+    vi.stubEnv("DUX_ID_SUCURSAL_ECOMMERCE", "1");
+  });
+
+  it("sin token, lo dice como resultado de la prueba y no llama a DUX", async () => {
+    const fetchDux = vi.spyOn(globalThis, "fetch");
+
+    expect(await probarIntegracion({ integracion: "dux" })).toMatchObject({
+      ok: true,
+      data: { ok: false, mensaje: expect.stringContaining("Todavía no se cargó el token") },
+    });
+    expect(fetchDux.mock.calls.filter(([url]) => String(url).includes("duxsoftware"))).toHaveLength(0);
+    fetchDux.mockRestore();
+  });
+
+  it("sin clave maestra en el ambiente, como en una preview, no puede conectarse", async () => {
+    await cargarCredencial({ integracion: "dux", valor: TOKEN });
+    vi.stubEnv("CREDENTIALS_KEY", "");
+
+    expect(await probarIntegracion({ integracion: "dux" })).toMatchObject({
+      ok: true,
+      data: { ok: false, mensaje: expect.stringContaining("CREDENTIALS_KEY") },
+    });
+  });
+
+  it("un rol sin permiso no puede probarla", async () => {
+    request.headers = operaciones;
+
+    expect(await probarIntegracion({ integracion: "dux" })).toMatchObject({
+      ok: false,
+      error: { code: "FORBIDDEN" },
+    });
   });
 });
 
