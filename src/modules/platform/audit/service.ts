@@ -98,6 +98,7 @@ const DESCRIPCION: Record<
     categoria: "accesos",
     texto: (_, d) => `Cerró las sesiones de ${texto(d, "nombre")}`,
   },
+  "credencial.cargada": { categoria: "accesos", texto: (_, d) => `Cargó la credencial de ${texto(d, "integracion")}` },
   "usuario.password_reseteada": {
     categoria: "accesos",
     texto: (_, d) => `Reseteó la contraseña de ${texto(d, "nombre")}`,

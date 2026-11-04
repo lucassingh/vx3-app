@@ -26,6 +26,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { api } from "@/lib/api/browser";
 import type { Integracion, IntegracionEstado } from "@/lib/api/types";
 import { toast } from "@/lib/toast";
+import { usaCredencial } from "@/modules/platform/credentials/integraciones";
+import { CargarCredencial } from "./cargar-credencial";
 
 const ICONS: Record<string, LucideIcon> = {
   dux: Database,
@@ -198,6 +200,13 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
             {pending ? <LoaderCircle aria-hidden className="animate-spin" /> : <PlugZap />}
             Probar conexión
           </Button>
+        )}
+        {usaCredencial(integracion.id) && (
+          <CargarCredencial
+            integracion={integracion.id}
+            nombre={integracion.nombre}
+            yaCargada={Boolean(integracion.credencial)}
+          />
         )}
         {puedeReintentar && (
           <Button variant="ghost" size="sm" disabled={pending} onClick={onReintentar}>

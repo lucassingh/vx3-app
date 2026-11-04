@@ -95,6 +95,15 @@ const esquemaServidor = z.object({
       "fatal, error, warn, info, debug, trace o silent",
     ),
   ),
+  /** Clave maestra de las credenciales de las integraciones. Sin ella no se guardan ni se leen. */
+  CREDENTIALS_KEY: opcional(
+    z
+      .string()
+      .regex(
+        /^[A-Za-z0-9_-]{43}$/,
+        "tienen que ser 32 bytes en base64url. Generá una con: node -e \"console.log(require('crypto').randomBytes(32).toString('base64url'))\"",
+      ),
+  ),
   DUX_API_URL: opcional(z.url("tiene que ser una URL")),
   DUX_TOKEN: opcional(z.string()),
   DUX_ID_EMPRESA: opcional(enteroPositivo),

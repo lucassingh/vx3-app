@@ -109,6 +109,20 @@ model LoginThrottle {
   @@map("login_throttles")
 }
 
+/// Credencial de una cuenta del cliente (token de DUX…), cifrada con AES-256-GCM (RF-M0-06).
+/// La clave maestra vive fuera de la base (CREDENTIALS_KEY): acá queda lo cifrado y la máscara.
+model IntegrationCredential {
+  id            String   @id @db.Uuid
+  integration   String   @unique
+  encrypted     String
+  mask          String
+  loadedById    String   @map("loaded_by_id") @db.Uuid
+  loadedByLabel String   @map("loaded_by_label")
+  loadedAt      DateTime @map("loaded_at") @db.Timestamptz(6)
+
+  @@map("integration_credentials")
+}
+
 /// Registro de acciones sensibles: quién hizo qué, sobre qué y cuándo (RF-M0-03).
 /// El actor puede ser una persona, el bot o un proceso, por eso no apunta a usuarios.
 model AuditLog {
