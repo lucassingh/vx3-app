@@ -32,7 +32,6 @@ export const duxItemSchema = z.object({
   codigo_externo: z.string().nullable(),
   fecha_creacion: z.string(),
   imagen_url: z.string().nullable(),
-  ctd_unidades_por_bulto: z.number(),
 });
 
 export type DuxItem = z.output<typeof duxItemSchema>;
