@@ -105,7 +105,6 @@ const esquemaServidor = z.object({
       ),
   ),
   DUX_API_URL: opcional(z.url("tiene que ser una URL")),
-  DUX_TOKEN: opcional(z.string()),
   DUX_ID_EMPRESA: opcional(enteroPositivo),
   DUX_ID_SUCURSAL_ECOMMERCE: opcional(enteroPositivo),
   DUX_ID_SUCURSAL_LOCAL: opcional(enteroPositivo),

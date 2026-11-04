@@ -5,7 +5,7 @@ import type { Integracion } from "@/lib/api/types";
 import { businessTime } from "@/lib/dates";
 import { formatNumber } from "@/lib/format";
 import { credencialEnmascarada } from "../credentials/service";
-import { estadoDeDux, LECTURAS_DUX, type UltimaCorrida } from "./estado";
+import { estadoDeDux, frecuenciaDeDux, LECTURAS_DUX, type UltimaCorrida } from "./estado";
 
 /**
  * Panel de integraciones (RF-M0-04): lo que muestra sale de las corridas reales. Lo que
@@ -86,10 +86,6 @@ const aPendiente = (pendiente: Pendiente): Integracion => ({
   metricas: [],
   credencial: null,
 });
-
-/** QA y local no tienen cron: ahí solo corre con el botón (`fase-1.4`, decisión 2). */
-const frecuenciaDeDux = () =>
-  process.env.APP_ENV === "production" ? "Una vez por día, y con el botón" : "Solo con el botón en este ambiente";
 
 async function integracionDux(): Promise<Integracion> {
   const db = getDb();

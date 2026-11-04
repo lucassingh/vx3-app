@@ -60,20 +60,10 @@ describe("api (servidor)", () => {
     expect(caja.cuentas.length).toBeGreaterThan(0);
   });
 
-  it("un dominio real sin la ruta pedida responde 404 como ApiError", async () => {
+  it("un dominio real sin la ruta pedida sigue con la API simulada", async () => {
     vi.stubEnv("API_REAL_DOMAINS", "dashboard");
 
-    await expect(api.dashboard.ventas(7)).rejects.toMatchObject({ name: "ApiError", status: 404 });
-  });
-
-  it("un dominio configurado como real sin implementación lo dice (501)", async () => {
-    vi.stubEnv("API_REAL_DOMAINS", "stock");
-
-    await expect(api.stock.espejo()).rejects.toMatchObject({
-      name: "ApiError",
-      status: 501,
-      message: expect.stringMatching(/stock está configurado como real/),
-    });
+    await expect(api.dashboard.ventas(7)).resolves.toBeDefined();
   });
 });
 

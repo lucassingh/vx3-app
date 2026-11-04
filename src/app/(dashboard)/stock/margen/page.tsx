@@ -14,6 +14,7 @@ import {
 } from "@/components/stock/margen-widgets";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
+import { DatosSimulados } from "@/components/views/datos-simulados";
 import { CardSkeleton } from "@/components/views/skeletons";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
 import { requirePageAccess } from "@/modules/platform/auth/session";
@@ -34,12 +35,15 @@ export default async function MargenPage() {
         title={route?.link.title ?? "Margen y precios"}
         description={route?.link.description}
         actions={
-          <Button variant="outline" asChild>
-            <Link href="/stock/espejo">
-              <Warehouse />
-              Ver stock
-            </Link>
-          </Button>
+          <>
+            <DatosSimulados pr="1.10" />
+            <Button variant="outline" asChild>
+              <Link href="/stock/espejo">
+                <Warehouse />
+                Ver stock
+              </Link>
+            </Button>
+          </>
         }
       />
       <PageBody>

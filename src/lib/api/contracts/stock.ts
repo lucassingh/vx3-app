@@ -6,9 +6,11 @@ import type { Kpi } from "../types";
 /* ---- Espejo de stock (RF-M2-01) ----------------------------------------- */
 
 export type StockSync = {
-  /** Fecha y hora ISO de la última lectura de DUX. */
-  ultimaLectura: string;
-  intervaloMin: number;
+  /** Fecha y hora ISO de la última lectura de DUX; null si nunca se leyó. */
+  ultimaLectura: string | null;
+  /** "Una vez por día, y con el botón". */
+  frecuencia: string;
+  alDia: boolean;
   llamadas: number;
   codigos: number;
   duracionS: number;
@@ -35,6 +37,9 @@ export type StockFila = {
   diasStock: number | null;
   estado: StockEstado;
 };
+
+/** Son más de mil productos: la tabla muestra los primeros, y el resto se encuentra filtrando. */
+export const MAXIMO_FILAS_ESPEJO = 300;
 
 export type StockQuery = {
   q?: string;
@@ -186,6 +191,7 @@ export function stockEndpoints(request: ApiRequest) {
     sync: () => request<StockSync>("/stock/sync"),
     kpis: () => request<Kpi[]>("/stock/kpis"),
     espejo: (query: StockQuery = {}) => request<StockFila[]>(`/stock/espejo${toQueryString(query)}`),
+    rubros: () => request<string[]>("/stock/rubros"),
     diferencias: () => request<StockDiferencia[]>("/stock/diferencias"),
     proponerAjuste: (id: string) =>
       request<StockDiferencia>(`/stock/diferencias/${encodeURIComponent(id)}/ajuste`, { method: "POST" }),

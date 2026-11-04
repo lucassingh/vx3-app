@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { estadoDeDux, type UltimaCorrida } from "./estado";
+import { estadoDeDux, estaAlDia, frecuenciaDeDux, type UltimaCorrida } from "./estado";
 
 const AHORA = new Date("2026-11-04T12:00:00Z");
 const HACE_UNA_HORA = new Date("2026-11-04T11:00:00Z");
@@ -86,5 +86,24 @@ describe("estadoDeDux", () => {
     const ultimas = ["items", "ventas", "clientas"].map((op) => corrida(op, { finishedAt: hace25 }));
 
     expect(estado(ultimas).estado).toBe("ok");
+  });
+});
+
+describe("estaAlDia", () => {
+  it("nunca leído no está al día", () => {
+    expect(estaAlDia(null, AHORA)).toBe(false);
+  });
+
+  it("corta a las 26 horas", () => {
+    expect(estaAlDia(new Date("2026-11-03T11:00:00Z"), AHORA)).toBe(true);
+    expect(estaAlDia(new Date("2026-11-03T10:00:00Z"), AHORA)).toBe(false);
+  });
+});
+
+describe("frecuenciaDeDux", () => {
+  it("solo producción tiene cron: en el resto no promete una corrida diaria", () => {
+    expect(frecuenciaDeDux("production")).toContain("Una vez por día");
+    expect(frecuenciaDeDux("qa")).toContain("Solo con el botón");
+    expect(frecuenciaDeDux("local")).toContain("Solo con el botón");
   });
 });

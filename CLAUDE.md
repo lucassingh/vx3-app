@@ -69,8 +69,8 @@ de pantalla en `src/components/kit/` (`KpiGrid`, `BarList`, `ColumnChart`,
   (`src/lib/api/real-routes.ts`) si figura en la variable, o a la API simulada
   (`src/mocks/`) si no. El servidor lo llama en proceso; el navegador, por fetch.
   Las rutas reales usan los mismos helpers y el mismo contrato que las simuladas
-  (`src/lib/api/route.ts`). Un dominio configurado como real sin implementación
-  responde 501. Ver `.env.example`.
+  (`src/lib/api/route.ts`). Lo que un dominio real todavía no tiene sigue saliendo
+  de la API simulada, ruta por ruta. Ver `.env.example`.
 - La API simulada: `mocks/seed/` es la semilla compartida (productos reales del
   Excel con el motor de precios, clientas, anuncios, pedidos con sus montos,
   equipo y proveedores), así una clienta o un pedido es el mismo en todas las

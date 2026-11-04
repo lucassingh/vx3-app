@@ -60,7 +60,7 @@ describe("serverEnv", () => {
   });
 
   it("toma una variable vacía (CLAVE=) como no cargada", () => {
-    expect(serverEnv({ ...desarrollo, AUTH_SECRET: "", DUX_TOKEN: "" }).DUX_TOKEN).toBeUndefined();
+    expect(serverEnv({ ...desarrollo, AUTH_SECRET: "", DUX_API_URL: "" }).DUX_API_URL).toBeUndefined();
   });
 
   it("convierte los IDs de DUX a número y rechaza los que no lo son", () => {

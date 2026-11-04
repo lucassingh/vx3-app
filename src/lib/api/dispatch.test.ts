@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { mockRoutes } from "@/mocks/router";
 import { dispatchApiRequest } from "./dispatch";
 import { API_DOMAINS, API_PREFIX, domainOf } from "./domains";
@@ -46,13 +46,49 @@ describe("dispatchApiRequest", () => {
     expect(await response.json()).toEqual({ sku: "MSU2-1" });
   });
 
-  it("un dominio real sin implementación responde 501", async () => {
-    const response = await dispatchApiRequest(pedir("/stock/espejo"), {
+  it("lo que un dominio real todavía no tiene sigue saliendo de la API simulada", async () => {
+    const llamada = vi.fn(() => Response.json({ real: true }));
+    const response = await dispatchApiRequest(pedir("/stock/proveedores"), {
+      user: ADMIN,
+      realDomains: ["stock"],
+      realRoutes: { stock: [{ method: "GET", pattern: /^\/stock\/sync$/, handler: llamada }] },
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(expect.any(Array));
+    expect(llamada).not.toHaveBeenCalled();
+  });
+
+  it("un dominio real sin ninguna ruta todavía sale entero de la API simulada", async () => {
+    const response = await dispatchApiRequest(pedir("/stock/proveedores"), {
       user: ADMIN,
       realDomains: ["stock"],
       realRoutes: {},
     });
-    expect(response.status).toBe(501);
+
+    expect(response.status).toBe(200);
+  });
+
+  it("la ruta real solo atiende su método: otro método va a la API simulada", async () => {
+    const llamada = vi.fn(() => Response.json({ real: true }));
+    const response = await dispatchApiRequest(pedir("/stock/kpis"), {
+      user: ADMIN,
+      realDomains: ["stock"],
+      realRoutes: { stock: [{ method: "POST", pattern: /^\/stock\/kpis$/, handler: llamada }] },
+    });
+
+    expect(response.status).toBe(200);
+    expect(llamada).not.toHaveBeenCalled();
+  });
+
+  it("una ruta que no existe en ninguna responde 404", async () => {
+    const response = await dispatchApiRequest(pedir("/stock/no-existe"), {
+      user: ADMIN,
+      realDomains: ["stock"],
+      realRoutes: {},
+    });
+
+    expect(response.status).toBe(404);
   });
 
   it("una ruta desconocida va al mock, que responde 404", async () => {

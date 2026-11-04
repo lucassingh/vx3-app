@@ -15,6 +15,15 @@ export const LECTURAS_DUX: Record<string, string> = {
 const ATRASO_MAXIMO_H = 26;
 const HORA_MS = 3_600_000;
 
+export function estaAlDia(terminada: Date | null, ahora: Date): boolean {
+  return terminada !== null && ahora.getTime() - terminada.getTime() < ATRASO_MAXIMO_H * HORA_MS;
+}
+
+/** QA y local no tienen cron: ahí solo corre con el botón (`fase-1.4`, decisión 2). */
+export function frecuenciaDeDux(ambiente = process.env.APP_ENV): string {
+  return ambiente === "production" ? "Una vez por día, y con el botón" : "Solo con el botón en este ambiente";
+}
+
 export type UltimaCorrida = {
   operation: string;
   status: "ok" | "con_errores" | "error";

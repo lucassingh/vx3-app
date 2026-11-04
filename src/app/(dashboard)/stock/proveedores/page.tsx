@@ -10,6 +10,7 @@ import {
 } from "@/components/stock/proveedores-widgets";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
+import { DatosSimulados } from "@/components/views/datos-simulados";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
 import { requirePageAccess } from "@/modules/platform/auth/session";
 
@@ -29,12 +30,15 @@ export default async function ProveedoresPage() {
         title={route?.link.title ?? "Proveedores"}
         description={route?.link.description}
         actions={
-          <Button asChild>
-            <Link href="/stock/compras">
-              <ClipboardList />
-              Recibir mercadería
-            </Link>
-          </Button>
+          <>
+            <DatosSimulados pr="1.10" />
+            <Button asChild>
+              <Link href="/stock/compras">
+                <ClipboardList />
+                Recibir mercadería
+              </Link>
+            </Button>
+          </>
         }
       />
       <PageBody>
