@@ -20,7 +20,7 @@ export const LIMITES_DUX = { v2: { clave: "dux:v2", intervaloMs: 250 }, v1: { cl
 
 /** 200 con "Formato desconocido" se arregló en todas las pruebas con la primera espera. */
 const ESPERAS_MS = [5_000, 15_000, 30_000];
-const POR_PAGINA = 50;
+export const POR_PAGINA = 50;
 
 export type DuxConfig = {
   baseUrl: string;
@@ -32,7 +32,7 @@ export type DuxConfig = {
 type Dependencias = {
   limites: { v1: LimiteDeTasa; v2: LimiteDeTasa };
   esperasMs?: readonly number[];
-} & Pick<HttpClientOptions, "fetch" | "esperar" | "log">;
+} & Pick<HttpClientOptions, "fetch" | "esperar" | "log" | "alIntentar">;
 
 function validar<S extends z.ZodType>(esquema: S, cuerpo: unknown, ruta: string): z.output<S> {
   const resultado = esquema.safeParse(cuerpo);

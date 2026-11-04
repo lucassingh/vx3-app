@@ -113,6 +113,15 @@ describe("createHttpClient", () => {
     expect(esperar).not.toHaveBeenCalled();
   });
 
+  it("cuenta cada intento, reintentos incluidos", async () => {
+    const alIntentar = vi.fn();
+    const { cliente } = armar([respuesta(503), respuesta(200)], { alIntentar });
+
+    await cliente.get("/ruta");
+
+    expect(alIntentar).toHaveBeenCalledTimes(2);
+  });
+
   it("cada proveedor decide cómo leer sus respuestas", async () => {
     const clasificar: HttpClientOptions["clasificar"] = ({ cuerpo }) =>
       (cuerpo as { falla?: boolean }).falla ? { tipo: "reintentar", motivo: "falla disfrazada" } : { tipo: "ok" };

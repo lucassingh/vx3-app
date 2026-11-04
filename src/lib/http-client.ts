@@ -33,6 +33,8 @@ export type HttpClientOptions = {
   timeoutMs?: number;
   /** Los proveedores responden errores de muchas formas: cada uno decide cómo leer los suyos. */
   clasificar?: (respuesta: RespuestaHttp) => Veredicto;
+  /** Se llama en cada intento, reintentos incluidos: es la cuenta real de llamadas al proveedor. */
+  alIntentar?: () => void;
   fetch?: typeof globalThis.fetch;
   esperar?: (ms: number) => Promise<void>;
   log?: Logger;
@@ -71,6 +73,7 @@ export function createHttpClient({
   esperasMs = ESPERAS_POR_DEFECTO,
   timeoutMs = 60_000,
   clasificar = clasificarPorDefecto,
+  alIntentar,
   fetch: fetchHttp = globalThis.fetch,
   esperar = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   log = loggerBase,
@@ -83,6 +86,7 @@ export function createHttpClient({
 
       for (let intento = 0; ; intento++) {
         await limite?.turno();
+        alIntentar?.();
         const inicio = performance.now();
         let motivo: string;
         let contexto: Record<string, unknown> | undefined;
