@@ -61,6 +61,12 @@ export async function tomarBloqueo(integration: string, duracionMs: number): Pro
   return holder;
 }
 
+/** Se toma antes de lanzar el Workflow: dice que hay una corrida apenas alguien la pide. */
+export async function hayCorridaEnCurso(integration: string): Promise<boolean> {
+  const bloqueo = await getDb().syncLock.findUnique({ where: { integration }, select: { expiresAt: true } });
+  return bloqueo !== null && bloqueo.expiresAt > new Date();
+}
+
 /** Si venció y ya lo tomó otra corrida, no le toca nada: ni su bloqueo ni sus corridas abiertas. */
 export async function soltarBloqueo(integration: string, holder: string) {
   const { count } = await getDb().syncLock.deleteMany({ where: { integration, holder } });

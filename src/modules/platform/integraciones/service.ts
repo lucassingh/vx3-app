@@ -5,6 +5,7 @@ import type { Integracion } from "@/lib/api/types";
 import { businessTime } from "@/lib/dates";
 import { formatNumber } from "@/lib/format";
 import { credencialEnmascarada } from "../credentials/service";
+import { hayCorridaEnCurso } from "../sync-runs";
 import { estadoDeDux, frecuenciaDeDux, LECTURAS_DUX, type UltimaCorrida } from "./estado";
 
 /**
@@ -90,7 +91,7 @@ const aPendiente = (pendiente: Pendiente): Integracion => ({
 async function integracionDux(): Promise<Integracion> {
   const db = getDb();
   const dux = { integration: "dux" };
-  const [credencial, corridas, abiertas, productos, comprobantes, clientas, deHoy] = await Promise.all([
+  const [credencial, corridas, sincronizando, productos, comprobantes, clientas, deHoy] = await Promise.all([
     credencialEnmascarada("dux"),
     // Cada sincronización escribe las tres: entre las últimas 30 están las más nuevas de cada una.
     db.syncRun.findMany({
@@ -98,7 +99,7 @@ async function integracionDux(): Promise<Integracion> {
       orderBy: { startedAt: "desc" },
       take: 30,
     }),
-    db.syncRun.count({ where: { ...dux, status: "en_curso" } }),
+    hayCorridaEnCurso("dux"),
     db.duxItem.count({ where: { present: true } }),
     db.duxInvoice.count(),
     db.duxCustomer.count(),
@@ -122,7 +123,7 @@ async function integracionDux(): Promise<Integracion> {
     nombre: "DUX",
     tipo: "ERP · API v1 y v2",
     estado,
-    detalle: abiertas > 0 ? `Hay una sincronización en curso. ${motivo}` : motivo,
+    detalle: sincronizando ? `Hay una sincronización en curso. ${motivo}` : motivo,
     frecuencia: frecuenciaDeDux(),
     ultimoSync: ultimoSync?.toISOString() ?? null,
     metricas: [
@@ -132,6 +133,7 @@ async function integracionDux(): Promise<Integracion> {
       { label: "Llamadas hoy", value: formatNumber(deHoy._sum.calls ?? 0) },
     ],
     credencial,
+    sincronizando,
   };
 }
 

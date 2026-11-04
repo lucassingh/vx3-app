@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
 import { guardarCredencial } from "../credentials/service";
+import { soltarBloqueo, tomarBloqueo } from "../sync-runs";
 import { listarIntegraciones, registroDeSincronizaciones } from "./service";
 
 const db = getDb();
@@ -30,6 +31,7 @@ const dux = async () => (await listarIntegraciones()).find(({ id }) => id === "d
 const conToken = () => guardarCredencial("dux", "token-de-prueba-7c1e", { id: USUARIO, label: "Admin de Prueba" });
 
 const limpiar = async () => {
+  await db.syncLock.deleteMany();
   await db.syncRun.deleteMany();
   await db.integrationCredential.deleteMany();
   await db.user.deleteMany({ where: { id: USUARIO } });
@@ -112,15 +114,28 @@ describe("listarIntegraciones", () => {
     expect((await dux()).ultimoSync).toBe(bien.finishedAt?.toISOString());
   });
 
-  it("avisa si hay una corrida en curso", async () => {
+  it("avisa si hay una corrida en curso, desde que se la pide y hasta que termina", async () => {
     await conToken();
     await tresBien();
-    await corrida("items", { status: "en_curso", finishedAt: null, startedAt: new Date() });
+    expect((await dux()).sincronizando).toBe(false);
+
+    const llave = await tomarBloqueo("dux", 60_000);
 
     const integracion = await dux();
-
     expect(integracion.estado).toBe("ok");
+    expect(integracion.sincronizando).toBe(true);
     expect(integracion.detalle).toContain("Hay una sincronización en curso.");
+
+    await soltarBloqueo("dux", llave!);
+    expect((await dux()).sincronizando).toBe(false);
+  });
+
+  it("un bloqueo vencido no cuenta: esa corrida murió", async () => {
+    await conToken();
+    await tomarBloqueo("dux", 60_000);
+    await db.syncLock.updateMany({ data: { expiresAt: new Date(Date.now() - 1000) } });
+
+    expect((await dux()).sincronizando).toBe(false);
   });
 
   it("el historial no cuenta para el estado", async () => {

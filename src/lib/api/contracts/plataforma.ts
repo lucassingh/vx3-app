@@ -79,6 +79,8 @@ export type Integracion = {
   ultimoSync: string | null;
   metricas: { label: string; value: string }[];
   credencial: CredencialEnmascarada | null;
+  /** Hay una sincronización corriendo: la tarjeta se refresca sola hasta que termine. */
+  sincronizando?: boolean;
 };
 
 export type PruebaConexion = { ok: boolean; latenciaMs: number; mensaje: string };

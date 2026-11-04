@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Integracion } from "@/lib/api/types";
 import { IntegracionCard } from "./integracion-card";
 
@@ -158,5 +158,63 @@ describe("Sincronizar ahora", () => {
       expect(toast.error).toHaveBeenCalledWith("No se pudo sincronizar DUX", { description: message }),
     );
     expect(toast.success).not.toHaveBeenCalled();
+  });
+});
+
+describe("mientras se sincroniza", () => {
+  const dux = (sincronizando: boolean) =>
+    integracion("dux", "DUX", { credencial: CREDENCIAL, sincronizando, detalle: "Detalle" });
+  const pasar = (ms: number) => act(() => vi.advanceTimersByTime(ms));
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  it("se refresca sola, y lo dice en el botón, que no deja lanzar otra", () => {
+    render(<IntegracionCard integracion={dux(true)} labels={LABELS} />);
+
+    expect(screen.getByRole("button", { name: "Sincronizando…" })).toBeDisabled();
+    pasar(5_000);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    pasar(5_000);
+    expect(refresh).toHaveBeenCalledTimes(2);
+  });
+
+  it("cuando termina deja de pedir, y el botón vuelve", () => {
+    const { rerender } = render(<IntegracionCard integracion={dux(true)} labels={LABELS} />);
+    pasar(5_000);
+    refresh.mockClear();
+
+    rerender(<IntegracionCard integracion={dux(false)} labels={LABELS} />);
+    pasar(60_000);
+
+    expect(refresh).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Sincronizar ahora" })).toBeEnabled();
+  });
+
+  it("sin una corrida en curso no le pide nada al servidor", () => {
+    render(<IntegracionCard integracion={dux(false)} labels={LABELS} />);
+
+    pasar(60_000);
+
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("con la pestaña oculta no pide, y al salir de la pantalla se corta", () => {
+    const visibilidad = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    const { unmount } = render(<IntegracionCard integracion={dux(true)} labels={LABELS} />);
+
+    pasar(10_000);
+    expect(refresh).not.toHaveBeenCalled();
+
+    visibilidad.mockReturnValue("visible");
+    unmount();
+    pasar(10_000);
+    expect(refresh).not.toHaveBeenCalled();
   });
 });
