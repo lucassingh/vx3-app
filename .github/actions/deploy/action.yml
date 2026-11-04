@@ -17,7 +17,7 @@ inputs:
     description: El APP_ENV del build (qa, preview o production)
     required: true
   vercel-token:
-    description: Token de Vercel con alcance al Team
+    description: Token de Vercel con alcance a la cuenta del proyecto
     required: true
   database-url-unpooled:
     description: Conexión directa del dueño de la branch de Neon que se migra

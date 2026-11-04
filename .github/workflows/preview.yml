@@ -67,7 +67,7 @@ jobs:
               marca,
               `**Preview:** ${process.env.URL}`,
               "",
-              `Commit ${commit}. Usa la base \`develop\` y está detrás de la protección de Vercel: se entra con la cuenta del Team.`,
+              `Commit ${commit}. Usa la base \`develop\` y está detrás de la protección de Vercel: se entra con una cuenta con acceso al proyecto.`,
             ].join("\n");
             const { data: comentarios } = await github.rest.issues.listComments({
               ...context.repo,

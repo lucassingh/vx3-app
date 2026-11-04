@@ -10,8 +10,13 @@ cuenta, qué hacer y cómo verificar que quedó bien. Los secretos están en
 | QA         | `https://cli-vx3-qa.vercel.app` | branch `develop`      | cada push a `develop`      |
 | Previews   | la URL que se comenta en la PR  | branch `develop`      | cada PR a `develop`        |
 
+El proyecto `cli-vx3` de Vercel está, por ahora, en la cuenta Hobby de Lucas
+(`lucas-singhs-projects`), sin repo conectado. Pasa al Team Pro de la agencia
+antes de que VX3 lo use en serio: Hobby es solo para uso no comercial y sus
+crons corren una vez por día como mucho.
+
 QA y las previews están detrás de la protección de Vercel: se entra con una
-cuenta del Team "más uno — clientes". Producción es pública (la app pide su
+cuenta que tenga acceso al proyecto. Producción es pública (la app pide su
 propio login).
 
 ## 1. Dónde mirar
@@ -104,7 +109,7 @@ Run workflow; producción con Re-run all jobs del último Deploy producción.
 | Contraseña de `readonly`              | GitHub `PROD_DATABASE_URL_READONLY`       | `npm run db:roles -- --branch main --rotar readonly` → actualizar el secret del repo                                                    | Ninguno                                      |
 | Contraseña del dueño (`neondb_owner`) | GitHub `QA_`/`PROD_DATABASE_URL_UNPOOLED` | Neon → Branches → la branch → Roles → `neondb_owner` → Reset password → actualizar el secret                                            | Ninguno (solo migra)                         |
 | `NEON_API_KEY`                        | GitHub y `.env.local`                     | Neon → Settings del proyecto → API keys → crear una nueva, actualizar, revocar la vieja                                                 | Ninguno                                      |
-| `VERCEL_TOKEN`                        | GitHub y `.env.local`                     | Vercel → Account Settings → Tokens (scope: el Team) → crear, actualizar, borrar el viejo                                                | Ninguno                                      |
+| `VERCEL_TOKEN`                        | GitHub y `.env.local`                     | Vercel → Account Settings → Tokens (scope: la cuenta del proyecto) → crear, actualizar, borrar el viejo                                 | Ninguno                                      |
 | `SENTRY_AUTH_TOKEN`                   | GitHub                                    | Sentry → Settings → Auth Tokens                                                                                                         | Ninguno                                      |
 | Claves del bucket (`BACKUP_S3_*`)     | GitHub                                    | Panel del bucket → nuevo par con permiso solo sobre `backups/vx3/` → actualizar → borrar el viejo                                       | Ninguno                                      |
 | `BACKUP_PASSPHRASE`                   | GitHub y 1Password                        | Generarla como `AUTH_SECRET` y actualizar el secret                                                                                     | Las copias viejas siguen con la frase vieja  |
