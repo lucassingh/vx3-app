@@ -15,7 +15,8 @@ import { type IntegracionConCredencial, NOMBRE_INTEGRACION } from "./integracion
  */
 
 function claveMaestra(): Buffer {
-  const clave = serverEnv().CREDENTIALS_KEY;
+  // Las previews comparten las variables de Vercel con QA, y no se conectan a DUX (`fase-1.4`, decisión 2).
+  const clave = process.env.APP_ENV === "preview" ? undefined : serverEnv().CREDENTIALS_KEY;
   if (!clave) {
     throw new AppError(
       "INTERNAL",

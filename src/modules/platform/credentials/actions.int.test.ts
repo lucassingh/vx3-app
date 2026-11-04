@@ -42,6 +42,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   vi.stubEnv("CREDENTIALS_KEY", randomBytes(32).toString("base64url"));
+  vi.stubEnv("APP_ENV", "qa");
   await db.integrationCredential.deleteMany();
   request.headers = admin;
 });
@@ -180,6 +181,16 @@ describe("probar la conexión", () => {
   it("sin clave maestra en el ambiente, como en una preview, no puede conectarse", async () => {
     await cargarCredencial({ integracion: "dux", valor: TOKEN });
     vi.stubEnv("CREDENTIALS_KEY", "");
+
+    expect(await probarIntegracion({ integracion: "dux" })).toMatchObject({
+      ok: true,
+      data: { ok: false, mensaje: expect.stringContaining("CREDENTIALS_KEY") },
+    });
+  });
+
+  it("una preview no se conecta, aunque vea la clave: comparte las variables con QA", async () => {
+    await cargarCredencial({ integracion: "dux", valor: TOKEN });
+    vi.stubEnv("APP_ENV", "preview");
 
     expect(await probarIntegracion({ integracion: "dux" })).toMatchObject({
       ok: true,
