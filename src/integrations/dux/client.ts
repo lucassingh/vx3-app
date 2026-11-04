@@ -4,6 +4,7 @@ import { businessTime } from "@/lib/dates";
 import { ExternalServiceError } from "@/lib/errors";
 import { createHttpClient, type HttpClientOptions } from "@/lib/http-client";
 import type { LimiteDeTasa } from "@/lib/rate-limit";
+import type { PedidoDeComprobantes } from "@/modules/inventory/erp-gateway";
 import { clasificarRespuestaDux } from "./respuesta";
 import { duxPaginaFacturasSchema, duxPaginaItemsSchema } from "./schemas";
 
@@ -61,8 +62,22 @@ export function createDuxClient(config: DuxConfig, { limites, esperasMs = ESPERA
     return validar(duxPaginaItemsSchema, (await v2.get(ruta)).cuerpo, ruta);
   };
 
+  const listarFacturas = async ({ sucursal, desde, hasta, offset }: PedidoDeComprobantes) => {
+    const parametros = new URLSearchParams({
+      idEmpresa: String(config.idEmpresa),
+      idSucursal: String(sucursal),
+      fechaDesde: desde,
+      fechaHasta: hasta,
+      offset: String(offset),
+      limit: String(POR_PAGINA),
+    });
+    const ruta = `/facturas?${parametros}`;
+    return validar(duxPaginaFacturasSchema, (await v1.get(ruta)).cuerpo, ruta);
+  };
+
   return {
     listarItems,
+    listarFacturas,
 
     /**
      * Prueba las dos versiones, porque fallan por motivos distintos: la v1 es la única

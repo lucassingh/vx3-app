@@ -5,7 +5,7 @@ import { limiteCompartido } from "@/lib/rate-limit";
 import { leerCredencial } from "@/modules/platform/credentials/service";
 import type { ErpGateway } from "@/modules/inventory/erp-gateway";
 import { createDuxClient, LIMITES_DUX, POR_PAGINA } from "./client";
-import { aErpItem } from "./mapeo";
+import { aErpComprobante, aErpItem } from "./mapeo";
 
 export const POR_PAGINA_DUX = POR_PAGINA;
 
@@ -36,10 +36,28 @@ export async function duxClient({ esperasMs, alIntentar }: Opciones = {}) {
   );
 }
 
+/** Las dos sucursales que venden, e-commerce y local. No necesita el token. */
+export function sucursalesDux(): number[] {
+  const { DUX_ID_SUCURSAL_ECOMMERCE: ecommerce, DUX_ID_SUCURSAL_LOCAL: local } = serverEnv();
+  if (!ecommerce || !local) {
+    throw new ExternalServiceError("DUX", "Faltan DUX_ID_SUCURSAL_ECOMMERCE o DUX_ID_SUCURSAL_LOCAL en este ambiente.");
+  }
+  return [ecommerce, local];
+}
+
 /** DUX como lo ve el dominio. */
 export async function erpGateway(opciones: Opciones = {}): Promise<ErpGateway> {
   const cliente = await duxClient(opciones);
   return {
+    listarComprobantes: async (pedido) => {
+      const { results, paging } = await cliente.listarFacturas(pedido);
+      return {
+        comprobantes: results.map((factura) => aErpComprobante(factura, pedido.sucursal)),
+        total: paging?.total ?? pedido.offset + results.length,
+        // Una página incompleta es la última: `paging.total` no siempre viene.
+        hayMas: results.length === POR_PAGINA && pedido.offset + POR_PAGINA < (paging?.total ?? Infinity),
+      };
+    },
     listarItems: async (offset) => {
       const { datos, paginacion } = await cliente.listarItems(offset);
       return { items: datos.map(aErpItem), total: paginacion.total, hayMas: paginacion.hay_mas };

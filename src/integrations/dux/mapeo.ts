@@ -1,6 +1,7 @@
+import { ExternalServiceError } from "@/lib/errors";
 import { Money } from "@/lib/money";
-import type { ErpItem } from "@/modules/inventory/erp-gateway";
-import type { DuxItem } from "./schemas";
+import type { ErpComprobante, ErpItem } from "@/modules/inventory/erp-gateway";
+import type { DuxFactura, DuxItem } from "./schemas";
 
 const centavos = (pesos: number) => Number(Money.fromPesos(pesos).cents);
 
@@ -27,5 +28,48 @@ export function aErpItem(item: DuxItem): ErpItem {
     codigoExterno: item.codigo_externo,
     imagenUrl: item.imagen_url,
     creadoEl: item.fecha_creacion,
+  };
+}
+
+const MESES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * "Nov 3, 2026 3:00:00 AM" → "2026-11-03". Se lee el texto, sin pasar por Date: el
+ * resultado no puede depender de la zona horaria del servidor.
+ */
+export function fechaDeDux(texto: string): string {
+  const [, mes = "", dia = "", anio = ""] = /^([A-Z][a-z]{2}) (\d{1,2}), (\d{4})/.exec(texto) ?? [];
+  const numeroDeMes = MESES.indexOf(mes) + 1;
+  if (!numeroDeMes) throw new ExternalServiceError("DUX", "DUX respondió con una fecha que no esperábamos.");
+  return `${anio}-${String(numeroDeMes).padStart(2, "0")}-${dia.padStart(2, "0")}`;
+}
+
+export function aErpComprobante(factura: DuxFactura, sucursal: number): ErpComprobante {
+  return {
+    id: factura.id,
+    sucursal,
+    tipo: factura.tipo_comp,
+    letra: factura.letra_comp,
+    puntoDeVenta: factura.nro_pto_vta,
+    numero: factura.nro_comp,
+    fecha: fechaDeDux(factura.fecha_comp),
+    clienteId: factura.id_cliente ?? null,
+    pedido: factura.nro_pedido || null,
+    totalCentavos: centavos(factura.total),
+    anulado: factura.anulada?.toUpperCase() === "S",
+    // Una línea sin código no es de ningún producto, y tampoco se sumó en la lectura del 04/11.
+    lineas: (factura.detalles ?? []).flatMap((linea) => {
+      const codigo = linea.cod_item?.trim();
+      if (!codigo) return [];
+      return {
+        codigo,
+        nombre: linea.item ?? "",
+        cantidad: linea.ctd,
+        precioCentavos: centavos(linea.precio_uni),
+        descuentoPct: linea.porc_desc,
+        ivaPct: linea.porc_iva,
+        costoCentavos: centavos(linea.costo),
+      };
+    }),
   };
 }

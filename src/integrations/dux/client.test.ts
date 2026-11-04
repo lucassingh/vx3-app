@@ -2,6 +2,7 @@ import { Writable } from "node:stream";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createLogger } from "@/lib/logger";
 import { createDuxClient, LIMITES_DUX } from "./client";
+import fixtureFacturas from "./fixtures/facturas.json";
 import fixtureItems from "./fixtures/items.json";
 
 const TOKEN = "token-de-prueba-7c1e";
@@ -98,6 +99,49 @@ describe("listarItems", () => {
     expect((await cliente.listarItems(0)).datos).toHaveLength(fixtureItems.datos.length);
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(lineas.join("")).toContain("req_1");
+  });
+});
+
+describe("listarFacturas", () => {
+  const PEDIDO = { sucursal: 2, desde: "2026-10-01", hasta: "2026-10-31", offset: 50 };
+
+  it("lee la v1, con el token solo, el ID de empresa y su límite", async () => {
+    const { cliente, pedido, limites } = armar([json(fixtureFacturas)]);
+
+    const { results } = await cliente.listarFacturas(PEDIDO);
+
+    expect(pedido(0)[0]).toBe(
+      "https://dux.prueba/rest/facturas?idEmpresa=9432&idSucursal=2&fechaDesde=2026-10-01&fechaHasta=2026-10-31&offset=50&limit=50",
+    );
+    expect(pedido(0)[1].headers.Authorization).toBe(TOKEN);
+    expect(limites.v1.turno).toHaveBeenCalledOnce();
+    expect(limites.v2.turno).not.toHaveBeenCalled();
+    expect(results).toHaveLength(3);
+  });
+
+  it("reintenta el 200 con 'Formato desconocido', como pasó en la lectura de 12 meses", async () => {
+    const { cliente, fetch } = armar([json({ message: "Formato desconocido." }), json(fixtureFacturas)]);
+
+    expect((await cliente.listarFacturas(PEDIDO)).results).toHaveLength(3);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("no deja pasar el nombre ni el CUIT de la clienta", async () => {
+    const { cliente } = armar([json(fixtureFacturas)]);
+
+    const { results } = await cliente.listarFacturas(PEDIDO);
+
+    expect(JSON.stringify(results)).not.toContain("PRIVADO");
+    expect(JSON.stringify(results)).not.toContain("27301112229");
+  });
+
+  it("una línea sin costo o con un número roto falla claro y sin reintentar", async () => {
+    const rota = structuredClone(fixtureFacturas);
+    rota.results[0]!.detalles![0]!.precio_uni = "no-es-un-numero";
+    const { cliente, fetch } = armar([json(rota)]);
+
+    await expect(cliente.listarFacturas(PEDIDO)).rejects.toThrow(/results\.0\.detalles\.0\.precio_uni/);
+    expect(fetch).toHaveBeenCalledOnce();
   });
 });
 
