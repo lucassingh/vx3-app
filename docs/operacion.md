@@ -227,6 +227,58 @@ en la rutina mensual (`tecnica_doc/infraestructura.md` §11 y §12).
 - [ ] Spend Management de Vercel con alerta, y el plan de Neon que corresponde.
 - [ ] El último backup existe, pesa lo esperado y la prueba de restauración del mes pasó.
 
+## 11. Clientas: segmentos y lista del día
+
+Las fichas, sus métricas y sus segmentos se recalculan al final de cada sincronización y
+del historial, solo desde el espejo: no le piden nada a DUX. Una ficha es un teléfono
+normalizado. Sin teléfono no hay ficha, y esa venta queda como no identificada.
+
+**Segmentos.** Se evalúan en este orden, y gana el primero que cumple:
+
+| Segmento  | Cuándo                                                                              |
+| --------- | ----------------------------------------------------------------------------------- |
+| Dormida   | Más de 120 días sin comprar                                                         |
+| En riesgo | Más de 60 días, o con 2 compras o más, más de 1,5 veces su ciclo y al menos 30 días |
+| Nueva     | Una sola compra, hace 45 días o menos                                               |
+| Top       | Está en el 10 % con más margen de los últimos 12 meses                              |
+| Activa    | El resto                                                                            |
+
+Una ficha sin compras leídas no tiene segmento. Los comprobantes del mismo día son una
+compra, y el ciclo es la mediana de los días entre compras.
+
+**Margen.** Línea por línea, con el costo que DUX congeló en la venta. CF deja el 54,75 % de
+la venta, y envío, embalaje y flete dejan 0. Una línea sin costo no suma, y tampoco una con
+un costo que llega al precio: es un costo mal cargado, no una pérdida.
+
+**Lista del día.** Hasta 30 por día, por margen de los últimos 12 meses. Los mensajes salen a
+los 7, 17, 27 y 37 días de la compra en rotación rápida (ciclo de 20 días o menos), y a los
+7, 22, 37 y 52 en la lenta. Nunca más de uno por semana. Si responde, sale de la secuencia;
+si vuelve a comprar, arranca de nuevo. Después del último mensaje descansa 45 días y pasa a
+la reactivación, que se manda una vez por ciclo. La app no manda nada.
+
+**Dónde se cambian los valores.** Hasta que llegue el editor de reglas (1.10), en código:
+
+| Qué                                               | Dónde                                                          |
+| ------------------------------------------------- | -------------------------------------------------------------- |
+| Días y porcentajes de los segmentos               | `VALORES_DE_SEGMENTOS`, en `src/modules/customers/metricas.ts` |
+| Tope, días de cada mensaje, descanso y alto valor | `VALORES_DE_RECOMPRA`, en `src/modules/customers/secuencia.ts` |
+| A qué dormidas les llega la reactivación          | `reactivacionMinimoCompras`, en el mismo lugar                 |
+| Textos de los mensajes                            | `PLANTILLAS`, en el mismo archivo                              |
+| Cómo se nombra cada rubro en un mensaje           | `RUBRO_EN_MENSAJE`, en el mismo archivo                        |
+
+Un cambio en los segmentos se ve después del deploy y de la sincronización siguiente; uno
+en la lista, apenas se despliega.
+
+**Antes de usar la lista en producción:**
+
+1. Correr el historial de 12 meses (sección 8): sin él, casi todas salen como nuevas.
+2. Confirmar con Elías que Clara ya no manda nada.
+3. Medir cuántas no tienen nombre de pila: sin él, cada mensaje hay que completarlo a mano.
+   ```sql
+   SELECT count(*) FILTER (WHERE first_name IS NULL) AS sin_nombre, count(*) AS con_compras
+   FROM customers WHERE purchases > 0;
+   ```
+
 ## Variables y secretos de cada lugar
 
 **Vercel** (Settings → Environment Variables):
@@ -239,7 +291,7 @@ en la rutina mensual (`tecnica_doc/infraestructura.md` §11 y §12).
 | `CRON_SECRET`               | propio de producción         | propio de QA                   |
 | `NEXT_PUBLIC_SENTRY_DSN`    | el DSN de `cli-vx3`          | el mismo                       |
 | `CREDENTIALS_KEY`           | propia de producción         | la de `.env.local`             |
-| `API_REAL_DOMAINS`          | `stock`                      | `stock`                        |
+| `API_REAL_DOMAINS`          | `stock,clientas`             | `stock,clientas`               |
 | `DUX_ID_EMPRESA`            | `9432`                       | `9432`                         |
 | `DUX_ID_SUCURSAL_ECOMMERCE` | `1`                          | `1`                            |
 | `DUX_ID_SUCURSAL_LOCAL`     | `2`                          | `2`                            |
