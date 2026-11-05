@@ -14,14 +14,13 @@ import type { ErpItem } from "./erp-gateway";
  */
 
 function aFila(item: ErpItem) {
-  const { tipo, base, normalizado, cantidad, fueraDeRegla } = leerCodigo(item.codigo, item.rubro);
+  const { tipo, base, normalizado, cantidad } = leerCodigo(item.codigo, item.rubro);
   return {
     code: item.codigo,
     normalizedCode: normalizado,
     kind: tipo,
     baseCode: base,
     packQuantity: cantidad,
-    outOfRule: fueraDeRegla,
     name: item.nombre,
     category: item.rubro,
     subcategory: item.subrubro,

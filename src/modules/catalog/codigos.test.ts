@@ -41,20 +41,10 @@ describe("leerCodigo", () => {
     expect(leerCodigo(codigo, rubro)).toMatchObject({ tipo, base, cantidad });
   });
 
-  it("el mismo sufijo depende del rubro: -3 solo es cantidad normal en medias", () => {
-    expect(leerCodigo("X1-3", MEDIAS)).toMatchObject({ tipo: "pack", fueraDeRegla: false });
-    expect(leerCodigo("X1-24", LENCERIA)).toMatchObject({ tipo: "prenda", base: "X1-24" });
-    expect(leerCodigo("X1-24", MEDIAS)).toMatchObject({ tipo: "pack", base: "X1", cantidad: 24 });
-  });
-
-  it("el -3 fuera de medias se lee como pack, marcado, hasta que VX3 decida (10 §8)", () => {
-    expect(leerCodigo("DSN10-3", "DEPORTIVO")).toMatchObject({
-      tipo: "pack",
-      base: "DSN10",
-      cantidad: 3,
-      fueraDeRegla: true,
-    });
-    expect(leerCodigo("MEN1-3", "MALLAS")).toMatchObject({ tipo: "pack", base: "MEN1", fueraDeRegla: true });
+  it("el -3 es una cantidad normal en cualquier rubro (Elías, 04/11)", () => {
+    expect(leerCodigo("X1-3", MEDIAS)).toMatchObject({ tipo: "pack", base: "X1", cantidad: 3 });
+    expect(leerCodigo("DSN10-3", "DEPORTIVO")).toMatchObject({ tipo: "pack", base: "DSN10", cantidad: 3 });
+    expect(leerCodigo("MEN1-3", "MALLAS")).toMatchObject({ tipo: "pack", base: "MEN1", cantidad: 3 });
   });
 
   it("un sufijo que no es cantidad queda como parte de la identidad", () => {

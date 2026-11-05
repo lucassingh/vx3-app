@@ -158,7 +158,8 @@ model DuxItem {
   /// La identidad del producto ("MSU2-1"): une la prenda con sus packs.
   baseCode       String      @map("base_code")
   packQuantity   Int?        @map("pack_quantity")
-  /// El -3 fuera de medias: la regla no lo prevé (solucion_doc/10 §8).
+  /// Sin uso desde la 1.8: el -3 es normal en todos los rubros. QA y producción todavía escriben
+  /// esta columna: se borra en una PR posterior, para no romper una sincronización en el medio.
   outOfRule      Boolean     @default(false) @map("out_of_rule")
   name           String
   category       String?
