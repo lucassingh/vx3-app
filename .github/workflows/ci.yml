@@ -59,7 +59,8 @@ jobs:
   integration:
     name: Integración (branch efímera de Neon)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Es un tope, no una meta: al pasarlo, el job se cancela sin decir qué test iba corriendo.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
