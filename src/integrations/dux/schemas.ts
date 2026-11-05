@@ -67,7 +67,7 @@ export const duxFacturaSchema = z.object({
   nro_pto_vta: z.string(),
   tipo_comp: z.string(),
   letra_comp: z.string(),
-  nro_comp: z.number(),
+  nro_comp: z.number().nullish(),
   fecha_comp: z.string().regex(/^[A-Z][a-z]{2} \d{1,2}, \d{4}/, "no es una fecha de DUX"),
   nro_pedido: z.string().nullish(),
   total: decimal,

@@ -134,6 +134,16 @@ describe("aErpComprobante", () => {
     expect(comprobante.anulado).toBe(false);
   });
 
+  it("acepta una factura sin número, como las que tiene DUX, sin inventarle uno", () => {
+    const {
+      results: [sinNumero],
+    } = duxPaginaFacturasSchema.parse({
+      results: [{ ...fixtureFacturas.results[0], nro_comp: null }],
+    });
+
+    expect(aErpComprobante(sinNumero!, 1)).toMatchObject({ numero: null, anulado: false, totalCentavos: 16_840_000 });
+  });
+
   it("una nota de crédito sin detalle y una anulada", () => {
     expect(aErpComprobante(results[1]!, 1)).toMatchObject({ tipo: "NOTA_CREDITO", lineas: [], pedido: null });
     expect(aErpComprobante(results[2]!, 1)).toMatchObject({ anulado: true });

@@ -48,7 +48,8 @@ export type ErpComprobante = {
   tipo: string;
   letra: string;
   puntoDeVenta: string;
-  numero: number;
+  /** DUX tiene facturas sin número. */
+  numero: number | null;
   /** "2026-11-03". */
   fecha: string;
   clienteId: number | null;

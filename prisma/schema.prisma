@@ -201,7 +201,8 @@ model DuxInvoice {
   type          String
   letter        String
   pointOfSale   String           @map("point_of_sale")
-  number        Int
+  /// DUX tiene facturas sin número: son ventas válidas, y no se le inventa uno.
+  number        Int?
   issuedOn      DateTime         @map("issued_on") @db.Date
   /// id_cliente en DUX. Sin clave foránea: el comprobante puede llegar antes que la clienta.
   customerDuxId Int?             @map("customer_dux_id")
