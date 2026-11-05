@@ -2,7 +2,8 @@ import type { StockEstado, StockProveedor } from "@/lib/api/types";
 import type { BadgeTone } from "@/lib/domain";
 
 export const ESTADO_STOCK: Record<StockEstado, { label: string; tone: BadgeTone }> = {
-  agotado: { label: "Agotado", tone: "danger" },
+  // No es el estado Agotado del catálogo (RN-125): acá quiere decir que no llega a un bulto completo.
+  agotado: { label: "Sin bulto", tone: "danger" },
   critico: { label: "Crítico", tone: "warning" },
   ok: { label: "Al día", tone: "success" },
   sobrestock: { label: "Sobrestock", tone: "accent" },

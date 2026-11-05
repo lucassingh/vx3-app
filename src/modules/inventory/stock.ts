@@ -130,7 +130,7 @@ export function kpisDeStock(filas: StockFila[], codigos: number): Kpi[] {
     },
     {
       id: "critico",
-      label: "Stock crítico o agotado",
+      label: "Stock crítico o sin bulto",
       value: filas.filter(
         ({ estado, ventas30dBultos }) => estado === "critico" || (estado === "agotado" && ventas30dBultos > 0),
       ).length,

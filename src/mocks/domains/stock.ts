@@ -118,7 +118,7 @@ function stockKpis(): Kpi[] {
     },
     {
       id: "critico",
-      label: "Stock crítico o agotado",
+      label: "Stock crítico o sin bulto",
       value: criticos,
       format: "number",
       hint: "Alimenta la palanca “se está acabando” del bot",

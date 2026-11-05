@@ -18,6 +18,12 @@ type Pendiente = Pick<Integracion, "id" | "nombre" | "tipo" | "detalle">;
 /** En el orden en que se conectan (`solucion_doc/07`). Cada una sale de acá con la PR que la conecta. */
 const PENDIENTES: Pendiente[] = [
   {
+    id: "tiendanube",
+    nombre: "Tienda Nube",
+    tipo: "App de VX3",
+    detalle: "Publicación de productos y precios. Se conecta en la PR 1.9.",
+  },
+  {
     id: "meta",
     nombre: "Meta Ads",
     tipo: "Marketing API",
@@ -48,16 +54,10 @@ const PENDIENTES: Pendiente[] = [
     detalle: "Se importa el extracto, para la rendición de la contraentrega. Entra en la PR 1.7.",
   },
   {
-    id: "tiendanube",
-    nombre: "Tienda Nube",
-    tipo: "App de VX3",
-    detalle: "Publicación de productos y precios. Se conecta en la PR 1.9.",
-  },
-  {
     id: "nacion",
     nombre: "Nación",
     tipo: "Extracto bancario",
-    detalle: "Se importa el extracto, para la caja del día. Entra en la PR 1.11.",
+    detalle: "Se importa el extracto, para la rendición de la contraentrega. Entra en la PR 1.7.",
   },
   {
     id: "correo",
