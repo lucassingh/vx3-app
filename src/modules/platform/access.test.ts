@@ -1,5 +1,5 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { dirname, join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import { navigation } from "@/config/navigation";
 import { mockRoutes } from "@/mocks/router";
@@ -95,6 +95,20 @@ describe("cada pantalla del dashboard se protege", () => {
       const conGuarda = codigo.includes(`requirePageAccess("${ruta}")`);
       const abierta = ABIERTAS_PAGINAS.includes(ruta) && codigo.includes("requireUser()");
       expect(conGuarda || abierta).toBe(true);
+    });
+  }
+
+  // Cada pantalla espera la sesión en su primera línea. Entre dos pantallas de la misma
+  // sección, el loading.tsx de (dashboard) queda arriba de lo compartido y no se muestra.
+  const secciones = new Set(
+    paginas(base)
+      .map((archivo) => dirname(dirname(archivo)))
+      .filter((dir) => dir.startsWith(base + sep)),
+  );
+
+  for (const seccion of secciones) {
+    it(`${relative(base, seccion)} muestra el esqueleto al pasar entre sus pantallas`, () => {
+      expect(existsSync(join(seccion, "loading.tsx"))).toBe(true);
     });
   }
 });
