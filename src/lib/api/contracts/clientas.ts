@@ -93,9 +93,12 @@ export type DuplicadoClienta = {
   registros: { sistema: string; nombre: string; detalle: string }[];
 };
 
-export type RecompraTipo = "en_riesgo" | "dormida" | "reposicion";
+export type RecompraTipo = "recompra" | "reactivacion";
 
-export type RecompraEstado = "pendiente" | "contactada" | "pospuesta";
+/** Los cuatro mensajes de la secuencia, y después la reactivación. */
+export type RecompraEtapa = "m1" | "m2" | "m3" | "m4" | "reactivacion" | "alto_valor";
+
+export type RecompraEstado = "pendiente" | "contactada" | "respondio" | "pospuesta";
 
 export type ClientaParaRecompra = {
   id: string;
@@ -103,25 +106,44 @@ export type ClientaParaRecompra = {
   telefono: string;
   /** Solo dígitos, para armar el link de wa.me. */
   telefonoWa: string;
-  segmento: Segmento;
+  segmento: Segmento | null;
   tipo: RecompraTipo;
+  etapa: RecompraEtapa;
+  etapaLabel: string;
   motivo: string;
   ultimaCompraDias: number;
   cicloDias: number | null;
   totalComprado: number;
   ultimoPedido: { id: string; total: number; resumen: string; haceDias: number } | null;
   skus: { sku: string; nombre: string; colores: string[] }[];
+  /** Con [corchetes] donde falta un dato: así no se puede mandar. */
   mensaje: string;
-  /** Si escribió en las últimas 24 h: el mensaje va libre; si no, como plantilla aprobada por Meta. */
-  ventanaAbierta: boolean;
   /** Algo que conviene saber antes de escribirle. */
   nota?: string;
   estado: RecompraEstado;
 };
 
+/** Contactada hace menos de una semana: si responde, sale de la secuencia. */
+export type RecompraEsperando = {
+  id: string;
+  nombre: string;
+  telefono: string;
+  etapaLabel: string;
+  contactadaHaceDias: number;
+  estado: "contactada" | "respondio";
+};
+
+export type ListaDeRecompra = {
+  hoy: ClientaParaRecompra[];
+  esperando: RecompraEsperando[];
+  /** A cuántas más les toca, y no entraron por el tope. */
+  enCola: number;
+  tope: number;
+};
+
+/** "Compraron" es un conteo, no un efecto: algunas iban a comprar igual. */
 export type RecompraResultados = {
   contactadas: number;
-  respondieron: number;
   compraron: number;
   ventas: number;
   margen: number;
@@ -134,10 +156,10 @@ export function clientasEndpoints(request: ApiRequest) {
     cobertura: () => request<ClientasCobertura>("/clientas/cobertura"),
     get: (id: string) => request<FichaClienta>(`/clientas/${encodeURIComponent(id)}`),
     duplicados: () => request<DuplicadoClienta[]>("/clientas/duplicados"),
-    recompra: () => request<ClientaParaRecompra[]>("/clientas/recompra"),
+    recompra: () => request<ListaDeRecompra>("/clientas/recompra"),
     recompraResultados: () => request<RecompraResultados>("/clientas/recompra/resultados"),
     marcarRecompra: (id: string, body: { estado: RecompraEstado; mensaje?: string }) =>
-      request<ClientaParaRecompra>(`/clientas/recompra/${encodeURIComponent(id)}`, {
+      request<{ estado: RecompraEstado }>(`/clientas/recompra/${encodeURIComponent(id)}`, {
         method: "PATCH",
         body: JSON.stringify(body),
       }),

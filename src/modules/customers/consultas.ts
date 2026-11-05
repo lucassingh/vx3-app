@@ -158,13 +158,37 @@ export async function clientasUnificadas(): Promise<DuplicadoClienta[]> {
   }));
 }
 
-type Comprobante = {
+export const COMPROBANTE_DE_FICHA = {
+  duxId: true,
+  issuedOn: true,
+  branchId: true,
+  letter: true,
+  pointOfSale: true,
+  number: true,
+  totalCents: true,
+  customerDuxId: true,
+  items: { select: { kind: true, baseCode: true, name: true } },
+} as const;
+
+export type Comprobante = {
+  duxId: number;
   issuedOn: Date;
+  branchId: number;
+  letter: string;
+  pointOfSale: string;
+  number: number | null;
+  totalCents: bigint;
+  customerDuxId: number | null;
   items: { kind: string; baseCode: string; name: string }[];
 };
 
+/** "X 2-00000123". Nunca se cruza con un número de pedido (RN-91). */
+export function numeroDeComprobante({ letter, pointOfSale, number }: Comprobante): string {
+  return number === null ? "sin número" : `${letter} ${pointOfSale}-${String(number).padStart(8, "0")}`;
+}
+
 /** Las veces son días con esa compra, igual que las compras de la clienta. El nombre es el más reciente. */
-function productosFrecuentes(lista: Comprobante[]): FichaClienta["skusFrecuentes"] {
+export function productosFrecuentes(lista: Comprobante[]): FichaClienta["skusFrecuentes"] {
   const productos = new Map<string, { nombre: string; dias: Set<string> }>();
   for (const { issuedOn, items } of lista) {
     for (const { kind, baseCode, name } of items) {
@@ -180,7 +204,7 @@ function productosFrecuentes(lista: Comprobante[]): FichaClienta["skusFrecuentes
     .slice(0, 4);
 }
 
-function detalleDeComprobante(enLocal: boolean, items: Comprobante["items"]): string {
+export function detalleDeComprobante(enLocal: boolean, items: Comprobante["items"]): string {
   const canal = enLocal ? "Local" : "E-commerce";
   const codigos = [...new Set(items.filter(({ kind }) => kind !== "no_producto").map(({ baseCode }) => baseCode))];
   if (codigos.length === 0) return canal;
@@ -202,17 +226,7 @@ export async function fichaDeClienta(id: string): Promise<FichaClienta | null> {
   const lista = await db.duxInvoice.findMany({
     where: { ...VENTA_VALIDA, customerDuxId: { in: duxIds } },
     orderBy: [{ issuedOn: "desc" }, { duxId: "desc" }],
-    select: {
-      duxId: true,
-      issuedOn: true,
-      branchId: true,
-      letter: true,
-      pointOfSale: true,
-      number: true,
-      totalCents: true,
-      customerDuxId: true,
-      items: { select: { kind: true, baseCode: true, name: true } },
-    },
+    select: COMPROBANTE_DE_FICHA,
   });
   const cantidades = new Map<number | null, number>();
   for (const { customerDuxId } of lista) cantidades.set(customerDuxId, (cantidades.get(customerDuxId) ?? 0) + 1);
@@ -234,16 +248,13 @@ export async function fichaDeClienta(id: string): Promise<FichaClienta | null> {
     })),
     anuncioOrigen: null,
     skusFrecuentes: productosFrecuentes(lista),
-    eventos: lista.map(({ duxId, issuedOn, branchId, letter, pointOfSale, number, totalCents, items }) => ({
-      id: String(duxId),
+    eventos: lista.map((comprobante) => ({
+      id: String(comprobante.duxId),
       tipo: "pedido",
-      titulo:
-        number === null
-          ? "Comprobante sin número"
-          : `Comprobante ${letter} ${pointOfSale}-${String(number).padStart(8, "0")}`,
-      detalle: detalleDeComprobante(branchId === local, items),
-      fecha: businessTime.startOfDay(dia(issuedOn)).toISOString(),
-      monto: pesos(totalCents),
+      titulo: `Comprobante ${numeroDeComprobante(comprobante)}`,
+      detalle: detalleDeComprobante(comprobante.branchId === local, comprobante.items),
+      fecha: businessTime.startOfDay(dia(comprobante.issuedOn)).toISOString(),
+      monto: pesos(comprobante.totalCents),
     })),
   };
 }

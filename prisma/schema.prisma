@@ -325,8 +325,52 @@ model Customer {
   firstSeenAt        DateTime         @map("first_seen_at") @db.Timestamptz(6)
   changedAt          DateTime         @map("changed_at") @db.Timestamptz(6)
 
+  reactivationContacts ReactivationContact[]
+
   @@index([segment])
   @@map("customers")
+}
+
+enum ReactivationStage {
+  m1
+  m2
+  m3
+  m4
+  reactivacion
+  alto_valor
+
+  @@map("reactivation_stage")
+}
+
+enum ReactivationStatus {
+  contactada
+  respondio
+  pospuesta
+
+  @@map("reactivation_status")
+}
+
+/// Lo que se hizo con la lista del día. Lo escribe una persona: la app no manda nada.
+model ReactivationContact {
+  id          String             @id @db.Uuid
+  customerId  String             @map("customer_id") @db.Uuid
+  customer    Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// El día del negocio del mensaje.
+  contactedOn DateTime           @map("contacted_on") @db.Date
+  stage       ReactivationStage
+  /// Qué plantilla le tocó: no se repite la vez siguiente (RN-74).
+  variant     String
+  status      ReactivationStatus
+  /// El texto que se mandó, con lo que la persona haya editado.
+  message     String
+  respondedOn DateTime?          @map("responded_on") @db.Date
+  actorId     String?            @map("actor_id")
+  createdAt   DateTime           @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime           @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([customerId, contactedOn])
+  @@index([contactedOn])
+  @@map("reactivation_contacts")
 }
 
 model SyncLock {

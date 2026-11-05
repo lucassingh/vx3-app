@@ -8,11 +8,38 @@ import { businessTime } from "@/lib/dates";
 import { normalizeText } from "@/lib/utils";
 import { VENTA_VALIDA } from "@/modules/inventory/ventas";
 import { unirFichas, type ClientaUnida } from "./ficha-unica";
-import { calcularMetricas, elegirSegmento, umbralTop, type ComprobanteDeClienta } from "./metricas";
+import { calcularMetricas, elegirSegmento, umbralTop, type ComprobanteDeClienta, type LineaDeCompra } from "./metricas";
 
 const dia = (fecha: Date) => fecha.toISOString().slice(0, 10);
 const aFecha = (texto: string) => new Date(`${texto}T00:00:00Z`);
 const huella = (dato: unknown) => createHash("sha256").update(JSON.stringify(dato)).digest("hex");
+
+export const LINEA_DE_COMPRA = {
+  kind: true,
+  code: true,
+  quantity: true,
+  unitPriceCents: true,
+  discountPct: true,
+  costCents: true,
+} as const;
+
+export function aLineaDeCompra(linea: {
+  kind: LineaDeCompra["tipo"];
+  code: string;
+  quantity: { toNumber(): number };
+  unitPriceCents: bigint;
+  discountPct: { toNumber(): number };
+  costCents: bigint;
+}): LineaDeCompra {
+  return {
+    tipo: linea.kind,
+    codigo: linea.code,
+    cantidad: linea.quantity.toNumber(),
+    precioCentavos: Number(linea.unitPriceCents),
+    descuentoPct: linea.discountPct.toNumber(),
+    costoCentavos: Number(linea.costCents),
+  };
+}
 
 /** Las filas con el nombre de sus columnas, para jsonb_to_recordset. */
 function aJson(filas: FilaDeClienta[]): string {
@@ -103,9 +130,7 @@ export async function recalcularClientas(ahora: Date): Promise<ResultadoDeFichas
       issuedOn: true,
       branchId: true,
       totalCents: true,
-      items: {
-        select: { kind: true, code: true, quantity: true, unitPriceCents: true, discountPct: true, costCents: true },
-      },
+      items: { select: LINEA_DE_COMPRA },
     },
   });
 
@@ -123,14 +148,7 @@ export async function recalcularClientas(ahora: Date): Promise<ResultadoDeFichas
         fecha,
         enLocal: branchId === local,
         totalCentavos: Number(totalCents),
-        lineas: items.map((linea) => ({
-          tipo: linea.kind,
-          codigo: linea.code,
-          cantidad: linea.quantity.toNumber(),
-          precioCentavos: Number(linea.unitPriceCents),
-          descuentoPct: linea.discountPct.toNumber(),
-          costoCentavos: Number(linea.costCents),
-        })),
+        lineas: items.map(aLineaDeCompra),
       },
     ]);
   }

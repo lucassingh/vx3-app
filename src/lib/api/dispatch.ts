@@ -11,7 +11,7 @@ import { errorResponse, routeParams, type Route } from "./route";
 
 type Opciones = {
   /** Quién pide: sin usuario, 401. */
-  user: Pick<SessionUser, "role"> | null;
+  user: (Pick<SessionUser, "role"> & Partial<Pick<SessionUser, "id">>) | null;
   realDomains?: readonly ApiDomain[];
   realRoutes?: Partial<Record<ApiDomain, Route[]>>;
 };
@@ -47,7 +47,7 @@ export async function dispatchApiRequest(request: Request, opciones: Opciones): 
   const rutas = (opciones.realRoutes ?? rutasReales)[dominio] ?? [];
   for (const route of rutas) {
     const match = route.method === request.method ? path.match(route.pattern) : null;
-    if (match) return route.handler({ url, params: routeParams(match), request });
+    if (match) return route.handler({ url, params: routeParams(match), request, actorId: opciones.user.id ?? null });
   }
   return handleMockRequest(request, path);
 }

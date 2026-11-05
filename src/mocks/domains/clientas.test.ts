@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { ClientaParaRecompra, FichaClienta, Paginated, ClientaFila, DuplicadoClienta } from "@/lib/api/types";
+import type { ListaDeRecompra, FichaClienta, Paginated, ClientaFila, DuplicadoClienta } from "@/lib/api/types";
 import { resetDb } from "../db";
 import { handleMockRequest, MOCK_API_PREFIX } from "../router";
 import { normalizarTelefono } from "./clientas";
@@ -46,9 +46,9 @@ describe("clientas", () => {
   });
 
   it("marca una clienta de la recompra como contactada", async () => {
-    const { body: lista } = await call<ClientaParaRecompra[]>("/clientas/recompra");
-    const pendiente = lista.find((item) => item.estado === "pendiente")!;
-    const { body } = await call<ClientaParaRecompra>(`/clientas/recompra/${pendiente.id}`, {
+    const { body: lista } = await call<ListaDeRecompra>("/clientas/recompra");
+    const pendiente = lista.hoy.find((item) => item.estado === "pendiente")!;
+    const { body } = await call<{ estado: string }>(`/clientas/recompra/${pendiente.id}`, {
       method: "PATCH",
       body: JSON.stringify({ estado: "contactada" }),
     });

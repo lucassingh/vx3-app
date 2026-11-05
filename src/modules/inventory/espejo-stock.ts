@@ -66,6 +66,10 @@ async function leerFilas(): Promise<{ filas: StockFila[]; codigos: number }> {
   return { filas: ordenarPorAtencion(filas), codigos: items.length };
 }
 
+export async function filasDelEspejo(): Promise<StockFila[]> {
+  return (await leerFilas()).filas;
+}
+
 export async function espejoDeStock({ q, rubro, estado }: StockQuery = {}): Promise<StockFila[]> {
   const { filas } = await leerFilas();
   const buscado = normalizeText(q?.trim() ?? "");

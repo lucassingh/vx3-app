@@ -3,7 +3,7 @@ import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
 import { dispatchApiRequest } from "@/lib/api/dispatch";
 import { API_PREFIX } from "@/lib/api/domains";
-import type { ClientaFila, FichaClienta, Paginated, RecompraResultados, SegmentoResumen } from "@/lib/api/types";
+import type { ClientaFila, FichaClienta, Paginated, SegmentoResumen } from "@/lib/api/types";
 import type { DuxItemKind } from "@/generated/prisma/client";
 import { businessTime } from "@/lib/dates";
 import type { ErpClienta } from "@/modules/inventory/erp-gateway";
@@ -434,11 +434,7 @@ describe("la API de clientas", () => {
     expect((await pedir(`/clientas/${newId()}`)).status).toBe(404);
   });
 
-  it("la recompra y un ID de las pantallas simuladas siguen en la API simulada", async () => {
-    const resultados = (await (await pedir("/clientas/recompra/resultados")).json()) as RecompraResultados;
-
-    expect(resultados.contactadas).toBeGreaterThan(0);
-    expect((await pedir("/clientas/recompra")).status).toBe(200);
+  it("un ID de las pantallas simuladas sigue en la API simulada", async () => {
     expect((await pedir("/clientas/c-10")).status).toBe(200);
   });
 

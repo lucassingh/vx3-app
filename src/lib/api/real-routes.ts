@@ -1,4 +1,4 @@
-import type { Segmento, StockEstado } from "@/lib/api/types";
+import type { RecompraEstado, Segmento, StockEstado } from "@/lib/api/types";
 import {
   clientasUnificadas,
   coberturaDeClientas,
@@ -6,9 +6,15 @@ import {
   listarClientas,
   segmentosDeClientas,
 } from "@/modules/customers/consultas";
+import {
+  listaDeRecompra,
+  marcarRecompra,
+  RecompraNoCorresponde,
+  resultadosDeRecompra,
+} from "@/modules/customers/recompra";
 import { espejoDeStock, estadoDelEspejo, kpisDelEspejo, rubrosDelEspejo } from "@/modules/inventory/espejo-stock";
 import type { ApiDomain } from "./domains";
-import { errorResponse, readInt, type Route } from "./route";
+import { errorResponse, readInt, readJson, type Route } from "./route";
 
 const ESTADOS: StockEstado[] = ["agotado", "critico", "ok", "sobrestock", "sin_rotacion"];
 
@@ -33,11 +39,12 @@ const stock: Route[] = [
 ];
 
 const SEGMENTOS: Segmento[] = ["nueva", "activa", "top", "en_riesgo", "dormida"];
+const ESTADOS_RECOMPRA: RecompraEstado[] = ["pendiente", "contactada", "respondio", "pospuesta"];
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 
 /**
- * Las fichas (1.5). La recompra sigue simulada hasta el 1.5.6: como las clientas reales
- * tienen UUID, lo de "/clientas/recompra" y un ID de las pantallas simuladas siguen de largo.
+ * Las fichas y la recompra (1.5). Las clientas reales tienen UUID: un ID de las pantallas
+ * que siguen simuladas va de largo a la API simulada.
  */
 const clientas: Route[] = [
   {
@@ -68,6 +75,31 @@ const clientas: Route[] = [
     method: "GET",
     pattern: /^\/clientas\/duplicados$/,
     handler: async () => Response.json(await clientasUnificadas()),
+  },
+  { method: "GET", pattern: /^\/clientas\/recompra$/, handler: async () => Response.json(await listaDeRecompra()) },
+  {
+    method: "GET",
+    pattern: /^\/clientas\/recompra\/resultados$/,
+    handler: async () => Response.json(await resultadosDeRecompra()),
+  },
+  {
+    method: "PATCH",
+    pattern: new RegExp(`^/clientas/recompra/(${UUID})$`),
+    handler: async ({ params: [id], request, actorId }) => {
+      const { estado, mensaje } = await readJson<{ estado: RecompraEstado; mensaje: string }>(request);
+      if (!estado || !ESTADOS_RECOMPRA.includes(estado)) return errorResponse(400, "Estado inválido.");
+      try {
+        const marcada = await marcarRecompra(
+          id,
+          { estado, mensaje: typeof mensaje === "string" && mensaje.trim() ? mensaje.trim() : undefined },
+          actorId ?? null,
+        );
+        return marcada ? Response.json(marcada) : errorResponse(404, "No existe esa clienta.");
+      } catch (error) {
+        if (error instanceof RecompraNoCorresponde) return errorResponse(409, error.message);
+        throw error;
+      }
+    },
   },
   {
     method: "GET",

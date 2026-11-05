@@ -50,7 +50,7 @@ export type MetricasDeClienta = {
   primeraEnLocal: boolean;
 };
 
-const diasEntre = (desde: string, hasta: string) => (Date.parse(hasta) - Date.parse(desde)) / DIA_MS;
+export const diasEntre = (desde: string, hasta: string) => (Date.parse(hasta) - Date.parse(desde)) / DIA_MS;
 
 /**
  * Línea por línea, con el costo que DUX congeló en la venta (RN-92). Vale para los dos
