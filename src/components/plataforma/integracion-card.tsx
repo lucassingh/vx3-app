@@ -104,7 +104,7 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
     if (!conectada) return;
     startTransition(async () => {
       try {
-        const result = await sincronizarIntegracion({ integracion: conectada });
+        const result = await sincronizarIntegracion({ integracion: "dux" });
         if (!result.ok) throw new Error(result.error.message);
         toast.success(`${nombre} se está sincronizando`, { description: "Tarda unos minutos." });
         router.refresh();
@@ -185,21 +185,23 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
             {pending ? <LoaderCircle aria-hidden className="animate-spin" /> : <PlugZap />}
             Probar conexión
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={pending || sincronizando || !integracion.credencial}
-            onClick={onSincronizar}
-          >
-            {pending || sincronizando ? (
-              <LoaderCircle aria-hidden className="animate-spin" />
-            ) : puedeReintentar ? (
-              <RotateCw />
-            ) : (
-              <RefreshCw />
-            )}
-            {sincronizando ? "Sincronizando…" : puedeReintentar ? "Reintentar" : "Sincronizar ahora"}
-          </Button>
+          {conectada === "dux" && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pending || sincronizando || !integracion.credencial}
+              onClick={onSincronizar}
+            >
+              {pending || sincronizando ? (
+                <LoaderCircle aria-hidden className="animate-spin" />
+              ) : puedeReintentar ? (
+                <RotateCw />
+              ) : (
+                <RefreshCw />
+              )}
+              {sincronizando ? "Sincronizando…" : puedeReintentar ? "Reintentar" : "Sincronizar ahora"}
+            </Button>
+          )}
           <CargarCredencial integracion={conectada} nombre={nombre} yaCargada={Boolean(integracion.credencial)} />
         </CardFooter>
       )}

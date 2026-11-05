@@ -88,6 +88,24 @@ const aPendiente = (pendiente: Pendiente): Integracion => ({
   credencial: null,
 });
 
+/** El catálogo se arma desde el Sheet y Drive hasta el pase (`solucion_doc/06` §6.2). */
+async function integracionGoogle(): Promise<Integracion> {
+  const credencial = await credencialEnmascarada("google");
+  return {
+    id: "google",
+    nombre: "Google · Sheet y Drive",
+    tipo: "Cuenta de servicio · solo lectura",
+    estado: "pendiente",
+    detalle: credencial
+      ? "La clave está cargada: probá la conexión. El catálogo se importa en la PR 1.8."
+      : "De acá sale el catálogo hasta el pase. Se conecta en la PR 1.8.",
+    frecuencia: "—",
+    ultimoSync: null,
+    metricas: [],
+    credencial,
+  };
+}
+
 async function integracionDux(): Promise<Integracion> {
   const db = getDb();
   const dux = { integration: "dux" };
@@ -138,7 +156,7 @@ async function integracionDux(): Promise<Integracion> {
 }
 
 export async function listarIntegraciones(): Promise<Integracion[]> {
-  return [await integracionDux(), ...PENDIENTES.map(aPendiente)];
+  return [await integracionDux(), await integracionGoogle(), ...PENDIENTES.map(aPendiente)];
 }
 
 export type FilaDelRegistro = {

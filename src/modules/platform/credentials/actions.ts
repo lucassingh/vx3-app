@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { defineAction } from "@/lib/action";
+import { leerCuentaDeServicio } from "@/integrations/google/cuenta";
 import { ConflictError } from "@/lib/errors";
 import { arrancarSincronizacionDux } from "@/workflows/arrancar-dux";
 import { INTEGRACIONES_CON_CREDENCIAL, NOMBRE_INTEGRACION } from "./integraciones";
@@ -13,10 +14,15 @@ const integracion = z.enum(INTEGRACIONES_CON_CREDENCIAL, "Integración desconoci
 /** Carga o reemplaza la credencial de una integración: solo admin (plataforma.editar). */
 export const cargarCredencial = defineAction({
   name: "credenciales.cargar",
-  input: z.object({
-    integracion,
-    valor: z.string().trim().min(8, "Parece incompleta: revisá que la hayas copiado entera.").max(4096),
-  }),
+  input: z
+    .object({
+      integracion,
+      valor: z.string().trim().min(8, "Parece incompleta: revisá que la hayas copiado entera.").max(4096),
+    })
+    .refine(({ integracion, valor }) => integracion !== "google" || leerCuentaDeServicio(valor) !== null, {
+      path: ["valor"],
+      message: "No es la clave de una cuenta de servicio: pegá el archivo JSON entero.",
+    }),
   permission: "plataforma.editar",
   handler: async ({ integracion, valor }, { user, audit }) => {
     const { mascara, anterior } = await guardarCredencial(integracion, valor, { id: user.id, label: user.name });
@@ -46,7 +52,7 @@ export const probarIntegracion = defineAction({
 /** Lanza la sincronización y no espera a que termine: solo admin. */
 export const sincronizarIntegracion = defineAction({
   name: "integraciones.sincronizar",
-  input: z.object({ integracion }),
+  input: z.object({ integracion: z.literal("dux") }),
   permission: "plataforma.editar",
   handler: async (_input, { user, log }) => {
     const resultado = await arrancarSincronizacionDux({ trigger: "manual", triggeredBy: user.name });

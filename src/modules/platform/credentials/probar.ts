@@ -1,5 +1,6 @@
 import "server-only";
 import { duxClient } from "@/integrations/dux";
+import { fuentesDelCatalogo, googleClient } from "@/integrations/google";
 import type { PruebaConexion } from "@/lib/api/types";
 import { isAppError } from "@/lib/errors";
 import { formatNumber } from "@/lib/format";
@@ -13,6 +14,23 @@ const PRUEBAS: Record<IntegracionConCredencial, () => Promise<string>> = {
     const cliente = await duxClient({ esperasMs: ESPERAS_MS });
     const { items } = await cliente.probarConexion();
     return `DUX respondió: ${formatNumber(items)} items en el catálogo.`;
+  },
+  google: async () => {
+    const { sheetId, carpetaId } = fuentesDelCatalogo();
+    const cliente = await googleClient({ esperasMs: ESPERAS_MS, timeoutMs: 30_000 });
+    const [sheet, carpeta, foto] = await Promise.all([
+      cliente.verificar(sheetId),
+      cliente.verificar(carpetaId),
+      cliente.unaFoto(carpetaId),
+    ]);
+    const fotosPublicas = foto !== null && (await cliente.fotoEsPublica(foto));
+    return [
+      `Google respondió: "${sheet.nombre}" y "${carpeta.nombre}".`,
+      fotosPublicas ? "Las fotos se ven sin credenciales." : "Las fotos no se ven sin credenciales.",
+      sheet.puedeEditar || carpeta.puedeEditar ? "Ojo: la cuenta puede editar, y tendría que ser solo lectora." : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
   },
 };
 
