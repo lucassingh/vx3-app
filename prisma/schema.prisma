@@ -331,6 +331,169 @@ model Customer {
   @@map("customers")
 }
 
+enum CatalogLifecycle {
+  activo
+  agotado
+  historico
+
+  @@map("catalog_lifecycle")
+}
+
+enum CatalogPriority {
+  A
+  B
+  C
+
+  @@map("catalog_priority")
+}
+
+/// Copia cruda del Sheet: se reemplaza entera en cada lectura (`solucion_doc/06` §6.2).
+model CatalogSheetRow {
+  id        String   @id @db.Uuid
+  rowNumber Int      @unique @map("row_number")
+  /// Lo que ve el equipo, por encabezado.
+  shown     Json
+  /// El valor crudo, por encabezado: un "1,5" escrito como texto se nota acá.
+  raw       Json
+  readAt    DateTime @map("read_at") @db.Timestamptz(6)
+
+  @@map("catalog_sheet_rows")
+}
+
+/// Copia cruda de Drive: los datos de cada archivo, no las fotos.
+model CatalogDriveFile {
+  id         String    @id @db.Uuid
+  driveId    String    @unique @map("drive_id")
+  name       String
+  mimeType   String    @map("mime_type")
+  bytes      BigInt?
+  md5        String?
+  width      Int?
+  height     Int?
+  /// "Repositorio Fotos/Mallas": la carpeta donde está.
+  folder     String
+  modifiedAt DateTime? @map("modified_at") @db.Timestamptz(6)
+  readAt     DateTime  @map("read_at") @db.Timestamptz(6)
+
+  @@map("catalog_drive_files")
+}
+
+/// El producto, armado desde el Sheet, Drive y DUX. Hasta el pase es descartable: se puede
+/// borrar y reimportar. Lo que no se puede perder está en CatalogDecision.
+model CatalogProduct {
+  id            String                @id @db.Uuid
+  /// La llave natural: "MSU2-1". Se cruza siempre por SKU, nunca por nombre (RN-127).
+  baseCode      String                @unique @map("base_code")
+  name          String
+  isCombo       Boolean               @map("is_combo")
+  category      String?
+  subcategory   String?
+  brand         String?
+  /// El último: un producto puede venir de varios (RN-128).
+  lastSupplier  String?               @map("last_supplier")
+  fabric        String?
+  colors        String?
+  sizes         String?
+  /// Copa, encaje, push up, aro, elástico, bretel, gancho y otros detalles.
+  attributes    Json
+  lengthCm      Decimal?              @map("length_cm") @db.Decimal(8, 2)
+  widthCm       Decimal?              @map("width_cm") @db.Decimal(8, 2)
+  heightCm      Decimal?              @map("height_cm") @db.Decimal(8, 2)
+  weightKg      Decimal?              @map("weight_kg") @db.Decimal(8, 3)
+  lifecycle     CatalogLifecycle
+  /// Invierno, pijama y mallas: sin ventas ahora no quiere decir que ya no se vendan.
+  seasonal      Boolean
+  priority      CatalogPriority
+  salesRank     Int?                  @map("sales_rank")
+  sales90dCents BigInt                @map("sales_90d_cents")
+  lastSaleOn    DateTime?             @map("last_sale_on") @db.Date
+  /// Lo que le falta (RN-124): [{ dato, situacion }], con "falta" o "no_hay_dato".
+  missing       Json
+  readyToSell   Boolean               @map("ready_to_sell")
+  inSheet       Boolean               @map("in_sheet")
+  inDux         Boolean               @map("in_dux")
+  sheetRow      Int?                  @map("sheet_row")
+  /// false: dejó de aparecer en las fuentes. No se borra: las ventas se leen contra ese código.
+  present       Boolean               @default(true)
+  /// Sin tildes ni mayúsculas: para buscar en la base.
+  searchText    String                @map("search_text")
+  contentHash   String                @map("content_hash")
+  firstSeenAt   DateTime              @map("first_seen_at") @db.Timestamptz(6)
+  changedAt     DateTime              @map("changed_at") @db.Timestamptz(6)
+  presentations CatalogPresentation[]
+  photos        CatalogPhoto[]
+
+  @@index([category])
+  @@index([lifecycle])
+  @@index([priority])
+  @@map("catalog_products")
+}
+
+/// Cada forma de venderlo: la prenda, sus packs o el combo. Precio y stock se leen del espejo de DUX por el código.
+model CatalogPresentation {
+  id        String         @id @db.Uuid
+  productId String         @map("product_id") @db.Uuid
+  product   CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  code      String         @unique
+  kind      DuxItemKind
+  /// Unidades del pack; null en la prenda y en el combo.
+  quantity  Int?
+  inDux     Boolean        @map("in_dux")
+
+  @@index([productId])
+  @@map("catalog_presentations")
+}
+
+model CatalogPhoto {
+  id        String         @id @db.Uuid
+  productId String         @map("product_id") @db.Uuid
+  product   CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  driveId   String         @unique @map("drive_id")
+  name      String
+  position  Int
+  width     Int?
+  height    Int?
+
+  @@index([productId])
+  @@map("catalog_photos")
+}
+
+/// Lo que una persona tiene que revisar. Se regenera en cada importación: lo corregido en la fuente desaparece solo.
+model CatalogReviewCase {
+  id          String           @id @db.Uuid
+  block       String
+  /// Lo que identifica al caso dentro del bloque: un código o un archivo.
+  key         String
+  baseCode    String?          @map("base_code")
+  priority    CatalogPriority?
+  salesRank   Int?             @map("sales_rank")
+  description String
+  /// "sheet", "dux", "drive" o "app".
+  fixIn       String           @map("fix_in")
+  sheetRow    Int?             @map("sheet_row")
+  details     Json
+
+  @@unique([block, key])
+  @@index([block])
+  @@map("catalog_review_cases")
+}
+
+/// Lo que el Sheet no puede guardar: a qué producto va una foto suelta, si se descarta, y los
+/// históricos. Sobrevive a cualquier importación, y cada corrida la vuelve a aplicar.
+model CatalogDecision {
+  id             String   @id @db.Uuid
+  type           String
+  /// La llave natural: un código o un archivo de Drive.
+  key            String
+  value          Json
+  decidedById    String?  @map("decided_by_id")
+  decidedByLabel String   @map("decided_by_label")
+  decidedAt      DateTime @map("decided_at") @db.Timestamptz(6)
+
+  @@unique([type, key])
+  @@map("catalog_decisions")
+}
+
 enum ReactivationStage {
   m1
   m2
