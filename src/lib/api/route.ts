@@ -13,7 +13,13 @@ import type { ApiErrorBody, Paginated } from "@/lib/api/types";
  */
 export type RouteParams = readonly [string, ...string[]];
 
-export type RouteContext = { url: URL; params: RouteParams; request: Request };
+export type RouteContext = {
+  url: URL;
+  params: RouteParams;
+  request: Request;
+  /** Quién pide, en las rutas reales: lo guardan las que registran lo que hizo una persona. */
+  actorId?: string | null;
+};
 
 /** Los parámetros de una ruta, a partir del match de su patrón. */
 export function routeParams(match: RegExpMatchArray): RouteParams {

@@ -1,7 +1,20 @@
-import type { StockEstado } from "@/lib/api/types";
+import type { RecompraEstado, Segmento, StockEstado } from "@/lib/api/types";
+import {
+  clientasUnificadas,
+  coberturaDeClientas,
+  fichaDeClienta,
+  listarClientas,
+  segmentosDeClientas,
+} from "@/modules/customers/consultas";
+import {
+  listaDeRecompra,
+  marcarRecompra,
+  RecompraNoCorresponde,
+  resultadosDeRecompra,
+} from "@/modules/customers/recompra";
 import { espejoDeStock, estadoDelEspejo, kpisDelEspejo, rubrosDelEspejo } from "@/modules/inventory/espejo-stock";
 import type { ApiDomain } from "./domains";
-import type { Route } from "./route";
+import { errorResponse, readInt, readJson, type Route } from "./route";
 
 const ESTADOS: StockEstado[] = ["agotado", "critico", "ok", "sobrestock", "sin_rotacion"];
 
@@ -25,9 +38,82 @@ const stock: Route[] = [
   },
 ];
 
+const SEGMENTOS: Segmento[] = ["nueva", "activa", "top", "en_riesgo", "dormida"];
+const ESTADOS_RECOMPRA: RecompraEstado[] = ["pendiente", "contactada", "respondio", "pospuesta"];
+const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+
+/**
+ * Las fichas y la recompra (1.5). Las clientas reales tienen UUID: un ID de las pantallas
+ * que siguen simuladas va de largo a la API simulada.
+ */
+const clientas: Route[] = [
+  {
+    method: "GET",
+    pattern: /^\/clientas$/,
+    handler: async ({ url }) => {
+      const segmento = url.searchParams.get("segmento") as Segmento | null;
+      const pagina = await listarClientas({
+        q: url.searchParams.get("q") ?? undefined,
+        segmento: segmento && SEGMENTOS.includes(segmento) ? segmento : undefined,
+        page: readInt(url.searchParams.get("page"), 1),
+        pageSize: readInt(url.searchParams.get("pageSize"), 8, 100),
+      });
+      return Response.json(pagina);
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/clientas\/segmentos$/,
+    handler: async () => Response.json(await segmentosDeClientas()),
+  },
+  {
+    method: "GET",
+    pattern: /^\/clientas\/cobertura$/,
+    handler: async () => Response.json(await coberturaDeClientas()),
+  },
+  {
+    method: "GET",
+    pattern: /^\/clientas\/duplicados$/,
+    handler: async () => Response.json(await clientasUnificadas()),
+  },
+  { method: "GET", pattern: /^\/clientas\/recompra$/, handler: async () => Response.json(await listaDeRecompra()) },
+  {
+    method: "GET",
+    pattern: /^\/clientas\/recompra\/resultados$/,
+    handler: async () => Response.json(await resultadosDeRecompra()),
+  },
+  {
+    method: "PATCH",
+    pattern: new RegExp(`^/clientas/recompra/(${UUID})$`),
+    handler: async ({ params: [id], request, actorId }) => {
+      const { estado, mensaje } = await readJson<{ estado: RecompraEstado; mensaje: string }>(request);
+      if (!estado || !ESTADOS_RECOMPRA.includes(estado)) return errorResponse(400, "Estado inválido.");
+      try {
+        const marcada = await marcarRecompra(
+          id,
+          { estado, mensaje: typeof mensaje === "string" && mensaje.trim() ? mensaje.trim() : undefined },
+          actorId ?? null,
+        );
+        return marcada ? Response.json(marcada) : errorResponse(404, "No existe esa clienta.");
+      } catch (error) {
+        if (error instanceof RecompraNoCorresponde) return errorResponse(409, error.message);
+        throw error;
+      }
+    },
+  },
+  {
+    method: "GET",
+    pattern: new RegExp(`^/clientas/(${UUID})$`),
+    handler: async ({ params: [id] }) => {
+      const ficha = await fichaDeClienta(id);
+      return ficha ? Response.json(ficha) : errorResponse(404, "No existe esa clienta.");
+    },
+  },
+];
+
 /**
  * Implementaciones reales de cada dominio, con el mismo contrato que su mock
  * (src/mocks/domains). Se activan con API_REAL_DOMAINS, y lo que un dominio todavía no
  * tiene acá sigue saliendo de la API simulada (dispatch.ts).
  */
-export const realRoutes: Partial<Record<ApiDomain, Route[]>> = { stock };
+export const realRoutes: Partial<Record<ApiDomain, Route[]>> = { stock, clientas };

@@ -1,11 +1,12 @@
 "use client";
 
-import { Check, Clock, FileCheck2, MessageCircle, PartyPopper, TriangleAlert, Undo2 } from "lucide-react";
+import { Check, CheckCheck, Clock, MessageCircle, PartyPopper, Reply, TriangleAlert, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { SegmentoBadge } from "@/components/kit/badges";
 import { EmptyState } from "@/components/kit/empty-state";
 import { Meter } from "@/components/kit/meter";
 import { ProductThumb } from "@/components/kit/product-thumb";
+import { SearchField } from "@/components/kit/url-search";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,10 +15,11 @@ import { Label } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api/browser";
-import type { ClientaParaRecompra, RecompraEstado, RecompraTipo } from "@/lib/api/types";
+import type { ClientaParaRecompra, RecompraEsperando, RecompraEstado, RecompraTipo } from "@/lib/api/types";
+import { formatNumber, primerNombre } from "@/lib/format";
 import { toast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import { primerNombre } from "@/lib/format";
+import { cn, normalizeText } from "@/lib/utils";
+import { faltaCompletar } from "@/modules/customers/secuencia";
 
 /** Item de la lista con los textos ya formateados en el servidor. */
 export type RecompraItemView = ClientaParaRecompra & {
@@ -26,26 +28,37 @@ export type RecompraItemView = ClientaParaRecompra & {
   ultimoPedidoDetalle: string;
 };
 
-type Filtro = "todas" | RecompraTipo;
+type Filtro = "todas" | RecompraTipo | "esperando";
 
-const FILTROS: { value: Filtro; label: string }[] = [
+const FILTROS: { value: "todas" | RecompraTipo; label: string }[] = [
   { value: "todas", label: "Todas" },
-  { value: "en_riesgo", label: "En riesgo" },
-  { value: "reposicion", label: "Les toca reponer" },
-  { value: "dormida", label: "Dormidas" },
+  { value: "recompra", label: "Recompra" },
+  { value: "reactivacion", label: "Reactivación" },
 ];
 
 const ESTADO_BADGE: Record<RecompraEstado, { label: string; variant: "neutral" | "success" | "outline" }> = {
   pendiente: { label: "Pendiente", variant: "outline" },
   contactada: { label: "Contactada", variant: "success" },
+  respondio: { label: "Respondió", variant: "success" },
   pospuesta: { label: "Pospuesta", variant: "neutral" },
 };
 
-export function RecompraLista({ initialItems }: { initialItems: RecompraItemView[] }) {
+export function RecompraLista({
+  initialItems,
+  initialEsperando,
+  enCola,
+  tope,
+}: {
+  initialItems: RecompraItemView[];
+  initialEsperando: RecompraEsperando[];
+  enCola: number;
+  tope: number;
+}) {
   const [items, setItems] = useState(initialItems);
+  const [esperando, setEsperando] = useState(initialEsperando);
   const [filtro, setFiltro] = useState<Filtro>("todas");
 
-  const contactadas = items.filter((item) => item.estado === "contactada").length;
+  const hechas = items.filter(({ estado }) => estado === "contactada" || estado === "respondio").length;
   const patch = (id: string, values: Partial<RecompraItemView>) =>
     setItems((current) => current.map((item) => (item.id === id ? { ...item, ...values } : item)));
 
@@ -58,6 +71,7 @@ export function RecompraLista({ initialItems }: { initialItems: RecompraItemView
       if (!avisar) return;
       const deshacer = { label: "Deshacer", onClick: () => cambiarEstado({ ...item, estado }, anterior, false) };
       if (estado === "contactada") toast.success(`${nombre} quedó como contactada`, { action: deshacer });
+      if (estado === "respondio") toast.success(`${nombre} sale de la secuencia`, { action: deshacer });
       if (estado === "pospuesta") toast.success(`${nombre} vuelve mañana a la lista`, { action: deshacer });
     } catch {
       patch(item.id, { estado: anterior });
@@ -68,26 +82,45 @@ export function RecompraLista({ initialItems }: { initialItems: RecompraItemView
     }
   };
 
+  const marcarRespuesta = async (espera: RecompraEsperando, estado: RecompraEsperando["estado"]) => {
+    const nombre = primerNombre(espera.nombre);
+    const cambiar = (nuevo: RecompraEsperando["estado"]) =>
+      setEsperando((current) => current.map((entry) => (entry.id === espera.id ? { ...entry, estado: nuevo } : entry)));
+    cambiar(estado);
+    try {
+      await api.clientas.marcarRecompra(espera.id, { estado });
+      if (estado === "respondio") toast.success(`${nombre} sale de la secuencia`);
+    } catch {
+      cambiar(espera.estado);
+      toast.error(`No se pudo actualizar a ${nombre}`, {
+        description: "Revisá la conexión e intentá de nuevo.",
+        action: { label: "Reintentar", onClick: () => marcarRespuesta(espera, estado) },
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <div>
           <CardTitle>Para contactar hoy</CardTitle>
           <CardDescription>
-            Se arma sola cada mañana: clientas en riesgo, dormidas y las que les toca reponer según su ciclo.
+            Hasta {tope} por día, primero las que más margen dejan. La app no manda nada: cada mensaje se escribe a mano
+            desde WhatsApp.
+            {enCola > 0 && ` A otras ${formatNumber(enCola)} les toca y esperan lugar en los próximos días.`}
           </CardDescription>
         </div>
         <div className="w-full space-y-2 sm:w-60">
           <p aria-live="polite" className="text-[13px] text-muted-foreground">
-            <span className="font-semibold text-foreground tabular-nums">{contactadas}</span> de{" "}
+            <span className="font-semibold text-foreground tabular-nums">{hechas}</span> de{" "}
             <span className="tabular-nums">{items.length}</span> contactadas
           </p>
           <Meter
-            value={contactadas}
-            max={items.length}
+            value={hechas}
+            max={Math.max(items.length, 1)}
             tone="success"
             label="Avance de la lista de hoy"
-            valueText={`${contactadas} de ${items.length} contactadas`}
+            valueText={`${hechas} de ${items.length} contactadas`}
           />
         </div>
       </CardHeader>
@@ -104,6 +137,12 @@ export function RecompraLista({ initialItems }: { initialItems: RecompraItemView
                 </TabsTrigger>
               );
             })}
+            <TabsTrigger value="esperando">
+              Esperan respuesta
+              <span className="text-muted-foreground tabular-nums">
+                {esperando.filter(({ estado }) => estado === "contactada").length}
+              </span>
+            </TabsTrigger>
           </TabsList>
 
           {FILTROS.map(({ value }) => {
@@ -125,9 +164,88 @@ export function RecompraLista({ initialItems }: { initialItems: RecompraItemView
               </TabsContent>
             );
           })}
+
+          <TabsContent value="esperando" className="mt-5">
+            <Esperando items={esperando} onRespuesta={marcarRespuesta} />
+          </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
+  );
+}
+
+function Esperando({
+  items,
+  onRespuesta,
+}: {
+  items: RecompraEsperando[];
+  onRespuesta: (item: RecompraEsperando, estado: RecompraEsperando["estado"]) => void;
+}) {
+  const [buscado, setBuscado] = useState("");
+  const texto = normalizeText(buscado.trim());
+  const digitos = texto.replace(/\D/g, "");
+  const visibles = items.filter(
+    ({ nombre, telefono }) =>
+      !texto ||
+      normalizeText(nombre).includes(texto) ||
+      (digitos.length >= 3 && telefono.replace(/\D/g, "").includes(digitos)),
+  );
+
+  if (items.length === 0) {
+    return (
+      <EmptyState
+        icon={CheckCheck}
+        title="Nadie esperando respuesta"
+        description="Las contactadas de la última semana aparecen acá, para marcar a las que respondan."
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-[13px] text-pretty text-muted-foreground">
+        Las contactadas de la última semana. Si te responde, marcala: sale de la secuencia y queda para atenderla vos.
+      </p>
+      <SearchField
+        value={buscado}
+        onChange={(event) => setBuscado(event.target.value)}
+        aria-label="Buscar entre las contactadas"
+        placeholder="Nombre o teléfono"
+      />
+      <ul className="divide-y divide-border rounded-xl border border-border">
+        {visibles.map((item) => (
+          <li key={`${item.id}-${item.contactadaHaceDias}`} className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <Avatar name={item.nombre} className="size-8" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{item.nombre}</p>
+              <p className="truncate text-xs text-muted-foreground tabular-nums">
+                {item.telefono} · {item.etapaLabel} · hace {item.contactadaHaceDias}{" "}
+                {item.contactadaHaceDias === 1 ? "día" : "días"}
+              </p>
+            </div>
+            {item.estado === "respondio" ? (
+              <div className="flex items-center gap-2">
+                <Badge variant="success">Respondió</Badge>
+                <Button variant="ghost" size="sm" onClick={() => onRespuesta(item, "contactada")}>
+                  <Undo2 />
+                  Deshacer<span className="sr-only"> la respuesta de {item.nombre}</span>
+                </Button>
+              </div>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => onRespuesta(item, "respondio")}>
+                <Reply />
+                Respondió<span className="sr-only"> {item.nombre}</span>
+              </Button>
+            )}
+          </li>
+        ))}
+        {visibles.length === 0 && (
+          <li className="px-4 py-6 text-center text-[13px] text-muted-foreground">
+            Ninguna coincide con esa búsqueda.
+          </li>
+        )}
+      </ul>
+    </div>
   );
 }
 
@@ -144,6 +262,7 @@ function RecompraItem({
   const mensajeId = `mensaje-${item.id}`;
   const hintId = `mensaje-hint-${item.id}`;
   const estado = ESTADO_BADGE[item.estado];
+  const incompleto = faltaCompletar(item.mensaje);
   const waHref = `https://wa.me/${item.telefonoWa}?text=${encodeURIComponent(item.mensaje)}`;
 
   return (
@@ -151,7 +270,7 @@ function RecompraItem({
       aria-labelledby={titleId}
       className={cn(
         "rounded-xl border border-border p-4 transition-[background-color,border-color,opacity] duration-200 sm:p-5",
-        item.estado === "contactada" && "border-success/30 bg-success/5",
+        (item.estado === "contactada" || item.estado === "respondio") && "border-success/30 bg-success/5",
         item.estado === "pospuesta" && "opacity-70",
       )}
     >
@@ -166,12 +285,13 @@ function RecompraItem({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <SegmentoBadge segmento={item.segmento} />
+          {item.segmento && <SegmentoBadge segmento={item.segmento} />}
           <Badge variant={estado.variant}>{estado.label}</Badge>
         </div>
       </div>
 
-      <p className="mt-3 text-sm font-medium">{item.motivo}</p>
+      <p className="mt-3 text-sm font-medium">{item.etapaLabel}</p>
+      <p className="text-[13px] text-muted-foreground">{item.motivo}</p>
       {item.nota && (
         <p role="note" className="mt-2 flex items-start gap-2 rounded-lg bg-warning/12 px-3 py-2 text-[13px]">
           <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-warning" />
@@ -183,7 +303,7 @@ function RecompraItem({
         <div className="space-y-4">
           <dl className="grid grid-cols-2 gap-3 text-[13px]">
             <div className="min-w-0">
-              <dt className="text-muted-foreground">Último pedido</dt>
+              <dt className="text-muted-foreground">Última compra</dt>
               <dd className="mt-0.5 font-medium tabular-nums">{item.ultimoPedidoTexto}</dd>
               <dd className="truncate text-xs text-muted-foreground">{item.ultimoPedidoDetalle}</dd>
             </div>
@@ -192,17 +312,19 @@ function RecompraItem({
               <dd className="mt-0.5 font-medium tabular-nums">{item.totalTexto}</dd>
             </div>
           </dl>
-          <div>
-            <p className="text-[13px] text-muted-foreground">Suele comprar</p>
-            <ul className="mt-2 space-y-2">
-              {item.skus.slice(0, 3).map((producto) => (
-                <li key={producto.sku} className="flex items-center gap-2.5">
-                  <ProductThumb sku={producto.sku} colors={producto.colores} size="sm" />
-                  <span className="min-w-0 truncate text-[13px]">{producto.nombre}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {item.skus.length > 0 && (
+            <div>
+              <p className="text-[13px] text-muted-foreground">Suele comprar</p>
+              <ul className="mt-2 space-y-2">
+                {item.skus.slice(0, 3).map((producto) => (
+                  <li key={producto.sku} className="flex items-center gap-2.5">
+                    <ProductThumb sku={producto.sku} colors={producto.colores} size="sm" />
+                    <span className="min-w-0 truncate text-[13px]">{producto.nombre}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -214,54 +336,64 @@ function RecompraItem({
             onChange={(event) => onMensaje(event.target.value)}
             aria-describedby={hintId}
           />
-          <p id={hintId} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-            {item.ventanaAbierta ? (
-              <>
-                <MessageCircle aria-hidden className="mt-px size-3.5 shrink-0 text-success" />
-                Escribió en las últimas 24 h: el mensaje sale como texto libre.
-              </>
-            ) : (
-              <>
-                <FileCheck2 aria-hidden className="mt-px size-3.5 shrink-0" />
-                Pasaron más de 24 h desde su último mensaje: desde la app sale como plantilla aprobada por Meta, con
-                costo por mensaje.
-              </>
-            )}
+          <p id={hintId} className="text-xs text-muted-foreground">
+            {incompleto
+              ? "Falta completar lo que está entre corchetes: hasta entonces no se puede mandar."
+              : "Se abre WhatsApp con este texto, y lo mandás vos."}
           </p>
         </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
-        <Button size="sm" asChild>
-          <a href={waHref} target="_blank" rel="noopener noreferrer">
+        {incompleto ? (
+          <Button size="sm" disabled aria-describedby={hintId}>
             <MessageCircle />
             Abrir en WhatsApp
-            <span className="sr-only"> (se abre en otra pestaña)</span>
-          </a>
-        </Button>
-        {item.estado === "contactada" ? (
-          <Button variant="outline" size="sm" onClick={() => onEstado("pendiente")}>
-            <Undo2 />
-            Volver a pendiente
           </Button>
         ) : (
+          <Button size="sm" asChild>
+            <a href={waHref} target="_blank" rel="noopener noreferrer">
+              <MessageCircle />
+              Abrir en WhatsApp
+              <span className="sr-only"> (se abre en otra pestaña)</span>
+            </a>
+          </Button>
+        )}
+        {item.estado === "pendiente" && (
           <Button variant="outline" size="sm" onClick={() => onEstado("contactada")}>
             <Check />
             Marcar como contactada
           </Button>
         )}
-        {item.estado === "pospuesta" ? (
+        {item.estado === "contactada" && (
+          <>
+            <Button variant="outline" size="sm" onClick={() => onEstado("respondio")}>
+              <Reply />
+              Respondió
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onEstado("pendiente")}>
+              <Undo2 />
+              Volver a pendiente
+            </Button>
+          </>
+        )}
+        {item.estado === "respondio" && (
+          <Button variant="ghost" size="sm" onClick={() => onEstado("contactada")}>
+            <Undo2 />
+            No respondió
+          </Button>
+        )}
+        {item.estado === "pendiente" && (
+          <Button variant="ghost" size="sm" onClick={() => onEstado("pospuesta")}>
+            <Clock />
+            Posponer a mañana
+          </Button>
+        )}
+        {item.estado === "pospuesta" && (
           <Button variant="ghost" size="sm" onClick={() => onEstado("pendiente")}>
             <Undo2 />
             Volver a la lista
           </Button>
-        ) : (
-          item.estado === "pendiente" && (
-            <Button variant="ghost" size="sm" onClick={() => onEstado("pospuesta")}>
-              <Clock />
-              Posponer a mañana
-            </Button>
-          )
         )}
       </div>
     </article>

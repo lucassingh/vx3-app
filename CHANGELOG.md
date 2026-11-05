@@ -19,6 +19,24 @@ las ventas y las clientas, y los guarda en su base. Solo lee: no escribe nada en
 - Margen, compras, proveedores y las diferencias en góndola siguen simulados, y ahora lo
   dicen en pantalla.
 
+### Clientas
+
+- Una ficha por clienta, unida por su teléfono: las fichas de DUX con el mismo número son
+  una sola persona, con todas sus compras, y se pueden revisar en "Fichas unificadas".
+- Cada ficha muestra sus compras, el total, el margen, qué suele comprar y sus comprobantes.
+  Conversaciones, envíos, cobros y reclamos se suman con cada módulo.
+- Cinco segmentos: nueva, activa, top, en riesgo y dormida. La pantalla dice qué parte de la
+  venta queda sin identificar.
+- Recompra del día: hasta 30 clientas por día, primero las de más margen, con el mensaje de
+  la secuencia que le toca a cada una. La app no manda nada: se escribe a mano desde WhatsApp.
+- Un mensaje solo ofrece lo que tiene un bulto en stock. Sin nombre de pila o sin un dato, no
+  se puede mandar hasta completarlo.
+- La pantalla cuenta cuántas volvieron a comprar en los 14 días siguientes al mensaje.
+
+### Navegación
+
+- Al pasar entre pantallas de una misma sección, el esqueleto de carga aparece enseguida.
+
 ### Integraciones
 
 - Configuración → Integraciones muestra el estado real de DUX, el motivo si algo falla, sus
@@ -32,6 +50,7 @@ las ventas y las clientas, y los guarda en su base. Solo lee: no escribe nada en
 - Una vez por día en producción: productos, stock y precios, ventas de los últimos 35 días,
   para ver anulaciones y notas de crédito tardías, y clientas.
 - El historial de 12 meses de ventas se dispara a mano, y si se corta, retoma.
+- Cada sincronización recalcula las fichas, sus métricas y sus segmentos.
 - Fuera de producción, las clientas se anonimizan antes de guardarse, y las previews no se
   conectan a DUX.
 

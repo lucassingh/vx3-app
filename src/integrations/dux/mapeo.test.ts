@@ -134,6 +134,16 @@ describe("aErpComprobante", () => {
     expect(comprobante.anulado).toBe(false);
   });
 
+  it("acepta una factura sin número, como las que tiene DUX, sin inventarle uno", () => {
+    const {
+      results: [sinNumero],
+    } = duxPaginaFacturasSchema.parse({
+      results: [{ ...fixtureFacturas.results[0], nro_comp: null }],
+    });
+
+    expect(aErpComprobante(sinNumero!, 1)).toMatchObject({ numero: null, anulado: false, totalCentavos: 16_840_000 });
+  });
+
   it("una nota de crédito sin detalle y una anulada", () => {
     expect(aErpComprobante(results[1]!, 1)).toMatchObject({ tipo: "NOTA_CREDITO", lineas: [], pedido: null });
     expect(aErpComprobante(results[2]!, 1)).toMatchObject({ anulado: true });
@@ -149,6 +159,7 @@ describe("aErpClienta", () => {
     expect(clienta).toEqual({
       id: 501,
       nombre: "NOMBRE PRIVADO",
+      nombrePila: "NOMBRE PRIVADO",
       telefono: "+541144445555",
       email: "privado@correo.prueba",
       provincia: "BUENOS AIRES",
@@ -162,7 +173,12 @@ describe("aErpClienta", () => {
   });
 
   it("toma el celular si no tiene teléfono, y lo vacío queda vacío", () => {
-    expect(aErpClienta(datos[1]!)).toMatchObject({ telefono: "11-55556666", email: null, provincia: null });
+    expect(aErpClienta(datos[1]!)).toMatchObject({
+      nombrePila: null,
+      telefono: "11-55556666",
+      email: null,
+      provincia: null,
+    });
   });
 });
 

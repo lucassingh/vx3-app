@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Megaphone, Store, UserRound, ShoppingBag } from "lucide-react";
+import { CircleHelp, Megaphone, Store, UserRound, ShoppingBag } from "lucide-react";
 import { SegmentoBadge } from "@/components/kit/badges";
 import { Meter } from "@/components/kit/meter";
 import { SearchField, UrlSearch } from "@/components/kit/url-search";
@@ -32,52 +32,69 @@ function readSegmento(params: SearchParams) {
 /* ---- Resumen por segmento (también filtra la tabla) ------------------------ */
 
 export async function SegmentosResumen({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const [params, segmentos] = await Promise.all([searchParams, api.clientas.segmentos()]);
+  const [params, segmentos, cobertura] = await Promise.all([
+    searchParams,
+    api.clientas.segmentos(),
+    api.clientas.cobertura(),
+  ]);
   const activo = readSegmento(params);
   const q = param(params, "q");
 
   return (
-    <section aria-label="Clientas por segmento" className="grid gap-4 sm:grid-cols-3 xl:grid-cols-5">
-      {segmentos.map((item) => {
-        const selected = activo === item.segmento;
-        const href = `${BASE}${toQueryString({ q, segmento: selected ? undefined : item.segmento })}`;
-        return (
-          <Link
-            key={item.segmento}
-            href={href}
-            scroll={false}
-            aria-current={selected ? "true" : undefined}
-            className={cn(
-              "group rounded-xl border border-border bg-surface p-5 shadow-card transition-[background-color,border-color,box-shadow] duration-150 hover:bg-muted/40",
-              selected && "border-primary/60 ring-[3px] ring-primary/15",
-            )}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <SegmentoBadge segmento={item.segmento} />
-              <span className="text-xs text-muted-foreground">{selected ? "Filtrando" : "Filtrar"}</span>
-            </div>
-            <p className="mt-4 flex items-baseline gap-1.5">
-              <span className="text-[1.75rem] leading-none font-semibold tracking-tight tabular-nums">
-                {item.clientas}
-              </span>
-              <span className="text-[13px] text-muted-foreground">{item.clientas === 1 ? "clienta" : "clientas"}</span>
-            </p>
-            <p className="mt-3 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground tabular-nums">
-                {formatPercent(item.participacion, { maximumFractionDigits: 0 })}
-              </span>{" "}
-              del margen · {formatCurrencyCompact(item.margen)}
-            </p>
-            <Meter
-              className="mt-2"
-              value={item.participacion}
-              label={`Parte del margen de las clientas ${SEGMENTO[item.segmento].label.toLowerCase()}`}
-              valueText={formatPercent(item.participacion, { maximumFractionDigits: 0 })}
-            />
-            <p className="mt-3 text-xs text-pretty text-muted-foreground">{SEGMENTO[item.segmento].description}</p>
-          </Link>
-        );
-      })}
+    <section aria-label="Clientas por segmento" className="space-y-3">
+      <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-5">
+        {segmentos.map((item) => {
+          const selected = activo === item.segmento;
+          const href = `${BASE}${toQueryString({ q, segmento: selected ? undefined : item.segmento })}`;
+          return (
+            <Link
+              key={item.segmento}
+              href={href}
+              scroll={false}
+              aria-current={selected ? "true" : undefined}
+              className={cn(
+                "group rounded-xl border border-border bg-surface p-5 shadow-card transition-[background-color,border-color,box-shadow] duration-150 hover:bg-muted/40",
+                selected && "border-primary/60 ring-[3px] ring-primary/15",
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <SegmentoBadge segmento={item.segmento} />
+                <span className="text-xs text-muted-foreground">{selected ? "Filtrando" : "Filtrar"}</span>
+              </div>
+              <p className="mt-4 flex items-baseline gap-1.5">
+                <span className="text-[1.75rem] leading-none font-semibold tracking-tight tabular-nums">
+                  {item.clientas}
+                </span>
+                <span className="text-[13px] text-muted-foreground">
+                  {item.clientas === 1 ? "clienta" : "clientas"}
+                </span>
+              </p>
+              <p className="mt-3 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground tabular-nums">
+                  {formatPercent(item.participacion, { maximumFractionDigits: 0 })}
+                </span>{" "}
+                del margen · {formatCurrencyCompact(item.margen)}
+              </p>
+              <Meter
+                className="mt-2"
+                value={item.participacion}
+                label={`Parte del margen de las clientas ${SEGMENTO[item.segmento].label.toLowerCase()}`}
+                valueText={formatPercent(item.participacion, { maximumFractionDigits: 0 })}
+              />
+              <p className="mt-3 text-xs text-pretty text-muted-foreground">{SEGMENTO[item.segmento].description}</p>
+            </Link>
+          );
+        })}
+      </div>
+      <p className="text-[13px] text-pretty text-muted-foreground">
+        Las fichas identifican el{" "}
+        <span className="font-medium text-foreground tabular-nums">
+          {formatPercent(cobertura.ventaIdentificada, { maximumFractionDigits: 0 })}
+        </span>{" "}
+        de la venta de los últimos 12 meses. El resto no tiene teléfono: es sobre todo el local a consumidor final.
+        {cobertura.sinCompras > 0 &&
+          ` Otras ${formatNumber(cobertura.sinCompras)} fichas tienen teléfono pero ninguna compra en el historial leído, y quedan sin segmento.`}
+      </p>
     </section>
   );
 }
@@ -101,13 +118,14 @@ export function SegmentosResumenSkeleton() {
 
 /* ---- Tabla de clientas ------------------------------------------------------ */
 
-const COLUMNS = ["Clienta", "Localidad", "Segmento", "Origen", "Pedidos", "Total comprado", "Última compra", "Ciclo"];
+const COLUMNS = ["Clienta", "Localidad", "Segmento", "Origen", "Compras", "Total comprado", "Última compra", "Ciclo"];
 
 const origenIcon: Record<OrigenClientaTipo, typeof Megaphone> = {
   anuncio: Megaphone,
   organico: UserRound,
   local: Store,
   tiendanube: ShoppingBag,
+  sin_dato: CircleHelp,
 };
 
 export function ClientasCard({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -196,11 +214,17 @@ async function ClientasTable({ searchParams }: { searchParams: Promise<SearchPar
                   </div>
                 </TableCell>
                 <TableCell>
-                  <p className="truncate">{clienta.localidad}</p>
-                  <p className="text-xs text-muted-foreground">{ZONA[clienta.zona].label}</p>
+                  <p className="truncate">{clienta.localidad ?? "Sin dato"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {clienta.zona ? ZONA[clienta.zona].label : clienta.provincia}
+                  </p>
                 </TableCell>
                 <TableCell>
-                  <SegmentoBadge segmento={clienta.segmento} />
+                  {clienta.segmento ? (
+                    <SegmentoBadge segmento={clienta.segmento} />
+                  ) : (
+                    <span className="text-xs whitespace-nowrap text-muted-foreground">Sin compras</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <span className="flex max-w-52 items-center gap-1.5 text-[13px]">
@@ -216,10 +240,10 @@ async function ClientasTable({ searchParams }: { searchParams: Promise<SearchPar
                   </p>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">
-                  {diasLabel(clienta.ultimaCompraDias)}
+                  {clienta.ultimaCompraDias === null ? "—" : diasLabel(clienta.ultimaCompraDias)}
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">
-                  {clienta.cicloDias ? `Cada ${clienta.cicloDias} días` : "—"}
+                  {clienta.cicloDias ? `Cada ${formatNumber(clienta.cicloDias)} días` : "—"}
                 </TableCell>
                 <TableCell className="text-right">
                   <Button variant="outline" size="sm" asChild>

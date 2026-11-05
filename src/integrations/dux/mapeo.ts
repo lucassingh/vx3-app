@@ -51,7 +51,7 @@ export function aErpComprobante(factura: DuxFactura, sucursal: number): ErpCompr
     tipo: factura.tipo_comp,
     letra: factura.letra_comp,
     puntoDeVenta: factura.nro_pto_vta,
-    numero: factura.nro_comp,
+    numero: factura.nro_comp ?? null,
     fecha: fechaDeDux(factura.fecha_comp),
     clienteId: factura.id_cliente ?? null,
     pedido: factura.nro_pedido || null,
@@ -78,6 +78,7 @@ export function aErpClienta(cliente: DuxCliente): ErpClienta {
   return {
     id: cliente.id_cliente,
     nombre: cliente.full_name.trim(),
+    nombrePila: cliente.nombre?.trim() || null,
     telefono: cliente.telefono?.trim() || cliente.cel?.trim() || null,
     email: cliente.email?.trim() || null,
     provincia: cliente.provincia?.trim() || null,

@@ -1,5 +1,5 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { dirname, join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import { navigation } from "@/config/navigation";
 import { mockRoutes } from "@/mocks/router";
@@ -95,6 +95,18 @@ describe("cada pantalla del dashboard se protege", () => {
       const conGuarda = codigo.includes(`requirePageAccess("${ruta}")`);
       const abierta = ABIERTAS_PAGINAS.includes(ruta) && codigo.includes("requireUser()");
       expect(conGuarda || abierta).toBe(true);
+    });
+  }
+
+  // Cada pantalla espera la sesión en su primera línea. Sin un loading.tsx en su propia carpeta, entre
+  // pantallas de una misma sección no se muestra nada hasta que vuelve, y next dev marca "uncached data".
+  const carpetas = paginas(base)
+    .map((archivo) => dirname(archivo))
+    .filter((dir) => dir !== base && !dir.endsWith("[...slug]"));
+
+  for (const carpeta of carpetas) {
+    it(`${relative(base, carpeta)} tiene su propio loading.tsx`, () => {
+      expect(existsSync(join(carpeta, "loading.tsx"))).toBe(true);
     });
   }
 });

@@ -17,7 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useEffect, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,6 +51,9 @@ export const ESTADO_INTEGRACION: Record<
   pendiente: { label: "Pendiente", variant: "neutral" },
 };
 
+/** Cada cuánto se mira el resultado de una sincronización en curso. */
+const REFRESCO_MS = 5_000;
+
 /** Textos de fecha armados en el servidor. */
 export type IntegracionLabels = { ultimoSync: string; credencial: string | null };
 
@@ -71,6 +74,16 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
   // Solo lo que ya está conectado tiene algo para mostrar y algo para hacer.
   const conectada = usaCredencial(id) ? id : null;
   const puedeReintentar = integracion.estado === "degradado" || integracion.estado === "caido";
+  const sincronizando = Boolean(integracion.sincronizando);
+
+  // Solo mientras corre: el resto del tiempo no le pide nada al servidor. Con la pestaña oculta, tampoco.
+  useEffect(() => {
+    if (!sincronizando) return;
+    const intervalo = setInterval(() => {
+      if (document.visibilityState === "visible") router.refresh();
+    }, REFRESCO_MS);
+    return () => clearInterval(intervalo);
+  }, [sincronizando, router]);
 
   const onProbar = () => {
     if (!conectada) return;
@@ -121,7 +134,9 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col gap-4 pt-4">
-        <p className="text-[13px] text-pretty text-muted-foreground">{integracion.detalle}</p>
+        <p className="text-[13px] text-pretty text-muted-foreground" aria-live="polite">
+          {integracion.detalle}
+        </p>
 
         {conectada && (
           <>
@@ -170,15 +185,20 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
             {pending ? <LoaderCircle aria-hidden className="animate-spin" /> : <PlugZap />}
             Probar conexión
           </Button>
-          <Button variant="outline" size="sm" disabled={pending || !integracion.credencial} onClick={onSincronizar}>
-            {pending ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={pending || sincronizando || !integracion.credencial}
+            onClick={onSincronizar}
+          >
+            {pending || sincronizando ? (
               <LoaderCircle aria-hidden className="animate-spin" />
             ) : puedeReintentar ? (
               <RotateCw />
             ) : (
               <RefreshCw />
             )}
-            {puedeReintentar ? "Reintentar" : "Sincronizar ahora"}
+            {sincronizando ? "Sincronizando…" : puedeReintentar ? "Reintentar" : "Sincronizar ahora"}
           </Button>
           <CargarCredencial integracion={conectada} nombre={nombre} yaCargada={Boolean(integracion.credencial)} />
         </CardFooter>

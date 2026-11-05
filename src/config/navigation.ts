@@ -104,8 +104,7 @@ export const navigation: NavSection[] = [
             title: "Fichas",
             href: "/clientas/fichas",
             icon: Contact,
-            description:
-              "Una ficha por clienta, unida por su teléfono: pedidos, conversaciones, envíos, cobros y reclamos.",
+            description: "Una ficha por clienta, unida por su teléfono, con lo que compró y su segmento.",
           },
           {
             title: "Recompra del día",

@@ -1,18 +1,28 @@
 import type {
   ClientaFila,
-  ClientaParaRecompra,
+  ClientasCobertura,
   DuplicadoClienta,
   FichaClienta,
   FichaEvento,
   IdentidadSistema,
+  ListaDeRecompra,
   RecompraEstado,
   RecompraResultados,
-  RecompraTipo,
   Segmento,
   SegmentoResumen,
 } from "@/lib/api/types";
+import { businessTime } from "@/lib/dates";
 import { BANCO, TRANSPORTE } from "@/lib/domain";
-import { formatCurrency, primerNombre } from "@/lib/format";
+import { primerNombre } from "@/lib/format";
+import {
+  armarMensaje,
+  ETAPA_LABEL,
+  etapaQueToca,
+  productoEnMensaje,
+  umbralAltoValor,
+  VALORES_DE_RECOMPRA,
+  type Etapa,
+} from "@/modules/customers/secuencia";
 import { normalizeText } from "@/lib/utils";
 import { defineStore } from "../db";
 import { errorResponse, paginate, readJson, type Route } from "../http";
@@ -305,123 +315,88 @@ const getDuplicados = defineStore("clientas-duplicados", (): DuplicadoClienta[] 
 
 /* ---- Recompra del día ------------------------------------------------------- */
 
-const PRIORIDAD: Record<RecompraTipo, number> = { en_riesgo: 0, reposicion: 1, dormida: 2 };
-
-function tipoRecompra(clienta: ClientaSeed): RecompraTipo | null {
-  if (clienta.segmento === "en_riesgo") return "en_riesgo";
-  if (clienta.segmento === "dormida") return "dormida";
-  const { cicloDias, ultimaCompraDias } = clienta;
-  if (cicloDias && ultimaCompraDias > 0 && cicloDias - ultimaCompraDias <= 4) return "reposicion";
-  return null;
-}
-
-function motivoRecompra(clienta: ClientaSeed, tipo: RecompraTipo) {
-  const { cicloDias, ultimaCompraDias } = clienta;
-  if (tipo === "dormida") return `${ultimaCompraDias} días sin comprar`;
-  if (tipo === "reposicion" && cicloDias) {
-    const faltan = cicloDias - ultimaCompraDias;
-    return faltan <= 0
-      ? `Repone cada ${cicloDias} días: le toca hoy`
-      : `Repone cada ${cicloDias} días: le toca en ${faltan}`;
-  }
-  if (cicloDias && ultimaCompraDias > cicloDias) return `Compra cada ${cicloDias} días y van ${ultimaCompraDias}`;
-  return "Su ritmo de compra bajó en los últimos dos meses";
-}
-
-/** "conjuntos AmorArma", "vedetinas Linda Luna": cómo se nombra el producto en el chat. */
-function comoSeLlama(sku: string) {
-  const producto = getProducto(sku);
-  return `${producto.rubro.toLowerCase()}${producto.marca ? ` ${producto.marca}` : ""}`;
-}
-
-/** RN-74: tono VX3, cercano y con presión sutil; nunca el mismo texto para todas. */
-function mensajeSugerido(clienta: ClientaSeed, tipo: RecompraTipo, sku: string | undefined, index: number) {
-  const nombre = primerNombre(clienta.nombre);
-  const producto = sku ? comoSeLlama(sku) : "lo nuevo de la temporada";
-  const despacho =
-    clienta.zona === "interior"
-      ? "Si lo cerramos hoy, sale por Correo esta tarde 📦"
-      : "Si cerramos antes de las 11, sale hoy mismo 🚚";
-
-  if (tipo === "reposicion") {
-    return `¡Hola ${nombre}! Por cómo venís comprando, ya te deben estar quedando pocas ${producto} 😉 ¿Te preparo lo de siempre? ${despacho}`;
-  }
-  if (tipo === "dormida") {
-    return index % 2 === 0
-      ? `¡Hola ${nombre}! ¿Cómo estás? Hace un tiempito que no hablamos 💛 Renovamos el catálogo y hay muchas cosas nuevas. ¿Querés que te mande lo nuevo de ${producto}?`
-      : `¡Hola ${nombre}! Te escribo de VX3 😊 Entró temporada nueva y pensé en vos por ${producto}. Si querés, te armo una selección con fotos y los precios de hoy.`;
-  }
-  const variantes = [
-    `¡Hola ${nombre}! ¿Cómo andás? 😊 Te escribo de VX3 porque entraron ${producto} en colores nuevos y me acordé de vos. ¿Querés que te arme un pedido? ${despacho}`,
-    `¡Hola ${nombre}! Hace unas semanas que no sabemos de vos 💛 Repusimos ${producto}, que es lo que más te llevás. ¿Te paso fotos de lo que entró? ${despacho}`,
-    `¡${nombre}, buen día! Tenemos ${producto} con buen stock, pero se está moviendo rápido. ¿Te guardo una media docena? ${despacho}`,
-  ] as const;
-  return variantes[index % variantes.length] ?? variantes[0];
-}
-
 /** Las que ya figuran como contactadas hoy al arrancar la demo. */
 const YA_CONTACTADAS = new Set(["c-10", "c-16"]);
 
-function crearRecompra(): ClientaParaRecompra[] {
-  const elegidas = clientas
-    .map((clienta) => ({ clienta, tipo: tipoRecompra(clienta) }))
-    .filter((item): item is { clienta: ClientaSeed; tipo: RecompraTipo } => item.tipo !== null)
-    .toSorted((a, b) => PRIORIDAD[a.tipo] - PRIORIDAD[b.tipo] || b.clienta.totalComprado - a.clienta.totalComprado);
-
-  return elegidas.map(({ clienta, tipo }, index) => {
-    const propios = pedidosDe(clienta.id);
-    const compra = propios.find((pedido) => COMPRADO.has(pedido.estado));
-    const abierto = propios.find((pedido) => pedido.estado === "armandose" || pedido.estado === "pendiente_pago");
-    const skus = skusFrecuentes(clienta);
-    const ticket = Math.round(clienta.totalComprado / Math.max(1, clienta.pedidos) / 100) * 100;
-
-    let nota: string | undefined;
-    if (abierto) {
-      const falta = detalleDe(abierto).faltaParaMinimo;
-      nota =
-        falta > 0
-          ? `Tiene el ${abierto.id} abierto bajo el mínimo: le faltan ${formatCurrency(falta)}. Conviene cerrar ese primero.`
-          : `Tiene el ${abierto.id} armándose desde hoy sin confirmar. Conviene cerrar ese primero.`;
-    }
-
-    return {
-      id: clienta.id,
-      nombre: clienta.nombre,
-      telefono: clienta.telefono,
-      telefonoWa: clienta.telefono.replace(/\D/g, ""),
-      segmento: clienta.segmento,
-      tipo,
-      motivo: motivoRecompra(clienta, tipo),
-      ultimaCompraDias: clienta.ultimaCompraDias,
-      cicloDias: clienta.cicloDias,
-      totalComprado: clienta.totalComprado,
-      ultimoPedido: compra
-        ? {
-            id: compra.id,
-            total: detalleDe(compra).total,
-            resumen: `${compra.items.length} productos · ${TRANSPORTE[compra.transporte]}`,
-            haceDias: Math.floor(compra.creadoHaceMin / DAY),
-          }
-        : {
-            id: `V-0${(900 + index * 7).toString()}`,
-            total: ticket,
-            resumen: "Último pedido registrado en DUX",
-            haceDias: clienta.ultimaCompraDias,
-          },
-      skus: skus.map(({ sku, nombre, colores }) => ({ sku, nombre, colores })),
-      mensaje: mensajeSugerido(clienta, tipo, skus[0]?.sku, index),
-      ventanaAbierta: propios.some((pedido) => pedido.creadoHaceMin < DAY),
-      nota,
-      estado: YA_CONTACTADAS.has(clienta.id) ? "contactada" : "pendiente",
-    };
+function crearRecompra(): ListaDeRecompra {
+  const hoy = businessTime.today();
+  const enSecuencia = (clienta: ClientaSeed) => ({
+    ultimaCompra: businessTime.addDays(hoy, -clienta.ultimaCompraDias),
+    compras: clienta.pedidos,
+    cicloDias: clienta.cicloDias,
+    margen12mCentavos: margenDe(clienta) * 100,
   });
+  const umbral = umbralAltoValor(
+    clientas.filter(({ segmento }) => segmento === "dormida").map((clienta) => margenDe(clienta) * 100),
+  );
+  const elegidas = clientas
+    .map((clienta) => ({ clienta, etapa: etapaQueToca(enSecuencia(clienta), [], umbral, hoy) }))
+    .filter((item): item is { clienta: ClientaSeed; etapa: Etapa } => item.etapa !== null)
+    .toSorted((a, b) => margenDe(b.clienta) - margenDe(a.clienta));
+
+  return {
+    hoy: elegidas.slice(0, VALORES_DE_RECOMPRA.contactosPorDia).map(({ clienta, etapa }) => {
+      const propios = pedidosDe(clienta.id);
+      const compra = propios.find((pedido) => COMPRADO.has(pedido.estado));
+      const skus = skusFrecuentes(clienta);
+      const producto = skus[0] ? productoEnMensaje(skus[0].nombre) : null;
+      const { texto } = armarMensaje(
+        etapa,
+        {
+          nombre: primerNombre(clienta.nombre),
+          categorias: ["medias", "corpiños", "conjuntos de lencería"],
+          productoNuevo: producto,
+          comboNuevo: "lencería",
+          productoPorAgotarse: producto,
+        },
+        clienta.id,
+      );
+      return {
+        id: clienta.id,
+        nombre: clienta.nombre,
+        telefono: clienta.telefono,
+        telefonoWa: clienta.telefono.replace(/\D/g, ""),
+        segmento: clienta.segmento,
+        tipo: etapa === "reactivacion" || etapa === "alto_valor" ? "reactivacion" : "recompra",
+        etapa,
+        etapaLabel: ETAPA_LABEL[etapa],
+        motivo: `Hace ${clienta.ultimaCompraDias} días que compró`,
+        ultimaCompraDias: clienta.ultimaCompraDias,
+        cicloDias: clienta.cicloDias,
+        totalComprado: clienta.totalComprado,
+        ultimoPedido: compra
+          ? {
+              id: compra.id,
+              total: detalleDe(compra).total,
+              resumen: `${compra.items.length} productos · ${TRANSPORTE[compra.transporte]}`,
+              haceDias: Math.floor(compra.creadoHaceMin / DAY),
+            }
+          : null,
+        skus: skus.map(({ sku, nombre, colores }) => ({ sku, nombre, colores })),
+        mensaje: texto,
+        estado: YA_CONTACTADAS.has(clienta.id) ? "contactada" : "pendiente",
+      };
+    }),
+    esperando: clientas
+      .filter(({ segmento }) => segmento === "activa")
+      .slice(0, 2)
+      .map((clienta, index) => ({
+        id: clienta.id,
+        nombre: clienta.nombre,
+        telefono: clienta.telefono,
+        etapaLabel: ETAPA_LABEL.m1,
+        contactadaHaceDias: index + 2,
+        estado: "contactada",
+      })),
+    enCola: Math.max(0, elegidas.length - VALORES_DE_RECOMPRA.contactosPorDia),
+    tope: VALORES_DE_RECOMPRA.contactosPorDia,
+  };
 }
 
 const getRecompra = defineStore("clientas-recompra", crearRecompra);
 
 const resultados: RecompraResultados = {
   contactadas: 38,
-  respondieron: 24,
   compraron: 11,
   ventas: 812_000,
   margen: 186_000,
@@ -429,7 +404,7 @@ const resultados: RecompraResultados = {
 
 /* ---- Rutas ------------------------------------------------------------------ */
 
-const ESTADOS_RECOMPRA: RecompraEstado[] = ["pendiente", "contactada", "pospuesta"];
+const ESTADOS_RECOMPRA: RecompraEstado[] = ["pendiente", "contactada", "respondio", "pospuesta"];
 
 export const routes: Route[] = [
   {
@@ -469,19 +444,13 @@ export const routes: Route[] = [
   },
   {
     method: "GET",
-    pattern: /^\/clientas\/duplicados$/,
-    handler: () => Response.json(getDuplicados()),
+    pattern: /^\/clientas\/cobertura$/,
+    handler: () => Response.json({ ventaIdentificada: 0.56, sinCompras: 0 } satisfies ClientasCobertura),
   },
   {
-    method: "POST",
-    pattern: /^\/clientas\/duplicados\/([^/]+)\/fusionar$/,
-    handler: ({ params: [id] }) => {
-      const duplicados = getDuplicados();
-      const index = duplicados.findIndex((item) => item.id === decodeURIComponent(id));
-      if (index === -1) return errorResponse(404, `No existe el duplicado ${id}.`);
-      const [fusionado] = duplicados.splice(index, 1);
-      return Response.json({ fusionados: fusionado?.registros.length ?? 0 });
-    },
+    method: "GET",
+    pattern: /^\/clientas\/duplicados$/,
+    handler: () => Response.json(getDuplicados()),
   },
   {
     method: "GET",
@@ -497,15 +466,20 @@ export const routes: Route[] = [
     method: "PATCH",
     pattern: /^\/clientas\/recompra\/([^/]+)$/,
     handler: async ({ params: [id], request }) => {
-      const item = getRecompra().find((entry) => entry.id === decodeURIComponent(id));
-      if (!item) return errorResponse(404, `La clienta ${id} no está en la lista de hoy.`);
+      const { hoy, esperando } = getRecompra();
+      const item = hoy.find((entry) => entry.id === decodeURIComponent(id));
+      const espera = esperando.find((entry) => entry.id === decodeURIComponent(id));
+      if (!item && !espera) return errorResponse(404, `La clienta ${id} no está en la lista de hoy.`);
       const body = await readJson<{ estado: RecompraEstado; mensaje: string }>(request);
-      if (body.estado && !ESTADOS_RECOMPRA.includes(body.estado)) {
+      if (!body.estado || !ESTADOS_RECOMPRA.includes(body.estado)) {
         return errorResponse(400, `Estado inválido: ${body.estado}.`);
       }
-      if (body.estado) item.estado = body.estado;
-      if (typeof body.mensaje === "string" && body.mensaje.trim()) item.mensaje = body.mensaje.trim();
-      return Response.json(item);
+      if (item) {
+        item.estado = body.estado;
+        if (typeof body.mensaje === "string" && body.mensaje.trim()) item.mensaje = body.mensaje.trim();
+      }
+      if (espera && (body.estado === "contactada" || body.estado === "respondio")) espera.estado = body.estado;
+      return Response.json({ estado: body.estado });
     },
   },
   {

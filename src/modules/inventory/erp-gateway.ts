@@ -48,7 +48,8 @@ export type ErpComprobante = {
   tipo: string;
   letra: string;
   puntoDeVenta: string;
-  numero: number;
+  /** DUX tiene facturas sin número. */
+  numero: number | null;
   /** "2026-11-03". */
   fecha: string;
   clienteId: number | null;
@@ -66,6 +67,8 @@ export type PaginaDeComprobantes = { comprobantes: ErpComprobante[]; total: numb
 export type ErpClienta = {
   id: number;
   nombre: string;
+  /** Cuando el ERP lo tiene aparte del nombre completo. */
+  nombrePila: string | null;
   telefono: string | null;
   email: string | null;
   provincia: string | null;

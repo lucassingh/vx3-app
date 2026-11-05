@@ -42,7 +42,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
 
         <ClientasCard searchParams={searchParams} />
 
-        <AsyncWidget title="los duplicados" fallback={<DuplicadosCardSkeleton />}>
+        <AsyncWidget title="las fichas unificadas" fallback={<DuplicadosCardSkeleton />}>
           <DuplicadosCard />
         </AsyncWidget>
 

@@ -265,6 +265,8 @@ describe("kpisDelEspejo y rubrosDelEspejo", () => {
 });
 
 describe("estadoDelEspejo", () => {
+  // Un solo instante: con dos llamadas a Date.now(), la duración varía según en qué milisegundo caigan.
+  const ahora = Date.now();
   const corrida = (cambios: Record<string, unknown> = {}) =>
     db.syncRun.create({
       data: {
@@ -273,8 +275,8 @@ describe("estadoDelEspejo", () => {
         operation: "items",
         status: "ok",
         trigger: "cron",
-        startedAt: new Date(Date.now() - 60_000),
-        finishedAt: new Date(Date.now() - 10_000),
+        startedAt: new Date(ahora - 60_000),
+        finishedAt: new Date(ahora - 10_000),
         calls: 50,
         records: 2488,
         ...cambios,

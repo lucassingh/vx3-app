@@ -136,6 +136,15 @@ describe("lectura normal de ventas", () => {
     expect(validas.map(({ duxId }) => duxId)).toEqual([1]);
   });
 
+  it("guarda una factura sin número, y cuenta como venta", async () => {
+    responderCon(comprobante(1, { numero: null }));
+
+    await leerVentasDux(ORIGEN);
+
+    expect(await factura(1)).toMatchObject({ number: null, cancelled: false });
+    expect(await db.duxInvoice.count({ where: VENTA_VALIDA })).toBe(1);
+  });
+
   it("releer sin cambios no toca nada", async () => {
     responderCon(comprobante(1));
     await leerVentasDux(ORIGEN);

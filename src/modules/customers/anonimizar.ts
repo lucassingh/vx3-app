@@ -32,6 +32,7 @@ export function anonimizarClienta(clienta: ErpClienta, clave: string): ErpClient
   return {
     id: clienta.id,
     nombre: `Clienta ${clienta.id}`,
+    nombrePila: null,
     telefono: normalizado && telefonoFalso(normalizado, clave),
     email: clienta.email && `clienta-${clienta.id}@anonimizada.invalid`,
     provincia: clienta.provincia,

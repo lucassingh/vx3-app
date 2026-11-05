@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { ClientaParaRecompra, FichaClienta, Paginated, ClientaFila, DuplicadoClienta } from "@/lib/api/types";
+import type { ListaDeRecompra, FichaClienta, Paginated, ClientaFila, DuplicadoClienta } from "@/lib/api/types";
 import { resetDb } from "../db";
 import { handleMockRequest, MOCK_API_PREFIX } from "../router";
 import { normalizarTelefono } from "./clientas";
@@ -34,18 +34,21 @@ describe("clientas", () => {
     expect(body.eventos.some((evento) => evento.titulo === "Pedido V-1043")).toBe(true);
   });
 
-  it("fusiona un duplicado y lo saca de la lista", async () => {
-    const before = await call<DuplicadoClienta[]>("/clientas/duplicados");
-    const first = before.body[0]!;
-    expect((await call(`/clientas/duplicados/${first.id}/fusionar`, { method: "POST" })).status).toBe(200);
-    const after = await call<DuplicadoClienta[]>("/clientas/duplicados");
-    expect(after.body.map((item) => item.id)).not.toContain(first.id);
+  it("lista las fichas unificadas", async () => {
+    const { body } = await call<DuplicadoClienta[]>("/clientas/duplicados");
+    expect(body.length).toBeGreaterThan(0);
+    expect(body[0]?.registros.length).toBeGreaterThan(1);
+  });
+
+  it("dice cuánto de la venta está identificado", async () => {
+    const { status } = await call("/clientas/cobertura");
+    expect(status).toBe(200);
   });
 
   it("marca una clienta de la recompra como contactada", async () => {
-    const { body: lista } = await call<ClientaParaRecompra[]>("/clientas/recompra");
-    const pendiente = lista.find((item) => item.estado === "pendiente")!;
-    const { body } = await call<ClientaParaRecompra>(`/clientas/recompra/${pendiente.id}`, {
+    const { body: lista } = await call<ListaDeRecompra>("/clientas/recompra");
+    const pendiente = lista.hoy.find((item) => item.estado === "pendiente")!;
+    const { body } = await call<{ estado: string }>(`/clientas/recompra/${pendiente.id}`, {
       method: "PATCH",
       body: JSON.stringify({ estado: "contactada" }),
     });

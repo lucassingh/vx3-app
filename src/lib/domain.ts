@@ -78,9 +78,9 @@ export const BANCO: Record<Banco, string> = {
 };
 
 export const SEGMENTO: Record<Segmento, Labeled & { description: string }> = {
-  nueva: { label: "Nueva", tone: "accent", description: "Una sola compra, en los últimos 30 días" },
+  nueva: { label: "Nueva", tone: "accent", description: "Una sola compra, en los últimos 45 días" },
   activa: { label: "Activa", tone: "success", description: "Compra dentro de su ciclo" },
   top: { label: "Top", tone: "primary", description: "Las que más margen dejan" },
   en_riesgo: { label: "En riesgo", tone: "warning", description: "Se pasó de su ciclo de compra" },
-  dormida: { label: "Dormida", tone: "neutral", description: "Más de 60 días sin comprar" },
+  dormida: { label: "Dormida", tone: "neutral", description: "Más de 120 días sin comprar" },
 };

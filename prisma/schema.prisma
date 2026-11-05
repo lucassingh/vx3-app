@@ -201,7 +201,8 @@ model DuxInvoice {
   type          String
   letter        String
   pointOfSale   String           @map("point_of_sale")
-  number        Int
+  /// DUX tiene facturas sin número: son ventas válidas, y no se le inventa uno.
+  number        Int?
   issuedOn      DateTime         @map("issued_on") @db.Date
   /// id_cliente en DUX. Sin clave foránea: el comprobante puede llegar antes que la clienta.
   customerDuxId Int?             @map("customer_dux_id")
@@ -251,6 +252,8 @@ model DuxCustomer {
   id              String    @id @db.Uuid
   duxId           Int       @unique @map("dux_id")
   name            String
+  /// El nombre de pila, cuando DUX lo tiene aparte: para saludar sin arriesgar con un apellido.
+  firstName       String?   @map("first_name")
   phone           String?
   /// Los últimos 10 dígitos: la identidad de la clienta (RN-90).
   normalizedPhone String?   @map("normalized_phone")
@@ -279,6 +282,97 @@ enum SyncRunStatus {
 /// Una corrida de sincronización: lo que muestra el panel de integraciones (RF-M0-04).
 /// Nunca dos sincronizaciones a la vez de una integración. Vence solo: si un Workflow
 /// muere sin soltarlo, no traba para siempre.
+/// Una clienta: una fila por teléfono (RN-90), armada desde dux_customers y recalculada
+/// en cada sincronización. Una ficha de DUX sin teléfono no llega acá.
+enum CustomerSegment {
+  nueva
+  activa
+  top
+  en_riesgo
+  dormida
+
+  @@map("customer_segment")
+}
+
+model Customer {
+  id                 String           @id @db.Uuid
+  normalizedPhone    String           @unique @map("normalized_phone")
+  name               String
+  firstName          String?          @map("first_name")
+  phone              String
+  email              String?
+  province           String?
+  city               String?
+  /// Cuántas fichas de DUX son esta clienta.
+  duxRecords         Int              @map("dux_records")
+  /// Días con compras válidas: los comprobantes del mismo día son una compra.
+  purchases          Int              @default(0)
+  totalCents         BigInt           @default(0) @map("total_cents")
+  marginCents        BigInt           @default(0) @map("margin_cents")
+  /// El de los últimos 12 meses: define quién es Top y el orden de la lista del día.
+  margin12mCents     BigInt           @default(0) @map("margin_12m_cents")
+  firstPurchaseOn    DateTime?        @map("first_purchase_on") @db.Date
+  lastPurchaseOn     DateTime?        @map("last_purchase_on") @db.Date
+  /// Mediana de los días entre compras; null con menos de dos.
+  cycleDays          Float?           @map("cycle_days")
+  /// Sin anuncios todavía, es lo único que se sabe de cómo llegó (1.6).
+  firstPurchaseLocal Boolean          @default(false) @map("first_purchase_local")
+  /// Nombre, localidad y provincia, sin tildes ni mayúsculas: para buscar en la base.
+  searchText         String           @default("") @map("search_text")
+  /// null: no tiene compras en lo que está leído.
+  segment            CustomerSegment?
+  contentHash        String           @map("content_hash")
+  firstSeenAt        DateTime         @map("first_seen_at") @db.Timestamptz(6)
+  changedAt          DateTime         @map("changed_at") @db.Timestamptz(6)
+
+  reactivationContacts ReactivationContact[]
+
+  @@index([segment])
+  @@map("customers")
+}
+
+enum ReactivationStage {
+  m1
+  m2
+  m3
+  m4
+  reactivacion
+  alto_valor
+
+  @@map("reactivation_stage")
+}
+
+enum ReactivationStatus {
+  contactada
+  respondio
+  pospuesta
+
+  @@map("reactivation_status")
+}
+
+/// Lo que se hizo con la lista del día. Lo escribe una persona: la app no manda nada.
+model ReactivationContact {
+  id          String             @id @db.Uuid
+  customerId  String             @map("customer_id") @db.Uuid
+  customer    Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// El día del negocio del mensaje.
+  contactedOn DateTime           @map("contacted_on") @db.Date
+  stage       ReactivationStage
+  /// Qué plantilla le tocó: no se repite la vez siguiente (RN-74).
+  variant     String
+  status      ReactivationStatus
+  /// El texto que se mandó, con lo que la persona haya editado.
+  message     String
+  respondedOn DateTime?          @map("responded_on") @db.Date
+  actorId     String?            @map("actor_id")
+  createdAt   DateTime           @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime           @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([customerId, contactedOn])
+  @@index([contactedOn])
+  @@map("reactivation_contacts")
+}
+
 model SyncLock {
   integration String   @id
   holder      String

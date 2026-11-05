@@ -31,6 +31,8 @@ beforeEach(async () => {
   vi.stubEnv("CREDENTIALS_KEY", "A".repeat(43));
   await db.syncLock.deleteMany();
   await db.syncRun.deleteMany();
+  await db.customer.deleteMany();
+  await db.duxCustomer.deleteMany();
   erp.items = async () => ({ items: [], total: 0, hayMas: false });
   erp.comprobantes = async () => ({ comprobantes: [], total: 0, hayMas: false });
   erp.clientas = async () => ({ clientas: [], hayMas: false });
@@ -56,9 +58,53 @@ describe("sincronizarDux", () => {
 
     expect(resultado).toEqual({ items: "ok", ventas: "ok", clientas: "ok" });
     const filas = await corridas();
-    expect(filas.map(({ operation }) => operation)).toEqual(["items", "ventas", "clientas"]);
+    expect(filas.map(({ operation }) => operation)).toEqual(["items", "ventas", "clientas", "fichas"]);
     expect(filas.every(({ trigger, triggeredBy }) => trigger === "manual" && triggeredBy === "Prueba")).toBe(true);
     expect(await db.syncLock.count()).toBe(0);
+  });
+
+  it("arma las fichas con lo que leyó, y lo registra", async () => {
+    const { bloqueo } = await arrancarYTomarLlave();
+    erp.clientas = async () => ({
+      clientas: [
+        {
+          id: 1,
+          nombre: "NOMBRE REAL",
+          nombrePila: null,
+          telefono: "+5491144445555",
+          email: null,
+          provincia: null,
+          localidad: null,
+          habilitada: true,
+          creadaEl: null,
+        },
+        {
+          id: 2,
+          nombre: "SIN TELEFONO",
+          nombrePila: null,
+          telefono: null,
+          email: null,
+          provincia: null,
+          localidad: null,
+          habilitada: true,
+          creadaEl: null,
+        },
+      ],
+      hayMas: false,
+    });
+
+    await sincronizarDux(ORIGEN, bloqueo);
+
+    expect(await db.customer.count()).toBe(1);
+    expect((await corridas()).at(-1)).toMatchObject({
+      operation: "fichas",
+      status: "ok",
+      calls: 0,
+      records: 1,
+      detail:
+        "Clientas: 1. Nuevas: 1. Cambiadas: 0. Fichas sin teléfono: 1. " +
+        "Segmentos: dormida 0, en riesgo 0, nueva 0, top 0, activa 0. Sin compras: 1.",
+    });
   });
 
   it("una lectura que no pudo leer no frena a las demás", async () => {

@@ -18,11 +18,13 @@ import { DialogBody, DialogFooter, DialogHeader, DialogTitle } from "@/component
 import { LoadingLabel, Skeleton } from "@/components/ui/skeleton";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { SkeletonText } from "@/components/views/skeletons";
+import { realDomains } from "@/lib/api/dispatch";
+import type { ApiDomain } from "@/lib/api/domains";
 import { api } from "@/lib/api/server";
 import { toQueryString } from "@/lib/api/http";
 import type { FichaEventoTipo } from "@/lib/api/types";
 import { ZONA } from "@/lib/domain";
-import { formatCurrency, formatRelativeTime } from "@/lib/format";
+import { formatCurrency, formatNumber, formatRelativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { FichaDialog } from "./ficha-dialog";
 import { param, type SearchParams } from "./shared";
@@ -70,6 +72,12 @@ export async function FichaFromParams({
   );
 }
 
+/** Una clienta real no existe en una pantalla simulada, ni al revés: el enlace no llevaría a ningún lado. */
+function enlazaCon(dominio: ApiDomain) {
+  const reales = realDomains();
+  return reales.includes(dominio) === reales.includes("clientas");
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3">
@@ -81,8 +89,17 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 async function FichaContent({ id }: { id: string }) {
   const ficha = await api.clientas.get(id);
+  const lugar = [
+    [ficha.localidad, ficha.provincia].filter(Boolean).join(", "),
+    ficha.cp && `CP ${ficha.cp}`,
+    ficha.zona && ZONA[ficha.zona].label,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const verPedidos = enlazaCon("pedidos");
+  const verConversacion = enlazaCon("conversaciones");
   const stats = [
-    { label: "Pedidos", value: String(ficha.pedidos) },
+    { label: "Compras", value: String(ficha.pedidos) },
     { label: "Total comprado", value: formatCurrency(ficha.totalComprado) },
     { label: "Ticket promedio", value: formatCurrency(ficha.ticketPromedio) },
     { label: "Valor de vida (margen)", value: formatCurrency(ficha.margen) },
@@ -95,16 +112,16 @@ async function FichaContent({ id }: { id: string }) {
           <Avatar name={ficha.nombre} className="size-11 text-sm" />
           <div className="min-w-0">
             <DialogTitle className="truncate">{ficha.nombre}</DialogTitle>
-            <p className="truncate text-[13px] text-muted-foreground">
-              {ficha.localidad}, {ficha.provincia} · CP {ficha.cp} · {ZONA[ficha.zona].label}
-            </p>
+            <p className="truncate text-[13px] text-muted-foreground">{lugar || "Sin datos de localidad"}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-2">
-          <SegmentoBadge segmento={ficha.segmento} />
+          {ficha.segmento && <SegmentoBadge segmento={ficha.segmento} />}
           <span className="text-xs text-muted-foreground">
-            Clienta desde hace {ficha.primeraCompraDias} días
-            {ficha.cicloDias ? ` · compra cada ${ficha.cicloDias} días` : ""}
+            {ficha.primeraCompraDias === null
+              ? "Sin compras en el historial leído"
+              : `Clienta desde hace ${formatNumber(ficha.primeraCompraDias)} días`}
+            {ficha.cicloDias ? ` · compra cada ${formatNumber(ficha.cicloDias)} días` : ""}
           </span>
         </div>
       </DialogHeader>
@@ -128,8 +145,8 @@ async function FichaContent({ id }: { id: string }) {
             : une su historial en todos los sistemas, aunque cada uno lo guarde distinto.
           </p>
           <ul className="divide-y divide-border rounded-lg border border-border">
-            {ficha.identidades.map((identidad) => (
-              <li key={identidad.sistema} className="flex items-center gap-3 px-3 py-2.5 text-sm">
+            {ficha.identidades.map((identidad, index) => (
+              <li key={`${identidad.sistema}-${index}`} className="flex items-center gap-3 px-3 py-2.5 text-sm">
                 <CheckCircle2 aria-hidden className="size-4 shrink-0 text-success" />
                 <span className="w-24 shrink-0 font-medium">{identidad.sistema}</span>
                 <span className="min-w-0 flex-1">
@@ -167,7 +184,7 @@ async function FichaContent({ id }: { id: string }) {
                   <ProductThumb sku={producto.sku} colors={producto.colores} size="sm" />
                   <span className="min-w-0 flex-1 truncate text-sm">{producto.nombre}</span>
                   <span className="shrink-0 text-xs text-muted-foreground">
-                    {producto.veces} {producto.veces === 1 ? "pedido" : "pedidos"}
+                    {producto.veces} {producto.veces === 1 ? "compra" : "compras"}
                   </span>
                 </li>
               ))}
@@ -176,6 +193,9 @@ async function FichaContent({ id }: { id: string }) {
         )}
 
         <Section title="Historial">
+          {ficha.eventos.length === 0 && (
+            <p className="text-[13px] text-muted-foreground">Todavía no hay nada registrado.</p>
+          )}
           <ol className="relative space-y-4 before:absolute before:inset-y-2 before:left-4 before:w-px before:bg-border">
             {ficha.eventos.map((evento) => {
               const Icon = eventoIcon[evento.tipo];
@@ -211,20 +231,26 @@ async function FichaContent({ id }: { id: string }) {
         </Section>
       </DialogBody>
 
-      <DialogFooter>
-        <Button variant="outline" asChild>
-          <Link href={`/pedidos/bandeja${toQueryString({ q: ficha.nombre })}`}>
-            <ShoppingBag />
-            Ver pedidos
-          </Link>
-        </Button>
-        <Button asChild>
-          <Link href={`/conversaciones${toQueryString({ clienta: ficha.id })}`}>
-            <MessagesSquare />
-            Abrir conversación
-          </Link>
-        </Button>
-      </DialogFooter>
+      {(verPedidos || verConversacion) && (
+        <DialogFooter>
+          {verPedidos && (
+            <Button variant="outline" asChild>
+              <Link href={`/pedidos/bandeja${toQueryString({ q: ficha.nombre })}`}>
+                <ShoppingBag />
+                Ver pedidos
+              </Link>
+            </Button>
+          )}
+          {verConversacion && (
+            <Button asChild>
+              <Link href={`/conversaciones${toQueryString({ clienta: ficha.id })}`}>
+                <MessagesSquare />
+                Abrir conversación
+              </Link>
+            </Button>
+          )}
+        </DialogFooter>
+      )}
     </>
   );
 }

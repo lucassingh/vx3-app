@@ -16,8 +16,9 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
+// Con margen: el vencimiento lo compara el reloj de la base, y el de esta máquina puede ir adelantado.
 const vencer = () =>
-  db.syncLock.updateMany({ where: { integration: "dux" }, data: { expiresAt: new Date(Date.now() - 1000) } });
+  db.syncLock.updateMany({ where: { integration: "dux" }, data: { expiresAt: new Date(Date.now() - HORA) } });
 
 describe("bloqueo de corridas", () => {
   it("de varios pedidos simultáneos, gana uno solo", async () => {

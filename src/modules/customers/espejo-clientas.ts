@@ -13,6 +13,7 @@ function aFila(clienta: ErpClienta) {
   return {
     duxId: clienta.id,
     name: clienta.nombre,
+    firstName: clienta.nombrePila,
     phone: clienta.telefono,
     normalizedPhone: telefonoNormalizado(clienta.telefono),
     email: clienta.email,
