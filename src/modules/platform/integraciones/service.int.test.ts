@@ -133,7 +133,7 @@ describe("listarIntegraciones", () => {
   it("un bloqueo vencido no cuenta: esa corrida murió", async () => {
     await conToken();
     await tomarBloqueo("dux", 60_000);
-    await db.syncLock.updateMany({ data: { expiresAt: new Date(Date.now() - 1000) } });
+    await db.syncLock.updateMany({ data: { expiresAt: new Date(Date.now() - 3_600_000) } });
 
     expect((await dux()).sincronizando).toBe(false);
   });
