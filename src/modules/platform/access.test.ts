@@ -98,17 +98,15 @@ describe("cada pantalla del dashboard se protege", () => {
     });
   }
 
-  // Cada pantalla espera la sesión en su primera línea. Entre dos pantallas de la misma
-  // sección, el loading.tsx de (dashboard) queda arriba de lo compartido y no se muestra.
-  const secciones = new Set(
-    paginas(base)
-      .map((archivo) => dirname(dirname(archivo)))
-      .filter((dir) => dir.startsWith(base + sep)),
-  );
+  // Cada pantalla espera la sesión en su primera línea. Sin un loading.tsx en su propia carpeta, entre
+  // pantallas de una misma sección no se muestra nada hasta que vuelve, y next dev marca "uncached data".
+  const carpetas = paginas(base)
+    .map((archivo) => dirname(archivo))
+    .filter((dir) => dir !== base && !dir.endsWith("[...slug]"));
 
-  for (const seccion of secciones) {
-    it(`${relative(base, seccion)} muestra el esqueleto al pasar entre sus pantallas`, () => {
-      expect(existsSync(join(seccion, "loading.tsx"))).toBe(true);
+  for (const carpeta of carpetas) {
+    it(`${relative(base, carpeta)} tiene su propio loading.tsx`, () => {
+      expect(existsSync(join(carpeta, "loading.tsx"))).toBe(true);
     });
   }
 });

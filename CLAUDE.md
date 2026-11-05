@@ -137,9 +137,10 @@ Las cards son blancas con borde fino (`Card`, `CardHeader`, `CardTitle`,
 - Cada widget con datos lleva el suyo vía `AsyncWidget fallback={…}`.
   `(dashboard)/loading.tsx` muestra `PageSkeleton` cuando una página espera
   datos directo en su `page.tsx`.
-  Cada sección con subpantallas reexporta ese archivo en su propio `loading.tsx`:
-  sin él, pasar entre dos pantallas de la sección espera la sesión sin mostrar
-  nada, y `next dev` lo marca como "uncached data". Un test lo verifica.
+  Cada pantalla lo reexporta en el `loading.tsx` de su carpeta: espera la sesión en
+  su primera línea y, sin él, entre pantallas de una misma sección no se muestra nada
+  hasta que vuelve, y `next dev` lo marca como "uncached data". Al filtrar por la URL
+  el esqueleto no aparece. Un test lo verifica.
 - Para verlos con calma: `MOCK_API_DELAY_MS=3000` en `.env.local`.
 
 ## Avisos (toasts)
