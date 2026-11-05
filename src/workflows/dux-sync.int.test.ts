@@ -101,7 +101,9 @@ describe("sincronizarDux", () => {
       status: "ok",
       calls: 0,
       records: 1,
-      detail: "Clientas: 1. Nuevas: 1. Cambiadas: 0. Fichas sin teléfono: 1.",
+      detail:
+        "Clientas: 1. Nuevas: 1. Cambiadas: 0. Fichas sin teléfono: 1. " +
+        "Segmentos: dormida 0, en riesgo 0, nueva 0, top 0, activa 0. Sin compras: 1.",
     });
   });
 

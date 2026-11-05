@@ -284,21 +284,44 @@ enum SyncRunStatus {
 /// muere sin soltarlo, no traba para siempre.
 /// Una clienta: una fila por teléfono (RN-90), armada desde dux_customers y recalculada
 /// en cada sincronización. Una ficha de DUX sin teléfono no llega acá.
+enum CustomerSegment {
+  nueva
+  activa
+  top
+  en_riesgo
+  dormida
+
+  @@map("customer_segment")
+}
+
 model Customer {
-  id              String   @id @db.Uuid
-  normalizedPhone String   @unique @map("normalized_phone")
+  id              String           @id @db.Uuid
+  normalizedPhone String           @unique @map("normalized_phone")
   name            String
-  firstName       String?  @map("first_name")
+  firstName       String?          @map("first_name")
   phone           String
   email           String?
   province        String?
   city            String?
   /// Cuántas fichas de DUX son esta clienta.
-  duxRecords      Int      @map("dux_records")
-  contentHash     String   @map("content_hash")
-  firstSeenAt     DateTime @map("first_seen_at") @db.Timestamptz(6)
-  changedAt       DateTime @map("changed_at") @db.Timestamptz(6)
+  duxRecords      Int              @map("dux_records")
+  /// Días con compras válidas: los comprobantes del mismo día son una compra.
+  purchases       Int              @default(0)
+  totalCents      BigInt           @default(0) @map("total_cents")
+  marginCents     BigInt           @default(0) @map("margin_cents")
+  /// El de los últimos 12 meses: define quién es Top y el orden de la lista del día.
+  margin12mCents  BigInt           @default(0) @map("margin_12m_cents")
+  firstPurchaseOn DateTime?        @map("first_purchase_on") @db.Date
+  lastPurchaseOn  DateTime?        @map("last_purchase_on") @db.Date
+  /// Mediana de los días entre compras; null con menos de dos.
+  cycleDays       Float?           @map("cycle_days")
+  /// null: no tiene compras en lo que está leído.
+  segment         CustomerSegment?
+  contentHash     String           @map("content_hash")
+  firstSeenAt     DateTime         @map("first_seen_at") @db.Timestamptz(6)
+  changedAt       DateTime         @map("changed_at") @db.Timestamptz(6)
 
+  @@index([segment])
   @@map("customers")
 }
 

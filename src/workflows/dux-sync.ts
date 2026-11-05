@@ -1,3 +1,4 @@
+import { SEGMENTO } from "@/lib/domain";
 import { formatNumber } from "@/lib/format";
 import { recalcularClientas } from "@/modules/customers/fichas";
 import { abrirCorrida, cerrarCorrida, soltarBloqueo, type OrigenDeCorrida } from "@/modules/platform/sync-runs";
@@ -42,13 +43,16 @@ export async function recalcularFichasDux(origen: OrigenDeCorrida) {
   "use step";
 
   const { id } = await abrirCorrida("dux", "fichas", origen);
-  const { clientas, nuevas, cambiadas, sinTelefono } = await recalcularClientas(new Date());
+  const { clientas, nuevas, cambiadas, sinTelefono, sinCompras, segmentos } = await recalcularClientas(new Date());
   const n = (valor: number) => formatNumber(valor);
+  const porSegmento = (["dormida", "en_riesgo", "nueva", "top", "activa"] as const)
+    .map((segmento) => `${SEGMENTO[segmento].label.toLowerCase()} ${n(segmentos[segmento])}`)
+    .join(", ");
   await cerrarCorrida(id, {
     status: "ok",
     calls: 0,
     records: clientas,
-    detail: `Clientas: ${n(clientas)}. Nuevas: ${n(nuevas)}. Cambiadas: ${n(cambiadas)}. Fichas sin teléfono: ${n(sinTelefono)}.`,
+    detail: `Clientas: ${n(clientas)}. Nuevas: ${n(nuevas)}. Cambiadas: ${n(cambiadas)}. Fichas sin teléfono: ${n(sinTelefono)}. Segmentos: ${porSegmento}. Sin compras: ${n(sinCompras)}.`,
   });
 }
 
