@@ -280,7 +280,30 @@ describe("el dueño de cada dato", () => {
     expect(unico(armar([], [item("LN3", "LESS", { nombre })]), "LN3").nombre).toBe(nombre);
   });
 
-  it("el nombre de la prenda gana al de sus packs; la fecha es la más vieja", () => {
+  it("la fecha es la de la prenda, aunque un pack sea más viejo", () => {
+    const conFechas = armar(
+      [],
+      [item("LN3-6", "LESS", { creadoEl: "2024-01-01" }), item("LN3", "LESS", { creadoEl: "2025-03-01" })],
+    );
+
+    expect(unico(conFechas, "LN3").creadoEl).toBe("2025-03-01");
+  });
+
+  it("sin prenda, la fecha es la del pack más viejo", () => {
+    const soloPacks = armar(
+      [],
+      [item("LN3-12", "LESS", { creadoEl: "2026-10-08" }), item("LN3-6", "LESS", { creadoEl: "2025-03-01" })],
+    );
+
+    expect(unico(soloPacks, "LN3").creadoEl).toBe("2025-03-01");
+  });
+
+  it("sku_venta se lee si aparece, y hoy no está en el Sheet", () => {
+    expect(unico(armar([fila("LN3", { sku_venta: "ln 3-12" })]), "LN3").skuDeVenta).toBe("LN3-12");
+    expect(unico(armar([fila("LN3")]), "LN3").skuDeVenta).toBeNull();
+  });
+
+  it("el nombre de la prenda gana al de sus packs", () => {
     const conFechas = armar(
       [],
       [

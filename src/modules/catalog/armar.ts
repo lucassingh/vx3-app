@@ -79,10 +79,12 @@ export type ProductoArmado = {
   enSheet: boolean;
   enDux: boolean;
   filaDelSheet: number | null;
+  /** La columna `sku_venta`: la excepción a mano al bulto del rubro (RN-101). */
+  skuDeVenta: string | null;
   /** Lo que dice DUX, para ver si se contradice con el Sheet. */
   enDuxDice: { rubro: string | null; subrubro: string | null; marca: string | null; proveedor: string | null };
   tieneFotoEnDux: boolean;
-  /** La fecha más vieja de sus códigos en DUX; null si no está. */
+  /** Cuándo se creó la prenda o el combo: los packs se cargaron todos juntos el 08/10. Null si no está en DUX. */
   creadoEl: string | null;
   presentaciones: Presentacion[];
   fotos: FotoDelProducto[];
@@ -120,6 +122,8 @@ const ATRIBUTOS = ["copa", "encaje", "push_up", "aro", "elastico", "tipo_bretel"
 const MEDIDA_IMPOSIBLE_CM = 200;
 
 const sinTildes = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "");
+
+const masVieja = (items: ItemDeDux[]) => items.map(({ creadoEl }) => creadoEl).toSorted()[0];
 
 export const nombreSinCantidad = (nombre: string) => nombre.replace(CANTIDAD_DEL_NOMBRE, "").trim();
 
@@ -307,6 +311,7 @@ export function armarCatalogo({
       enSheet: fila !== null,
       enDux: propios.length > 0,
       filaDelSheet: fila?.fila ?? null,
+      skuDeVenta: visto.sku_venta?.trim() ? normalizarCodigo(visto.sku_venta) : null,
       enDuxDice: {
         rubro: principal?.rubro ?? null,
         subrubro: principal?.subrubro ?? null,
@@ -314,7 +319,7 @@ export function armarCatalogo({
         proveedor: principal?.proveedor ?? null,
       },
       tieneFotoEnDux: propios.some(({ tieneFoto }) => tieneFoto),
-      creadoEl: propios.map(({ creadoEl }) => creadoEl).toSorted()[0] ?? null,
+      creadoEl: masVieja(propios.filter(({ tipo }) => tipo !== "pack")) ?? masVieja(propios) ?? null,
       presentaciones: [...presentaciones.values()].toSorted((a, b) => a.codigo.localeCompare(b.codigo)),
       fotos,
     };
