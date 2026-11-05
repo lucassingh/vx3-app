@@ -34,12 +34,15 @@ describe("clientas", () => {
     expect(body.eventos.some((evento) => evento.titulo === "Pedido V-1043")).toBe(true);
   });
 
-  it("fusiona un duplicado y lo saca de la lista", async () => {
-    const before = await call<DuplicadoClienta[]>("/clientas/duplicados");
-    const first = before.body[0]!;
-    expect((await call(`/clientas/duplicados/${first.id}/fusionar`, { method: "POST" })).status).toBe(200);
-    const after = await call<DuplicadoClienta[]>("/clientas/duplicados");
-    expect(after.body.map((item) => item.id)).not.toContain(first.id);
+  it("lista las fichas unificadas", async () => {
+    const { body } = await call<DuplicadoClienta[]>("/clientas/duplicados");
+    expect(body.length).toBeGreaterThan(0);
+    expect(body[0]?.registros.length).toBeGreaterThan(1);
+  });
+
+  it("dice cuánto de la venta está identificado", async () => {
+    const { status } = await call("/clientas/cobertura");
+    expect(status).toBe(200);
   });
 
   it("marca una clienta de la recompra como contactada", async () => {

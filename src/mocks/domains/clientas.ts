@@ -1,5 +1,6 @@
 import type {
   ClientaFila,
+  ClientasCobertura,
   ClientaParaRecompra,
   DuplicadoClienta,
   FichaClienta,
@@ -469,19 +470,13 @@ export const routes: Route[] = [
   },
   {
     method: "GET",
-    pattern: /^\/clientas\/duplicados$/,
-    handler: () => Response.json(getDuplicados()),
+    pattern: /^\/clientas\/cobertura$/,
+    handler: () => Response.json({ ventaIdentificada: 0.56, sinCompras: 0 } satisfies ClientasCobertura),
   },
   {
-    method: "POST",
-    pattern: /^\/clientas\/duplicados\/([^/]+)\/fusionar$/,
-    handler: ({ params: [id] }) => {
-      const duplicados = getDuplicados();
-      const index = duplicados.findIndex((item) => item.id === decodeURIComponent(id));
-      if (index === -1) return errorResponse(404, `No existe el duplicado ${id}.`);
-      const [fusionado] = duplicados.splice(index, 1);
-      return Response.json({ fusionados: fusionado?.registros.length ?? 0 });
-    },
+    method: "GET",
+    pattern: /^\/clientas\/duplicados$/,
+    handler: () => Response.json(getDuplicados()),
   },
   {
     method: "GET",

@@ -2,8 +2,10 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
+import { serverEnv } from "@/env";
 import type { Segmento } from "@/lib/api/types";
 import { businessTime } from "@/lib/dates";
+import { normalizeText } from "@/lib/utils";
 import { VENTA_VALIDA } from "@/modules/inventory/ventas";
 import { unirFichas, type ClientaUnida } from "./ficha-unica";
 import { calcularMetricas, elegirSegmento, umbralTop, type ComprobanteDeClienta } from "./metricas";
@@ -31,6 +33,8 @@ function aJson(filas: FilaDeClienta[]): string {
       first_purchase_on: fila.firstPurchaseOn,
       last_purchase_on: fila.lastPurchaseOn,
       cycle_days: fila.cycleDays,
+      first_purchase_local: fila.firstPurchaseLocal,
+      search_text: fila.searchText,
       segment: fila.segment,
       content_hash: fila.contentHash,
     })),
@@ -45,6 +49,8 @@ type FilaDeClienta = ClientaUnida & {
   firstPurchaseOn: Date | null;
   lastPurchaseOn: Date | null;
   cycleDays: number | null;
+  firstPurchaseLocal: boolean;
+  searchText: string;
   segment: Segmento | null;
   contentHash: string;
 };
@@ -95,6 +101,7 @@ export async function recalcularClientas(ahora: Date): Promise<ResultadoDeFichas
     select: {
       customerDuxId: true,
       issuedOn: true,
+      branchId: true,
       totalCents: true,
       items: {
         select: { kind: true, code: true, quantity: true, unitPriceCents: true, discountPct: true, costCents: true },
@@ -102,9 +109,10 @@ export async function recalcularClientas(ahora: Date): Promise<ResultadoDeFichas
     },
   });
 
+  const local = serverEnv().DUX_ID_SUCURSAL_LOCAL;
   const ultimaCompra = new Map<number | null, string>();
   const porTelefono = new Map<string, ComprobanteDeClienta[]>();
-  for (const { customerDuxId, issuedOn, totalCents, items } of comprobantes) {
+  for (const { customerDuxId, issuedOn, branchId, totalCents, items } of comprobantes) {
     const fecha = dia(issuedOn);
     if (fecha > (ultimaCompra.get(customerDuxId) ?? "")) ultimaCompra.set(customerDuxId, fecha);
     const telefono = telefonos.get(customerDuxId ?? -1);
@@ -113,6 +121,7 @@ export async function recalcularClientas(ahora: Date): Promise<ResultadoDeFichas
       ...(porTelefono.get(telefono) ?? []),
       {
         fecha,
+        enLocal: branchId === local,
         totalCentavos: Number(totalCents),
         lineas: items.map((linea) => ({
           tipo: linea.kind,
@@ -144,6 +153,7 @@ export async function recalcularClientas(ahora: Date): Promise<ResultadoDeFichas
   const filas = clientas.map((clienta): FilaDeClienta => {
     const propias = metricas.get(clienta.normalizedPhone) ?? null;
     const segment = propias && elegirSegmento(propias, umbral, hoy);
+    const searchText = normalizeText([clienta.name, clienta.city, clienta.province].filter(Boolean).join(" "));
     return {
       ...clienta,
       purchases: propias?.compras ?? 0,
@@ -153,8 +163,10 @@ export async function recalcularClientas(ahora: Date): Promise<ResultadoDeFichas
       firstPurchaseOn: propias && aFecha(propias.primeraCompra),
       lastPurchaseOn: propias && aFecha(propias.ultimaCompra),
       cycleDays: propias?.cicloDias ?? null,
+      firstPurchaseLocal: propias?.primeraEnLocal ?? false,
+      searchText,
       segment,
-      contentHash: huella({ clienta, propias, segment }),
+      contentHash: huella({ clienta, propias, segment, searchText }),
     };
   });
 
@@ -188,6 +200,8 @@ export async function recalcularClientas(ahora: Date): Promise<ResultadoDeFichas
         first_purchase_on = d.first_purchase_on,
         last_purchase_on = d.last_purchase_on,
         cycle_days = d.cycle_days,
+        first_purchase_local = d.first_purchase_local,
+        search_text = d.search_text,
         segment = d.segment,
         content_hash = d.content_hash,
         changed_at = ${ahora}
@@ -207,6 +221,8 @@ export async function recalcularClientas(ahora: Date): Promise<ResultadoDeFichas
         first_purchase_on date,
         last_purchase_on date,
         cycle_days double precision,
+        first_purchase_local boolean,
+        search_text text,
         segment customer_segment,
         content_hash text
       )

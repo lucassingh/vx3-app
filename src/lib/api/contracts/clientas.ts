@@ -3,25 +3,28 @@ import type { Canal, EstadoPedido, Paginated, Segmento, Zona } from "../types";
 
 /** M12 · Clientes y recompra: la ficha única por teléfono normalizado y la lista del día. */
 
-export type OrigenClientaTipo = "anuncio" | "organico" | "local" | "tiendanube";
+export type OrigenClientaTipo = "anuncio" | "organico" | "local" | "tiendanube" | "sin_dato";
 
 /** Fila de la lista de clientas. */
 export type ClientaFila = {
   id: string;
   nombre: string;
   telefono: string;
-  localidad: string;
-  provincia: string;
-  zona: Zona;
-  segmento: Segmento;
+  localidad: string | null;
+  provincia: string | null;
+  /** La zona llega con el cotizador (2.1). */
+  zona: Zona | null;
+  /** Null: no tiene compras en lo que está leído. */
+  segmento: Segmento | null;
   origen: OrigenClientaTipo;
-  /** Nombre del anuncio de origen, o "Orgánico", "Local", "Tienda Nube". */
+  /** Nombre del anuncio de origen, o "Orgánico", "Local", "Tienda Nube", "Sin dato". */
   origenLabel: string;
   pedidos: number;
   totalComprado: number;
   /** Margen histórico estimado, en pesos. */
   margen: number;
-  ultimaCompraDias: number;
+  /** Null: no tiene compras en lo que está leído. */
+  ultimaCompraDias: number | null;
   cicloDias: number | null;
 };
 
@@ -38,6 +41,14 @@ export type SegmentoResumen = {
   margen: number;
   /** Parte del margen total, como fracción. */
   participacion: number;
+};
+
+/** Cuánto alcanzan las fichas. */
+export type ClientasCobertura = {
+  /** Parte de la venta de los últimos 12 meses que tiene una clienta identificada, como fracción. */
+  ventaIdentificada: number;
+  /** Fichas con teléfono, pero sin compras en lo que está leído: no tienen segmento. */
+  sinCompras: number;
 };
 
 export type FichaEventoTipo = "pedido" | "conversacion" | "envio" | "cobro" | "reclamo";
@@ -62,8 +73,8 @@ export type IdentidadSistema = {
 };
 
 export type FichaClienta = ClientaFila & {
-  cp: string;
-  primeraCompraDias: number;
+  cp: string | null;
+  primeraCompraDias: number | null;
   ticketPromedio: number;
   /** Teléfono normalizado: últimos 10 dígitos. */
   telefonoNormalizado: string;
@@ -120,12 +131,9 @@ export function clientasEndpoints(request: ApiRequest) {
   return {
     list: (query: ClientasQuery = {}) => request<Paginated<ClientaFila>>(`/clientas${toQueryString(query)}`),
     segmentos: () => request<SegmentoResumen[]>("/clientas/segmentos"),
+    cobertura: () => request<ClientasCobertura>("/clientas/cobertura"),
     get: (id: string) => request<FichaClienta>(`/clientas/${encodeURIComponent(id)}`),
     duplicados: () => request<DuplicadoClienta[]>("/clientas/duplicados"),
-    fusionar: (id: string) =>
-      request<{ fusionados: number }>(`/clientas/duplicados/${encodeURIComponent(id)}/fusionar`, {
-        method: "POST",
-      }),
     recompra: () => request<ClientaParaRecompra[]>("/clientas/recompra"),
     recompraResultados: () => request<RecompraResultados>("/clientas/recompra/resultados"),
     marcarRecompra: (id: string, body: { estado: RecompraEstado; mensaje?: string }) =>

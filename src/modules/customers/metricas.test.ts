@@ -22,6 +22,7 @@ const linea = (cambios: Partial<LineaDeCompra> = {}): LineaDeCompra => ({
 
 const comprobante = (fecha: string, lineas: LineaDeCompra[] = [linea()], totalCentavos = 10_000) => ({
   fecha,
+  enLocal: false,
   totalCentavos,
   lineas,
 });
@@ -34,6 +35,7 @@ const metricas = (cambios: Partial<MetricasDeClienta> = {}): MetricasDeClienta =
   primeraCompra: "2026-01-01",
   ultimaCompra: "2026-10-30",
   cicloDias: 60,
+  primeraEnLocal: false,
   ...cambios,
 });
 
@@ -122,6 +124,14 @@ describe("calcularMetricas", () => {
   it("no importa en qué orden lleguen los comprobantes", () => {
     const resultado = calcularMetricas([comprobante("2026-10-20"), comprobante("2026-10-01")], HOY);
     expect(resultado).toMatchObject({ primeraCompra: "2026-10-01", ultimaCompra: "2026-10-20", cicloDias: 19 });
+  });
+
+  it("sabe si la primera compra fue en el local, aunque después compre por otro lado", () => {
+    const enLocal = { ...comprobante("2026-01-01"), enLocal: true };
+    expect(calcularMetricas([comprobante("2026-05-01"), enLocal], HOY)?.primeraEnLocal).toBe(true);
+    expect(
+      calcularMetricas([comprobante("2026-01-01"), { ...enLocal, fecha: "2026-05-01" }], HOY)?.primeraEnLocal,
+    ).toBe(false);
   });
 
   it("el margen de 12 meses deja afuera lo anterior; el total, no", () => {

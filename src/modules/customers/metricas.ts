@@ -18,7 +18,7 @@ export const VALORES_DE_SEGMENTOS = {
 };
 
 const MARGEN_CF = 0.5475;
-const DIAS_12_MESES = 365;
+export const DIAS_12_MESES = 365;
 const DIA_MS = 86_400_000;
 
 export type LineaDeCompra = {
@@ -33,6 +33,7 @@ export type LineaDeCompra = {
 export type ComprobanteDeClienta = {
   /** "2026-11-03" */
   fecha: string;
+  enLocal: boolean;
   totalCentavos: number;
   lineas: LineaDeCompra[];
 };
@@ -46,6 +47,7 @@ export type MetricasDeClienta = {
   ultimaCompra: string;
   /** Mediana de los días entre compras: una compra rara no la mueve. Null con menos de dos. */
   cicloDias: number | null;
+  primeraEnLocal: boolean;
 };
 
 const diasEntre = (desde: string, hasta: string) => (Date.parse(hasta) - Date.parse(desde)) / DIA_MS;
@@ -93,6 +95,7 @@ export function calcularMetricas(comprobantes: ComprobanteDeClienta[], hoy: stri
     primeraCompra,
     ultimaCompra,
     cicloDias: entreCompras.length > 0 ? mediana(entreCompras) : null,
+    primeraEnLocal: comprobantes.some(({ fecha, enLocal }) => fecha === primeraCompra && enLocal),
   };
 }
 
