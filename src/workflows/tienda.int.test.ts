@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
 import { ExternalServiceError } from "@/lib/errors";
@@ -40,9 +40,15 @@ const limpiar = async () => {
 };
 
 beforeEach(async () => {
+  // En la CI no hay .env.local: la clave que cifra el token la pone cada prueba.
+  vi.stubEnv("CREDENTIALS_KEY", "A".repeat(43));
   await limpiar();
   tienda.categorias.mockReset().mockResolvedValue(CATEGORIAS);
   tienda.productos.mockReset().mockResolvedValue([PRODUCTO]);
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 afterAll(async () => {
