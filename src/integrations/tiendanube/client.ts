@@ -15,7 +15,7 @@ export const URL_DE_TIENDA_NUBE = "https://api.tiendanube.com/v1";
 export const LIMITE_DE_TIENDA_NUBE = { clave: "tiendanube", intervaloMs: 360 };
 
 /** Tienda Nube pide un contacto en el User-Agent: alcanza con la dirección de la tienda. */
-const USER_AGENT = "VX3 App (https://ventasportres.com)";
+const USER_AGENT = "VX3 App (https://www.ventasportres.com.ar)";
 
 const POR_PAGINA = 200;
 

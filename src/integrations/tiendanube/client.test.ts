@@ -44,7 +44,7 @@ describe("leer", () => {
     expect(url).toContain("/v1/1234/categories");
     expect(init?.headers).toMatchObject({
       Authentication: "bearer token-de-prueba-tn",
-      "User-Agent": expect.stringContaining("ventasportres.com"),
+      "User-Agent": expect.stringContaining("www.ventasportres.com.ar"),
     });
   });
 
