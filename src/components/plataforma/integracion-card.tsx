@@ -2,6 +2,7 @@
 
 import {
   Database,
+  FileSpreadsheet,
   KeyRound,
   Landmark,
   LoaderCircle,
@@ -29,6 +30,7 @@ import { CargarCredencial } from "./cargar-credencial";
 
 const ICONS: Record<string, LucideIcon> = {
   dux: Database,
+  google: FileSpreadsheet,
   meta: Megaphone,
   whatsapp: MessageCircle,
   tiendanube: ShoppingBag,
@@ -56,6 +58,25 @@ const REFRESCO_MS = 5_000;
 
 /** Textos de fecha armados en el servidor. */
 export type IntegracionLabels = { ultimoSync: string; credencial: string | null };
+
+/** El botón que lee la integración: en Google no es "sincronizar", porque ahí solo se copia el catálogo. */
+const LECTURA: Record<
+  IntegracionConCredencial,
+  { boton: string; enCurso: string; aviso: (nombre: string) => string; falla: (nombre: string) => string }
+> = {
+  dux: {
+    boton: "Sincronizar ahora",
+    enCurso: "Sincronizando…",
+    aviso: (nombre) => `${nombre} se está sincronizando`,
+    falla: (nombre) => `No se pudo sincronizar ${nombre}`,
+  },
+  google: {
+    boton: "Reimportar",
+    enCurso: "Importando…",
+    aviso: () => "El catálogo se está importando",
+    falla: () => "No se pudo importar el catálogo",
+  },
+};
 
 /** Prueba la conexión y la rechaza si la integración no respondió (para toast.promise). */
 async function probar(id: IntegracionConCredencial) {
@@ -104,12 +125,12 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
     if (!conectada) return;
     startTransition(async () => {
       try {
-        const result = await sincronizarIntegracion({ integracion: "dux" });
+        const result = await sincronizarIntegracion({ integracion: conectada });
         if (!result.ok) throw new Error(result.error.message);
-        toast.success(`${nombre} se está sincronizando`, { description: "Tarda unos minutos." });
+        toast.success(LECTURA[conectada].aviso(nombre), { description: "Tarda unos minutos." });
         router.refresh();
       } catch (error) {
-        toast.error(`No se pudo sincronizar ${nombre}`, {
+        toast.error(LECTURA[conectada].falla(nombre), {
           description: error instanceof Error ? error.message : undefined,
         });
       }
@@ -185,23 +206,21 @@ export function IntegracionCard({ integracion, labels }: { integracion: Integrac
             {pending ? <LoaderCircle aria-hidden className="animate-spin" /> : <PlugZap />}
             Probar conexión
           </Button>
-          {conectada === "dux" && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={pending || sincronizando || !integracion.credencial}
-              onClick={onSincronizar}
-            >
-              {pending || sincronizando ? (
-                <LoaderCircle aria-hidden className="animate-spin" />
-              ) : puedeReintentar ? (
-                <RotateCw />
-              ) : (
-                <RefreshCw />
-              )}
-              {sincronizando ? "Sincronizando…" : puedeReintentar ? "Reintentar" : "Sincronizar ahora"}
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={pending || sincronizando || !integracion.credencial}
+            onClick={onSincronizar}
+          >
+            {pending || sincronizando ? (
+              <LoaderCircle aria-hidden className="animate-spin" />
+            ) : puedeReintentar ? (
+              <RotateCw />
+            ) : (
+              <RefreshCw />
+            )}
+            {sincronizando ? LECTURA[conectada].enCurso : puedeReintentar ? "Reintentar" : LECTURA[conectada].boton}
+          </Button>
           <CargarCredencial integracion={conectada} nombre={nombre} yaCargada={Boolean(integracion.credencial)} />
         </CardFooter>
       )}

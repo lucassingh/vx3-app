@@ -98,6 +98,8 @@ export type CatalogoArmado = {
   filasBorradas: number[];
   /** Códigos armados a mano antes del corte, como `HB2-1DOCENA`, sin su `sku_nuevo`. */
   filasConPackViejo: { fila: number; codigo: string }[];
+  /** Filas con datos y sin SKU: no se sabe de qué producto son. */
+  filasSinCodigo: number[];
   /** El mismo código en más de una fila: vale la primera, y una persona tiene que mirarlo. */
   codigosRepetidos: { codigo: string; filas: number[] }[];
   /** Fotos cuyo nombre no lleva a ningún producto. */
@@ -120,6 +122,8 @@ const MEDIAS_EN_EL_NOMBRE = /\b(MEDIAS?|SOQUETES?)\b/;
 const CANTIDAD_DEL_NOMBRE = /\s*-\s*(?:UNIDAD|MEDIA DOCENA|UNA DOCENA|DOS DOCENAS|PACK DE \d+)\s*$/i;
 const ATRIBUTOS = ["copa", "encaje", "push_up", "aro", "elastico", "tipo_bretel", "gancho_espalda", "otros_detalles"];
 const MEDIDA_IMPOSIBLE_CM = 200;
+/** El peso va en kg (RN-124): más que esto es un valor en gramos. */
+const PESO_IMPOSIBLE_KG = 100;
 
 const sinTildes = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "");
 
@@ -142,7 +146,7 @@ function leerNumero(fila: FilaDelSheet, columna: string): { valor: number | null
   const valor = typeof crudo === "number" ? crudo : Number(String(crudo).trim().replace(",", "."));
   if (!Number.isFinite(valor)) return { valor: null, problema: `${columna} inválido: ${String(crudo)}` };
   if (valor <= 0) return { valor: null, problema: `${columna} en 0` };
-  if (columna !== "peso" && valor > MEDIDA_IMPOSIBLE_CM)
+  if (valor > (columna === "peso" ? PESO_IMPOSIBLE_KG : MEDIDA_IMPOSIBLE_CM))
     return { valor: null, problema: `${columna} imposible: ${valor}` };
   return { valor, problema: null };
 }
@@ -188,11 +192,16 @@ export function armarCatalogo({
   const itemsPorProducto = new Map<string, ItemDeDux[]>();
   const filasBorradas: number[] = [];
   const filasConPackViejo: CatalogoArmado["filasConPackViejo"] = [];
+  const filasSinCodigo: number[] = [];
 
   for (const fila of filas) {
     const codigo = codigoDeLaFila(fila);
     if (codigo === null) {
       filasBorradas.push(fila.fila);
+      continue;
+    }
+    if (!codigo) {
+      filasSinCodigo.push(fila.fila);
       continue;
     }
     const lectura = leerCodigo(codigo, rubroDeLaFila(fila));
@@ -325,5 +334,14 @@ export function armarCatalogo({
     };
   });
 
-  return { productos, filasBorradas, filasConPackViejo, codigosRepetidos, fotosSueltas, videos, fotosIa };
+  return {
+    productos,
+    filasBorradas,
+    filasConPackViejo,
+    filasSinCodigo,
+    codigosRepetidos,
+    fotosSueltas,
+    videos,
+    fotosIa,
+  };
 }

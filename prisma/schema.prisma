@@ -406,6 +406,8 @@ model CatalogProduct {
   seasonal      Boolean
   priority      CatalogPriority
   salesRank     Int?                  @map("sales_rank")
+  /// El código que se vende al por mayor: lo define el rubro (RN-101).
+  bulkCode      String?               @map("bulk_code")
   sales90dCents BigInt                @map("sales_90d_cents")
   lastSaleOn    DateTime?             @map("last_sale_on") @db.Date
   /// Lo que le falta (RN-124): [{ dato, situacion }], con "falta" o "no_hay_dato".

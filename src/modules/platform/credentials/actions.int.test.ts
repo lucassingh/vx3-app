@@ -168,6 +168,22 @@ describe("sincronizar", () => {
     await db.syncLock.deleteMany();
   });
 
+  it("en Google, lanza la importación del catálogo", async () => {
+    expect(await sincronizarIntegracion({ integracion: "google" })).toMatchObject({
+      ok: true,
+      data: { runId: "wrun_01" },
+    });
+    const [funcion, [origen]] = workflow.start.mock.calls[0] as [{ name: string }, [unknown]];
+    expect(funcion.name).toBe("importarCatalogo");
+    expect(origen).toEqual({ trigger: "manual", triggeredBy: "Prueba admin" });
+
+    expect(await sincronizarIntegracion({ integracion: "google" })).toMatchObject({
+      ok: false,
+      error: { code: "CONFLICT", message: expect.stringContaining("importación en curso") },
+    });
+    await db.syncLock.deleteMany();
+  });
+
   it("con una corrida en curso avisa, y no lanza otra", async () => {
     await sincronizarIntegracion({ integracion: "dux" });
 

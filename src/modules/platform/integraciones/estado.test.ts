@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { estadoDeDux, estaAlDia, frecuenciaDeDux, type UltimaCorrida } from "./estado";
+import { estadoDeDux, estaAlDia, frecuenciaDeDux, type UltimaCorrida, estadoDeGoogle } from "./estado";
 
 const AHORA = new Date("2026-11-04T12:00:00Z");
 const HACE_UNA_HORA = new Date("2026-11-04T11:00:00Z");
@@ -105,5 +105,50 @@ describe("frecuenciaDeDux", () => {
     expect(frecuenciaDeDux("production")).toContain("Una vez por día");
     expect(frecuenciaDeDux("qa")).toContain("Solo con el botón");
     expect(frecuenciaDeDux("local")).toContain("Solo con el botón");
+  });
+});
+
+describe("estadoDeGoogle", () => {
+  const AHORA = new Date("2026-11-05T12:00:00Z");
+  const importacion = (cambios: Partial<UltimaCorrida> = {}): UltimaCorrida => ({
+    operation: "catalogo",
+    status: "ok",
+    finishedAt: new Date("2026-11-05T08:30:00Z"),
+    detail: "Productos: 2.",
+    ...cambios,
+  });
+  const estado = (ultima: UltimaCorrida | null, tieneCredencial = true) =>
+    estadoDeGoogle({ tieneCredencial, ultima, ahora: AHORA }).estado;
+
+  it("sin clave, o sin ninguna importación, está pendiente", () => {
+    expect(estado(null, false)).toBe("pendiente");
+    expect(estado(null)).toBe("pendiente");
+  });
+
+  it("con una importación reciente, está bien", () => {
+    expect(estado(importacion())).toBe("ok");
+  });
+
+  it("si la última falló, está caída y dice el motivo", () => {
+    expect(
+      estadoDeGoogle({
+        tieneCredencial: true,
+        ultima: importacion({ status: "error", detail: "Falló." }),
+        ahora: AHORA,
+      }),
+    ).toEqual({
+      estado: "caido",
+      motivo: "Falló.",
+    });
+  });
+
+  it("si hace más de un día que no importa, tiene demoras", () => {
+    expect(
+      estadoDeGoogle({
+        tieneCredencial: true,
+        ultima: importacion({ finishedAt: new Date("2026-11-04T06:00:00Z") }),
+        ahora: AHORA,
+      }),
+    ).toEqual({ estado: "degradado", motivo: "La última importación terminó hace 30 horas." });
   });
 });

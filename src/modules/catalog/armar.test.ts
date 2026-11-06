@@ -180,6 +180,15 @@ describe("filas que no cierran", () => {
     expect(catalogo.filasConPackViejo).toEqual([{ fila: vieja.fila, codigo: "HB2-1DOCENA" }]);
   });
 
+  it("una fila sin SKU no arma un producto sin código, y dice cuál", () => {
+    const sinCodigo = fila("");
+
+    const catalogo = armar([sinCodigo]);
+
+    expect(catalogo.productos).toEqual([]);
+    expect(catalogo.filasSinCodigo).toEqual([sinCodigo.fila]);
+  });
+
   it("un código en dos filas: vale la primera, y queda para revisar", () => {
     const primera = fila("VG35", { tela: "Primera" });
     const segunda = fila("VG35", { tela: "Segunda" });
@@ -352,6 +361,7 @@ describe("peso y medidas", () => {
     [{ peso: "mucho" }, "peso inválido: mucho"],
     [{ largo: undefined }, "sin largo"],
     [{ alto: 300 }, "alto imposible: 300"],
+    [{ peso: 250 }, "peso imposible: 250"],
   ])("%j: %s", (crudo, problema) => {
     const producto = unico(armar([fila("LN1", {}, crudo)]), "LN1");
 

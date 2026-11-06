@@ -27,6 +27,8 @@ const ORIGEN = { trigger: "manual", triggeredBy: "Prueba" } as const;
 const corridas = () => db.syncRun.findMany({ orderBy: { startedAt: "asc" } });
 
 beforeEach(async () => {
+  // La branch de prueba copia las credenciales de develop: sin la clave de Google, el catálogo no se importa acá.
+  await db.integrationCredential.deleteMany();
   vi.stubEnv("APP_ENV", "qa");
   vi.stubEnv("CREDENTIALS_KEY", "A".repeat(43));
   await db.syncLock.deleteMany();
