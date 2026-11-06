@@ -120,6 +120,9 @@ const DESCRIPCION: Record<
         : `Creó ${texto(d, "sku")} en la tienda, oculto`,
   },
   "catalogo.tienda_visible": { categoria: "precios", texto: (_, d) => `Mostró ${texto(d, "sku")} en la tienda` },
+  "catalogo.edito": { categoria: "stock", texto: (_, d) => `Editó la ficha de ${texto(d, "sku")}` },
+  "catalogo.corte": { categoria: "reglas", texto: () => "Hizo el corte del catálogo" },
+  "catalogo.corte_atras": { categoria: "reglas", texto: () => "Volvió atrás el corte del catálogo" },
   "catalogo.bajo_xls": { categoria: "precios", texto: (_, d) => `Bajó ${texto(d, "archivo")} para importar en DUX` },
   "credencial.cargada": { categoria: "accesos", texto: (_, d) => `Cargó la credencial de ${texto(d, "integracion")}` },
   "usuario.password_reseteada": {

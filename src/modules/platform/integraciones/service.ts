@@ -1,5 +1,6 @@
 import "server-only";
 import { getDb } from "@/db/client";
+import { estadoDelCorte } from "@/modules/catalog/corte";
 import type { SyncRunStatus } from "@/generated/prisma/client";
 import type { Integracion } from "@/lib/api/types";
 import { businessTime } from "@/lib/dates";
@@ -95,23 +96,27 @@ async function integracionGoogle(): Promise<Integracion> {
   const db = getDb();
   const importaciones = { integration: "google", operation: "catalogo" };
   const presentes = { present: true };
-  const [credencial, ultima, ultimaBuena, importando, productos, enLasTres, filas, archivos] = await Promise.all([
-    credencialEnmascarada("google"),
-    db.syncRun.findFirst({
-      where: { ...importaciones, status: { not: "en_curso" } },
-      orderBy: { startedAt: "desc" },
-    }),
-    db.syncRun.findFirst({ where: { ...importaciones, status: "ok" }, orderBy: { startedAt: "desc" } }),
-    hayCorridaEnCurso("google"),
-    db.catalogProduct.count({ where: presentes }),
-    db.catalogProduct.count({ where: { ...presentes, inSheet: true, inDux: true, photos: { some: {} } } }),
-    db.catalogSheetRow.count(),
-    db.catalogDriveFile.count(),
-  ]);
+  const [corte, credencial, ultima, ultimaBuena, importando, productos, enLasTres, filas, archivos] = await Promise.all(
+    [
+      estadoDelCorte(),
+      credencialEnmascarada("google"),
+      db.syncRun.findFirst({
+        where: { ...importaciones, status: { not: "en_curso" } },
+        orderBy: { startedAt: "desc" },
+      }),
+      db.syncRun.findFirst({ where: { ...importaciones, status: "ok" }, orderBy: { startedAt: "desc" } }),
+      hayCorridaEnCurso("google"),
+      db.catalogProduct.count({ where: presentes }),
+      db.catalogProduct.count({ where: { ...presentes, inSheet: true, inDux: true, photos: { some: {} } } }),
+      db.catalogSheetRow.count(),
+      db.catalogDriveFile.count(),
+    ],
+  );
   const { estado, motivo } = estadoDeGoogle({
     tieneCredencial: Boolean(credencial),
     ultima: ultima?.status === "en_curso" ? null : (ultima as UltimaCorrida | null),
     ahora: new Date(),
+    cortado: corte !== null,
   });
   return {
     id: "google",

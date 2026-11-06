@@ -385,6 +385,10 @@ model CatalogSheetRow {
   /// El valor crudo, por encabezado: un "1,5" escrito como texto se nota acá.
   raw       Json
   readAt    DateTime @map("read_at") @db.Timestamptz(6)
+  /// "sheet" o "app": lo cargado en la app no se pisa con una importación.
+  source    String   @default("sheet")
+  /// Las fotos subidas en la app, en orden.
+  appPhotos Json?    @map("app_photos")
 
   @@map("catalog_sheet_rows")
 }

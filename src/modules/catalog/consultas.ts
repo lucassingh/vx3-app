@@ -21,6 +21,7 @@ import type { Kpi, Paginated } from "@/lib/api/types";
 import { normalizarCodigo } from "./codigos";
 import { losMasParecidos } from "./alta";
 import { armarControl } from "./control";
+import { estadoDelCorte } from "./corte";
 import { coloresDe, facetasDe, pasaLosFiltros, type ProductoFiltrable } from "./filtros";
 import { DECISION_DE_FOTO, DECISION_DE_HISTORICO } from "./importar";
 import { BLOQUES } from "./revision";
@@ -352,6 +353,7 @@ export async function fichaDelProducto(sku: string): Promise<CatalogoFicha | nul
   });
   if (!producto) return null;
 
+  const editable = (await estadoDelCorte()) !== null;
   const espejo = await leerEspejo(producto.presentations.map(({ code }) => code));
   const [primera] = producto.photos;
   const fila = aFila(producto, espejo, primera ? miniaturaDe(primera) : null);
@@ -361,6 +363,13 @@ export async function fichaDelProducto(sku: string): Promise<CatalogoFicha | nul
   return {
     ...fila,
     enLaTienda: await estadoEnLaTienda(producto.bulkCode),
+    editable,
+    // Después del corte, lo que antes se corregía en el Sheet o en Drive se corrige acá.
+    faltantes: editable
+      ? fila.faltantes.map((faltante) =>
+          /Sheet|Drive/.test(faltante.seCorrigeEn) ? { ...faltante, seCorrigeEn: "la ficha del producto" } : faltante,
+        )
+      : fila.faltantes,
     tela: producto.fabric,
     coloresTexto: producto.colors,
     talles: producto.sizes,
@@ -445,6 +454,7 @@ export async function casosDeUnBloque({
   pageSize: number;
 }): Promise<Paginated<RevisionCaso>> {
   const db = getDb();
+  const cortado = (await estadoDelCorte()) !== null;
   const total = await db.catalogReviewCase.count({ where: { block: bloque } });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const actual = Math.min(page, totalPages);
@@ -475,7 +485,12 @@ export async function casosDeUnBloque({
         nombre: caso.baseCode ? (nombres.get(caso.baseCode) ?? null) : null,
         prioridad: caso.priority,
         descripcion: caso.description,
-        seCorrigeEn: caso.fixIn === "sheet" && caso.sheetRow ? `Sheet, fila ${caso.sheetRow}` : fuente,
+        seCorrigeEn:
+          cortado && caso.fixIn !== "dux"
+            ? "la ficha del producto"
+            : caso.fixIn === "sheet" && caso.sheetRow
+              ? `Sheet, fila ${caso.sheetRow}`
+              : fuente,
         foto:
           caso.block === "fotos_sueltas"
             ? {

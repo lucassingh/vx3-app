@@ -35,7 +35,9 @@ const productoSchema = z.object({
   published: z.boolean(),
   categories: z.array(z.object({ id: z.number() })).default([]),
   images: z.array(z.object({ id: z.number() })).default([]),
-  variants: z.array(z.object({ sku: z.string().nullable(), price: z.string().nullable() })).default([]),
+  variants: z
+    .array(z.object({ id: z.number().optional(), sku: z.string().nullable(), price: z.string().nullable() }))
+    .default([]),
 });
 
 export type CategoriaDeLaTienda = z.output<typeof categoriaSchema>;
@@ -167,6 +169,18 @@ export function createTiendaNubeEscritura(
     /** Tienda Nube baja la foto de esa dirección: tiene que ser pública. */
     async agregarFoto(id: number, foto: { src: string; position: number }): Promise<void> {
       exigir(await cliente.escribir("POST", `/products/${id}/images`, foto), id);
+    },
+
+    async actualizarDescripcion(id: number, descripcion: string): Promise<void> {
+      exigir(await cliente.escribir("PUT", `/products/${id}`, { id, description: { es: descripcion } }), id);
+    },
+
+    async actualizarVariante(
+      id: number,
+      variante: number,
+      medidas: { weight: number; width: number; height: number; depth: number },
+    ): Promise<void> {
+      exigir(await cliente.escribir("PUT", `/products/${id}/variants/${variante}`, medidas), id);
     },
 
     /** Solo cambia lo que se manda. */

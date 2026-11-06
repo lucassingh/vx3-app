@@ -24,6 +24,7 @@ import {
   type HojaDeImportacion,
   type IdsDeDux,
 } from "./publicar";
+import { agregarAlCatalogo } from "./edicion";
 import { erroresDeAlta } from "./reglas-alta";
 
 /**
@@ -47,15 +48,19 @@ const pasosDe = (steps: Prisma.JsonValue | null): CatalogoPasoDeDux[] | null =>
 const pasosIniciales = (input: CatalogoAltaInput): CatalogoPasoDeDux[] =>
   presentacionesDe(input).map(({ codigo, nombre }) => ({ codigo, nombre, estado: "pendiente", detalle: null }));
 
-const guardarPasos = (id: string, pasos: CatalogoPasoDeDux[]) =>
-  getDb().catalogDraft.update({
+/** Con todos sus códigos en DUX, el producto entra al catálogo: aparece con la próxima sincronización. */
+const guardarPasos = async (id: string, pasos: CatalogoPasoDeDux[], input: CatalogoAltaInput) => {
+  const enDux = pasos.every(({ estado }) => estado === "creado");
+  if (enDux) await agregarAlCatalogo(input);
+  return getDb().catalogDraft.update({
     where: { id },
     data: {
       steps: pasos as unknown as Prisma.InputJsonArray,
-      duxDoneAt: pasos.every(({ estado }) => estado === "creado") ? new Date() : null,
+      duxDoneAt: enDux ? new Date() : null,
       updatedAt: new Date(),
     },
   });
+};
 
 /** Lo mismo que muestra el formulario. `conUsados`: un código ya creado en un intento anterior no cuenta. */
 async function validar(input: CatalogoAltaInput, { conUsados }: { conUsados: boolean }) {
@@ -138,7 +143,7 @@ async function unPaso(id: string): Promise<AvanceEnDux> {
   const pasos = previos ?? pasosIniciales(input);
 
   const paso = pasos.find(({ estado }) => estado !== "creado");
-  if (!paso) return { borrador: aBorrador(await guardarPasos(id, pasos)), creado: null };
+  if (!paso) return { borrador: aBorrador(await guardarPasos(id, pasos, input)), creado: null };
 
   const ids = await idsDeDux(input);
   const principal = input.fotos[0];
@@ -170,7 +175,7 @@ async function unPaso(id: string): Promise<AvanceEnDux> {
   }
 
   if (paso.estado === "creado") await guardarCodigosUsados([paso.codigo], new Date());
-  return { borrador: aBorrador(await guardarPasos(id, pasos)), creado };
+  return { borrador: aBorrador(await guardarPasos(id, pasos, input)), creado };
 }
 
 /** Después de importar los `.xls` a mano: mira qué códigos ya están. Solo lee de DUX. */
@@ -195,7 +200,7 @@ export async function comprobarEnDux(id: string): Promise<CatalogoBorrador> {
       paso.detalle = `Ya existe en DUX con otro nombre: ${existente.nombre}.`;
     }
   }
-  return aBorrador(await guardarPasos(id, pasos));
+  return aBorrador(await guardarPasos(id, pasos, input));
 }
 
 /** El plan B: lo mismo que iría por la API, en el formato que DUX importa. */

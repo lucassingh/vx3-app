@@ -104,11 +104,17 @@ export function estadoDeGoogle({
   tieneCredencial,
   ultima,
   ahora,
+  cortado = false,
 }: {
   tieneCredencial: boolean;
   ultima: UltimaCorrida | null;
   ahora: Date;
+  /** Después del corte, el Sheet y Drive ya no se leen. */
+  cortado?: boolean;
 }): { estado: IntegracionEstado; motivo: string } {
+  if (cortado) {
+    return { estado: "ok", motivo: "Con el corte hecho, ya no se lee: el catálogo se edita en la app y lee DUX." };
+  }
   if (!tieneCredencial) {
     return { estado: "pendiente", motivo: "De acá sale el catálogo hasta el pase. Falta cargar la clave." };
   }

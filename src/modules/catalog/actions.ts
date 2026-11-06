@@ -1,9 +1,13 @@
 "use server";
 
 import { z } from "zod";
+import { ConflictError } from "@/lib/errors";
 import { escribirXls } from "@/lib/xls";
 import { defineAction } from "@/lib/action";
+import { arrancarElCorte } from "@/workflows/arrancar-catalogo";
 import { borrarBorrador, borrarFotosSinUso, guardarBorrador } from "./alta-consultas";
+import { deshacerElCorte, estadoDelCorte } from "./corte";
+import { editarProducto } from "./edicion";
 import { CLAVE_DE_FOTO, FOTOS_POR_PRODUCTO } from "./fotos";
 import { ARCHIVOS_DE_IMPORTACION } from "./publicar";
 import { avanzarEnDux, comprobarEnDux, hojaDeImportacion } from "./publicar-dux";
@@ -90,6 +94,17 @@ export const deshacerDecisionDelCatalogo = defineAction({
 
 /* ---- Borradores del alta ---- */
 
+const fotosValidas = z
+  .array(
+    z.object({
+      clave: z.string().regex(CLAVE_DE_FOTO).max(300),
+      nombre: z.string().max(250),
+      ancho: z.number().int().min(0).nullable(),
+      alto: z.number().int().min(0).nullable(),
+    }),
+  )
+  .max(FOTOS_POR_PRODUCTO);
+
 const entradaDeAlta = z.object({
   sku: z.string().max(64),
   rubro: z.string().max(120),
@@ -112,16 +127,7 @@ const entradaDeAlta = z.object({
   costoDocena: z.number().min(0),
   pesoBultoKg: z.number().min(0),
   medidasCm: z.tuple([z.number().min(0), z.number().min(0), z.number().min(0)]),
-  fotos: z
-    .array(
-      z.object({
-        clave: z.string().regex(CLAVE_DE_FOTO).max(300),
-        nombre: z.string().max(250),
-        ancho: z.number().int().min(0).nullable(),
-        alto: z.number().int().min(0).nullable(),
-      }),
-    )
-    .max(FOTOS_POR_PRODUCTO),
+  fotos: fotosValidas,
 });
 
 /** Sin `id`, crea uno. Sin validar: guarda lo que todavía no está completo. */
@@ -231,4 +237,63 @@ export const verPedidoDeLaTienda = defineAction({
   input: z.object({ id: z.uuid() }),
   permission: "catalogo.editar",
   handler: async ({ id }) => pedidoDeLaTienda(id),
+});
+
+/* ---- Editar, después del corte ---- */
+
+export const editarProductoDelCatalogo = defineAction({
+  name: "catalogo.editar",
+  input: z.object({
+    sku: codigo,
+    tela: z.string().max(200),
+    colores: z.string().max(500),
+    talles: z.string().max(120),
+    atributos: z.record(z.string().max(40), z.string().max(200)),
+    pesoKg: z.number().min(0).max(100),
+    medidasCm: z.tuple([z.number().min(0).max(200), z.number().min(0).max(200), z.number().min(0).max(200)]),
+    fotos: fotosValidas,
+  }),
+  permission: "catalogo.editar",
+  handler: async ({ sku, ...cambios }, { audit }) => {
+    const resultado = await editarProducto(sku, cambios);
+    await audit({
+      action: "catalogo.edito",
+      entityType: "producto",
+      entityId: resultado.codigo,
+      after: { sku: resultado.codigo, tela: cambios.tela, colores: cambios.colores, fotos: cambios.fotos.length },
+    });
+    return resultado;
+  },
+});
+
+/* ---- El corte (`solucion_doc/06` §6.2) ---- */
+
+export const hacerElCorteDelCatalogo = defineAction({
+  name: "catalogo.corte",
+  input: z.object({}),
+  permission: "plataforma.editar",
+  handler: async (_, { user, audit }) => {
+    if (await estadoDelCorte()) throw new ConflictError("El corte ya está hecho.");
+    const resultado = await arrancarElCorte({ trigger: "manual", triggeredBy: user.name });
+    if (!resultado.arrancada) throw new ConflictError("Hay una importación en curso: esperá a que termine.");
+    await audit({ action: "catalogo.corte", entityType: "catalogo", entityId: "corte", after: { por: user.name } });
+    return { runId: resultado.runId };
+  },
+});
+
+export const volverAtrasElCorte = defineAction({
+  name: "catalogo.corteAtras",
+  input: z.object({}),
+  permission: "plataforma.editar",
+  handler: async (_, { user, audit }) => {
+    if (!(await estadoDelCorte())) throw new ConflictError("El corte no está hecho.");
+    await deshacerElCorte();
+    await audit({
+      action: "catalogo.corte_atras",
+      entityType: "catalogo",
+      entityId: "corte",
+      after: { por: user.name },
+    });
+    return { deshecho: true };
+  },
 });

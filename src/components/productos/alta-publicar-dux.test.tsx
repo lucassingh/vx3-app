@@ -70,7 +70,7 @@ describe("publicar", () => {
     render(<Prueba />);
     fireEvent.click(screen.getByRole("button", { name: "Publicar en DUX" }));
 
-    expect(await screen.findByText("Está en DUX.")).toBeInTheDocument();
+    expect(await screen.findByText(/Está en DUX/)).toBeInTheDocument();
     expect(avanzarPublicacionEnDux).toHaveBeenCalledTimes(2);
     expect(avanzarPublicacionEnDux).toHaveBeenCalledWith({ id: "b1" });
     expect(toast.success).toHaveBeenCalledOnce();
@@ -167,7 +167,7 @@ describe("a mano", () => {
     render(<Prueba guardarAntes={guardarAntes} />);
     fireEvent.click(screen.getByRole("button", { name: "Ya los importé: comprobar" }));
 
-    expect(await screen.findByText("Está en DUX.")).toBeInTheDocument();
+    expect(await screen.findByText(/Está en DUX/)).toBeInTheDocument();
     expect(guardarAntes).not.toHaveBeenCalled();
     expect(comprobarImportacionEnDux).toHaveBeenCalledWith({ id: "b1" });
   });

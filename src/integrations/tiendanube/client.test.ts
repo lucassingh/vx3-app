@@ -168,6 +168,18 @@ describe("escribir", () => {
     ).rejects.toThrow("Unable to download image");
   });
 
+  it("editar manda solo lo que cambia", async () => {
+    const fetch = armar(json(PRODUCTO), json({}));
+    const escritura = createTiendaNubeEscritura(CONFIG, produccion(fetch));
+
+    await escritura.actualizarDescripcion(7, "Marca: X.");
+    await escritura.actualizarVariante(7, 9, { weight: 1, width: 2, height: 3, depth: 4 });
+
+    expect(JSON.parse(fetch.mock.calls[0]?.[1]?.body as string)).toEqual({ id: 7, description: { es: "Marca: X." } });
+    expect(fetch.mock.calls[1]?.[0]).toContain("/products/7/variants/9");
+    expect(JSON.parse(fetch.mock.calls[1]?.[1]?.body as string)).toEqual({ weight: 1, width: 2, height: 3, depth: 4 });
+  });
+
   it("mostrar un producto que ya no está lo dice", async () => {
     const fetch = armar(json({}, 404));
 

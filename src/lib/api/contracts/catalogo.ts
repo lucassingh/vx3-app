@@ -43,6 +43,8 @@ export type CatalogoEnLaTienda = "publicado" | "pausado" | "no_esta";
 export type CatalogoFicha = CatalogoFila & {
   /** Null: la tienda todavía no se leyó. */
   enLaTienda: CatalogoEnLaTienda | null;
+  /** Después del corte, se edita en la app. */
+  editable: boolean;
   tela: string | null;
   /** Como está en el Sheet: "BLANCO, NEGRO Y BEIGE". */
   coloresTexto: string | null;
@@ -261,6 +263,23 @@ export type CatalogoAltaInput = {
   medidasCm: [number, number, number];
   /** En orden: la primera es la principal, la que va al frente en Tienda Nube y en DUX. */
   fotos: FotoSubida[];
+};
+
+/** La ficha para editar, después del corte. */
+export type CatalogoEdicion = {
+  sku: string;
+  nombre: string;
+  tela: string;
+  colores: string;
+  talles: string;
+  atributos: Record<string, string>;
+  pesoKg: number;
+  medidasCm: [number, number, number];
+  /** Las de Drive quedan como están. */
+  fotosDeDrive: number;
+  fotos: FotoSubida[];
+  opcionesDeAtributos: { clave: string; label: string; opciones: string[] }[];
+  cortado: boolean;
 };
 
 /** Lo que ya existe y se parece: se abre su ficha antes de crear otro (RN-04, RN-125). */

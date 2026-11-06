@@ -9,7 +9,9 @@ import { businessTime } from "@/lib/dates";
 import { isAppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { normalizeText } from "@/lib/utils";
+import type { FotoSubida } from "@/lib/api/contracts/catalogo";
 import { armarCatalogo, type FilaDelSheet, type ItemDeDux, type ProductoArmado } from "./armar";
+import { normalizarCodigo } from "./codigos";
 import { leerPestana } from "./fuentes";
 import { casosDeRevision } from "./revision";
 import {
@@ -85,7 +87,8 @@ export function leerYCopiarDrive(): Promise<Lectura> {
 
 async function guardarCopiaDelSheet(filas: FilaDelSheet[], leidoEl: Date) {
   await getDb().$transaction(async (tx) => {
-    await tx.catalogSheetRow.deleteMany();
+    // Lo cargado en la app no está en el Sheet: la importación no lo podría volver a traer.
+    await tx.catalogSheetRow.deleteMany({ where: { source: "sheet" } });
     await tx.catalogSheetRow.createMany({
       data: filas.map(({ fila, visto, crudo }) => ({
         id: newId(),
@@ -251,6 +254,44 @@ export type ResumenDeImportacion = {
   paraRevisar: number;
 };
 
+const codigoDeLaFilaCruda = (shown: Prisma.JsonValue) => {
+  const { sku_nuevo: nuevo, SKU: sku } = shown as Record<string, string | undefined>;
+  return normalizarCodigo(nuevo?.trim() || sku?.trim() || "");
+};
+
+/**
+ * Las fotos de la app salen de su fila. Van después de las de Drive, y en su orden. Un producto
+ * cuya fila no tiene lista no se toca: nadie le editó las fotos desde acá.
+ */
+async function sincronizarFotosDeLaApp(
+  tx: Prisma.TransactionClient,
+  filas: readonly { shown: Prisma.JsonValue; appPhotos: Prisma.JsonValue }[],
+) {
+  const conLista = filas.filter(({ appPhotos }) => Array.isArray(appPhotos));
+  if (conLista.length === 0) return;
+  const productos = await tx.catalogProduct.findMany({
+    where: { baseCode: { in: conLista.map(({ shown }) => codigoDeLaFilaCruda(shown)) } },
+    select: { id: true, baseCode: true, photos: { select: { id: true, driveId: true, storageKey: true } } },
+  });
+  for (const { shown, appPhotos } of conLista) {
+    const producto = productos.find(({ baseCode }) => baseCode === codigoDeLaFilaCruda(shown));
+    if (!producto) continue;
+    const fotos = appPhotos as unknown as FotoSubida[];
+    const quedan = new Set(fotos.map(({ clave }) => clave));
+    const sobran = producto.photos.filter(({ storageKey }) => storageKey && !quedan.has(storageKey));
+    await tx.catalogPhoto.deleteMany({ where: { id: { in: sobran.map(({ id }) => id) } } });
+    const deDrive = producto.photos.filter(({ driveId }) => driveId).length;
+    for (const [indice, { clave, nombre, ancho, alto }] of fotos.entries()) {
+      const datos = { name: nombre, position: deDrive + indice, width: ancho, height: alto };
+      await tx.catalogPhoto.upsert({
+        where: { storageKey: clave },
+        create: { id: newId(), productId: producto.id, storageKey: clave, ...datos },
+        update: { productId: producto.id, ...datos },
+      });
+    }
+  }
+}
+
 /** Idempotente: lo que no cambió no se toca, ni su ID ni su fecha. */
 export async function armarDesdeLasCopias(ahora: Date, hoy = businessTime.today()): Promise<ResumenDeImportacion> {
   const db = getDb();
@@ -265,10 +306,18 @@ export async function armarDesdeLasCopias(ahora: Date, hoy = businessTime.today(
     }),
   ]);
 
+  // Si el Sheet ya tiene ese código, manda el Sheet: pasa si alguien lo cargó en los dos lados antes del corte.
+  const delSheet = new Set(
+    filasCrudas.filter(({ source }) => source === "sheet").map(({ shown }) => codigoDeLaFilaCruda(shown)),
+  );
+  const filasVigentes = filasCrudas.filter(
+    ({ source, shown }) => source === "sheet" || !delSheet.has(codigoDeLaFilaCruda(shown)),
+  );
+
   const deTipo = (tipo: string) => decisiones.filter(({ type }) => type === tipo);
   const historicos = deTipo(DECISION_DE_HISTORICO);
   const armado = armarCatalogo({
-    filas: filasCrudas.map(({ rowNumber, shown, raw }) => ({
+    filas: filasVigentes.map(({ rowNumber, shown, raw }) => ({
       fila: rowNumber,
       visto: shown as Record<string, string>,
       crudo: raw as Record<string, unknown>,
@@ -376,6 +425,7 @@ export async function armarDesdeLasCopias(ahora: Date, hoy = businessTime.today(
       ),
     });
     await tx.catalogPhoto.createMany({ data: subidasEnLaApp });
+    await sincronizarFotosDeLaApp(tx, filasVigentes);
 
     // Se regenera entera: lo corregido en la fuente desaparece solo.
     await tx.catalogReviewCase.deleteMany();

@@ -111,6 +111,7 @@ const codigosCreados = () => dux.crear.mock.calls.map(([pedido]) => (pedido as {
 
 const limpiar = async () => {
   await db.catalogDraft.deleteMany();
+  await db.catalogSheetRow.deleteMany();
   await db.duxReference.deleteMany();
   await db.duxUsedCode.deleteMany();
   await db.duxItem.deleteMany();
@@ -175,6 +176,27 @@ describe("de a un código", () => {
     expect(ultimo.borrador.publicacion?.enDux).toBe(true);
     expect(ultimo.creado).toBeNull();
     expect(codigosCreados()).toEqual(["HB90", "HB90-6"]);
+  });
+
+  it("al quedar en DUX, entra al catálogo: con su ficha y sus fotos, y una sola vez", async () => {
+    const id = await crearBorrador();
+
+    await avanzarEnDux(id);
+    expect(await db.catalogSheetRow.count({ where: { source: "app" } })).toBe(0);
+
+    await avanzarEnDux(id);
+    await avanzarEnDux(id);
+
+    const fila = await db.catalogSheetRow.findFirstOrThrow({ where: { source: "app" } });
+    expect(fila.shown).toMatchObject({
+      SKU: "HB90",
+      Proveedor: "FABRICANTE, PRUEBA",
+      categoria_tn: "HOMBRE",
+      curva_colores: "NEGRO",
+      peso: "0.7",
+    });
+    expect(fila.appPhotos).toMatchObject([{ clave: "catalogo/boxer.jpg" }]);
+    expect(await db.catalogSheetRow.count({ where: { source: "app" } })).toBe(1);
   });
 
   it("los códigos creados ya cuentan como usados, sin esperar a la próxima sincronización", async () => {

@@ -80,6 +80,14 @@ function ProductoContent({ producto }: { producto: CatalogoFicha }) {
         <DialogDescription>
           {[producto.rubro, producto.subrubro].filter(Boolean).join(" · ") || "Sin rubro"}
         </DialogDescription>
+        {producto.editable && (
+          <Link
+            href={`/productos/editar?producto=${encodeURIComponent(producto.sku)}`}
+            className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+          >
+            Editar la ficha y las fotos
+          </Link>
+        )}
       </DialogHeader>
 
       <DialogBody className="space-y-5">
@@ -241,7 +249,11 @@ function ProductoContent({ producto }: { producto: CatalogoFicha }) {
           <ul className="flex flex-wrap gap-2 text-xs">
             <li>
               <Badge variant={producto.enSheet ? "success" : "warning"}>
-                {producto.enSheet ? `Sheet, fila ${producto.filaDelSheet}` : "No está en el Sheet"}
+                {!producto.enSheet
+                  ? "Sin ficha"
+                  : producto.filaDelSheet
+                    ? `Sheet, fila ${producto.filaDelSheet}`
+                    : "Ficha en la app"}
               </Badge>
             </li>
             <li>

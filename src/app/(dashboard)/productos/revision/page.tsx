@@ -9,9 +9,11 @@ import {
   RevisionCasosSkeleton,
   RevisionDecisiones,
 } from "@/components/productos/revision";
+import { CorteDelCatalogo } from "@/components/productos/corte-del-catalogo";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { getRouteMetadata } from "@/lib/navigation";
+import { estadoDelCorte } from "@/modules/catalog/corte";
 import { requirePageAccess } from "@/modules/platform/auth/session";
 import { can } from "@/modules/platform/permissions";
 
@@ -23,9 +25,14 @@ export const metadata = getRouteMetadata(HREF);
  * La cola de revisión del catálogo (`solucion_doc/06` §6.2). Una sola lista, que se vacía sola con
  * cada importación. Acá se decide solo lo que el Sheet no puede guardar; lo demás dice dónde se corrige.
  */
+async function Corte() {
+  return <CorteDelCatalogo corte={await estadoDelCorte()} />;
+}
+
 export default async function RevisionPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const user = await requirePageAccess("/productos/revision");
   const puedeEditar = can(user.role, "catalogo.editar");
+  const puedeCortar = can(user.role, "plataforma.editar");
   const header = routeHeader(HREF);
 
   return (
@@ -44,6 +51,11 @@ export default async function RevisionPage({ searchParams }: { searchParams: Pro
         }
       />
       <PageBody>
+        {puedeCortar && (
+          <AsyncWidget title="el corte del catálogo" fallback={null}>
+            <Corte />
+          </AsyncWidget>
+        )}
         <div className="grid items-start gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
           <AsyncWidget title="los bloques" fallback={<RevisionBloquesSkeleton />}>
             <RevisionBloques searchParams={searchParams} />
