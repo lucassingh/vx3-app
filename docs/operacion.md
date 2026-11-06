@@ -1,4 +1,4 @@
-# Guía de operación
+| `DUX_ID_PERSONAL`| a confirmar con Elías| sin cargar|| `DUX_ID_UNIDAD_MEDIDA`| a confirmar con DUX| sin cargar|| `MEDIA_URL`| la de `cli-vx3-media-prod`| la de `cli-vx3-media-dev`|# Guía de operación
 
 Qué hacer cuando algo se rompe a las 2 de la mañana. Cada caso dice cómo darse
 cuenta, qué hacer y cómo verificar que quedó bien. Los secretos están en
