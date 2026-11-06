@@ -29,8 +29,8 @@ import { formatCurrency, formatNumber } from "@/lib/format";
 import { swatchFor } from "@/lib/swatches";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { calcularPresentaciones } from "./motor-precios";
-import { avisosDeAlta, erroresDeAlta, nombreGenerado, type AltaProblema } from "./reglas-alta";
+import { calcularPresentaciones } from "@/modules/catalog/motor-precios";
+import { avisosDeAlta, erroresDeAlta, nombreGenerado, type AltaProblema } from "@/modules/catalog/reglas-alta";
 
 const FOTOS = [
   { tipo: "colores", label: "Todos los colores", hint: "La que manda el bot primero" },

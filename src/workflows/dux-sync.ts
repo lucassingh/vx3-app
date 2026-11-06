@@ -3,6 +3,7 @@ import { formatNumber } from "@/lib/format";
 import { recalcularClientas } from "@/modules/customers/fichas";
 import { abrirCorrida, cerrarCorrida, soltarBloqueo, type OrigenDeCorrida } from "@/modules/platform/sync-runs";
 import { importarCatalogoTrasDux } from "./catalogo";
+import { leerCodigosDux } from "./dux-codigos";
 import { barrerItemsDux } from "./dux-items";
 import { leerClientasDux } from "./dux-clientas";
 import { leerVentasDux, traerHistorialDeVentasDux } from "./dux-ventas";
@@ -20,6 +21,7 @@ export async function sincronizarDux(origen: OrigenDeCorrida, bloqueo: string) {
     const { status: items } = await barrerItemsDux(origen);
     const { status: ventas } = await leerVentasDux(origen);
     const { status: clientas } = await leerClientasDux(origen);
+    await leerCodigosDux(origen);
     await recalcularFichasDux(origen);
     resumen = { items, ventas, clientas };
   } finally {

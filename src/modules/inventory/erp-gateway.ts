@@ -30,6 +30,9 @@ export type ErpItem = {
 
 export type PaginaDeItems = { items: ErpItem[]; total: number; hayMas: boolean };
 
+/** Los códigos que existen en el ERP, habilitados o no. */
+export type PaginaDeCodigos = { codigos: string[]; hayMas: boolean };
+
 export type ErpLinea = {
   codigo: string;
   nombre: string;
@@ -81,6 +84,7 @@ export type ErpClienta = {
 export type PaginaDeClientas = { clientas: ErpClienta[]; hayMas: boolean };
 
 export interface ErpGateway {
+  listarCodigos(offset: number): Promise<PaginaDeCodigos>;
   listarItems(offset: number): Promise<PaginaDeItems>;
   listarClientas(offset: number): Promise<PaginaDeClientas>;
   listarComprobantes(pedido: PedidoDeComprobantes): Promise<PaginaDeComprobantes>;

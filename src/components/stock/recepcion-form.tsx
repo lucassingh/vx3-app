@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { ProductThumb } from "@/components/kit/product-thumb";
-import { precioBulto } from "@/components/productos/motor-precios";
+import { precioBulto } from "@/modules/catalog/motor-precios";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";

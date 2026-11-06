@@ -9,6 +9,7 @@ const erp = vi.hoisted(() => ({
   items: (async () => ({ items: [], total: 0, hayMas: false })) as () => Promise<unknown>,
   comprobantes: (async () => ({ comprobantes: [], total: 0, hayMas: false })) as () => Promise<unknown>,
   clientas: (async () => ({ clientas: [], hayMas: false })) as () => Promise<unknown>,
+  codigos: (async () => ({ codigos: [], hayMas: false })) as () => Promise<unknown>,
 }));
 const workflow = vi.hoisted(() => ({ start: vi.fn() }));
 
@@ -19,6 +20,7 @@ vi.mock("@/integrations/dux", () => ({
     listarItems: () => erp.items(),
     listarComprobantes: () => erp.comprobantes(),
     listarClientas: () => erp.clientas(),
+    listarCodigos: () => erp.codigos(),
   }),
 }));
 
@@ -60,7 +62,7 @@ describe("sincronizarDux", () => {
 
     expect(resultado).toEqual({ items: "ok", ventas: "ok", clientas: "ok" });
     const filas = await corridas();
-    expect(filas.map(({ operation }) => operation)).toEqual(["items", "ventas", "clientas", "fichas"]);
+    expect(filas.map(({ operation }) => operation)).toEqual(["items", "ventas", "clientas", "codigos", "fichas"]);
     expect(filas.every(({ trigger, triggeredBy }) => trigger === "manual" && triggeredBy === "Prueba")).toBe(true);
     expect(await db.syncLock.count()).toBe(0);
   });

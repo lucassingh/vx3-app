@@ -1,4 +1,4 @@
-import { calcularPresentaciones, ceilTo, margenDe } from "@/components/productos/motor-precios";
+import { calcularPresentaciones, ceilTo, margenDe } from "@/modules/catalog/motor-precios";
 import type {
   CapaCosto,
   CoeficientesPrecio,

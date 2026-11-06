@@ -66,6 +66,12 @@ export async function erpGateway(opciones: Opciones = {}): Promise<ErpGateway> {
   const cliente = await duxClient(opciones);
   return {
     listarClientas: async (offset) => aPaginaDeClientas(await cliente.listarClientes(offset), POR_PAGINA_DUX),
+    listarCodigos: async (offset) => {
+      const { DUX_ID_DEPOSITO: deposito } = serverEnv();
+      if (!deposito) throw new ExternalServiceError("DUX", "Falta DUX_ID_DEPOSITO en este ambiente.");
+      const { datos, paginacion } = await cliente.listarStock(deposito, offset);
+      return { codigos: datos.map(({ cod_item: codigo }) => codigo), hayMas: paginacion?.hay_mas ?? false };
+    },
     listarComprobantes: async (pedido) => {
       const { results, paging } = await cliente.listarFacturas(pedido);
       return {

@@ -194,6 +194,17 @@ model DuxItem {
 
 /// Un comprobante de la v1 de /facturas. Incluye anulados y notas de crédito, marcados:
 /// no se suman a la venta, pero tienen que verse si cambian.
+/// Todos los códigos que existen en DUX, inhabilitados incluidos (`/v2/stock`). Un número no se
+/// reusa nunca (RN-03). Solo se agrega: que DUX deje de mandarlo no quiere decir que no haya existido.
+model DuxUsedCode {
+  code           String   @id
+  normalizedCode String   @map("normalized_code")
+  firstSeenAt    DateTime @map("first_seen_at") @db.Timestamptz(6)
+
+  @@index([normalizedCode])
+  @@map("dux_used_codes")
+}
+
 model DuxInvoice {
   id            String           @id @db.Uuid
   duxId         Int              @unique @map("dux_id")

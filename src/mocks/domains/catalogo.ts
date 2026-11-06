@@ -1,5 +1,5 @@
-import { calcularPresentaciones, ceilTo, margenDe } from "@/components/productos/motor-precios";
-import { erroresDeAlta } from "@/components/productos/reglas-alta";
+import { calcularPresentaciones, ceilTo, margenDe } from "@/modules/catalog/motor-precios";
+import { erroresDeAlta } from "@/modules/catalog/reglas-alta";
 import type {
   CatalogoAltaInput,
   CatalogoAltaOpciones,

@@ -31,7 +31,15 @@ const precioPiso = (costo: number, coeficiente: number) =>
 const MAYORISTA = "MAYORISTA EF/TR";
 const LOCAL = "LOCAL EF/TR";
 
-export function calcularPresentaciones(familia: Familia, sku: string, costoDocena: number): PresentacionCalculada[] {
+/** Lo que no todos los productos tienen (RN-01). El -3 fuera de medias lo decide VX3 (Elías, 05/11). */
+export type OpcionalesDeAlta = { tres?: boolean; docena?: boolean; dosDocenas?: boolean };
+
+export function calcularPresentaciones(
+  familia: Familia,
+  sku: string,
+  costoDocena: number,
+  { tres = false, docena = true, dosDocenas = false }: OpcionalesDeAlta = {},
+): PresentacionCalculada[] {
   const cd = Math.max(0, costoDocena);
   const base = sku || "SKU";
 
@@ -61,8 +69,8 @@ export function calcularPresentaciones(familia: Familia, sku: string, costoDocen
       },
       {
         codigo: `${base}-12`,
-        label: "Docena",
-        terminacion: "DOCENA",
+        label: "Una docena",
+        terminacion: "UNA DOCENA",
         prendas: 12,
         coeficiente: 1.3,
         precio: precioPiso(cd, 1.3),
@@ -70,6 +78,21 @@ export function calcularPresentaciones(familia: Familia, sku: string, costoDocen
         listas: [MAYORISTA, LOCAL],
         esBulto: true,
       },
+      ...(dosDocenas
+        ? [
+            {
+              codigo: `${base}-24`,
+              label: "Dos docenas",
+              terminacion: "DOS DOCENAS",
+              prendas: 24,
+              coeficiente: 1.1765,
+              precio: precioPiso(cd * 2, 1.1765),
+              costo: cd * 2,
+              listas: [MAYORISTA, LOCAL],
+              esBulto: false,
+            },
+          ]
+        : []),
     ];
   }
 
@@ -85,6 +108,22 @@ export function calcularPresentaciones(familia: Familia, sku: string, costoDocen
       listas: [LOCAL],
       esBulto: false,
     },
+    // Los seis -3 que hay en DUX van por 1,30 y en las dos listas (medido el 06/11).
+    ...(tres
+      ? [
+          {
+            codigo: `${base}-3`,
+            label: "Pack de 3",
+            terminacion: "PACK DE 3",
+            prendas: 3,
+            coeficiente: 1.3,
+            precio: precioPiso(cd / 4, 1.3),
+            costo: cd / 4,
+            listas: [MAYORISTA, LOCAL],
+            esBulto: false,
+          },
+        ]
+      : []),
     {
       codigo: `${base}-6`,
       label: "Media docena",
@@ -96,17 +135,21 @@ export function calcularPresentaciones(familia: Familia, sku: string, costoDocen
       listas: [MAYORISTA, LOCAL],
       esBulto: true,
     },
-    {
-      codigo: `${base}-12`,
-      label: "Docena",
-      terminacion: "DOCENA",
-      prendas: 12,
-      coeficiente: 1.1765,
-      precio: precioPiso(cd, 1.1765),
-      costo: cd,
-      listas: [MAYORISTA, LOCAL],
-      esBulto: false,
-    },
+    ...(docena
+      ? [
+          {
+            codigo: `${base}-12`,
+            label: "Una docena",
+            terminacion: "UNA DOCENA",
+            prendas: 12,
+            coeficiente: 1.1765,
+            precio: precioPiso(cd, 1.1765),
+            costo: cd,
+            listas: [MAYORISTA, LOCAL],
+            esBulto: false,
+          },
+        ]
+      : []),
   ];
 }
 

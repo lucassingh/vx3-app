@@ -1,4 +1,7 @@
 import type { CatalogoAltaInput } from "@/lib/api/types";
+import { normalizeText } from "@/lib/utils";
+import { prefijoDeCodigo, problemasDelNombre } from "./alta";
+import { normalizarCodigo } from "./codigos";
 
 /**
  * Reglas del alta de producto. Las bloqueantes son las de RN-98 y RN-84; marca
@@ -13,7 +16,18 @@ export const PESO_MIN_KG = 0.03;
 export const PESO_MAX_KG = 5;
 export const MEDIDA_MAX_CM = 150;
 
-export function erroresDeAlta(input: Partial<CatalogoAltaInput>, skusExistentes: string[]): AltaProblema[] {
+/** Lo que solo sabe el servidor: la API vuelve a validar con esto. */
+export type ContextoDelAlta = {
+  /** Con los inhabilitados y los vendidos: un número no se reusa nunca (RN-03). */
+  codigosUsados?: readonly string[];
+  subrubrosDeDux?: readonly { rubro: string; subrubro: string }[];
+};
+
+export function erroresDeAlta(
+  input: Partial<CatalogoAltaInput>,
+  skusExistentes: string[],
+  { codigosUsados = [], subrubrosDeDux }: ContextoDelAlta = {},
+): AltaProblema[] {
   const errores: AltaProblema[] = [];
   const sku = (input.sku ?? "").trim().toUpperCase();
 
@@ -29,12 +43,30 @@ export function erroresDeAlta(input: Partial<CatalogoAltaInput>, skusExistentes:
   else if (skusExistentes.includes(sku))
     errores.push({
       campo: "sku",
-      mensaje: `${sku} ya existe en DUX. Si es el mismo producto con otros colores, usá el reciclado de SKU.`,
+      mensaje: `${sku} ya existe en DUX. Si es el mismo producto con otros colores, editalo: suma la foto y ajusta el color (RN-04).`,
+    });
+  else if (codigosUsados.some((usado) => normalizarCodigo(usado).split("-")[0] === normalizarCodigo(sku)))
+    errores.push({
+      campo: "sku",
+      mensaje: `Ese número ya se usó en DUX, aunque ahora no esté habilitado: ${sku} no se puede reusar.`,
     });
 
   if (!input.rubro || !input.subrubro)
     errores.push({ campo: "subrubro", mensaje: "Elegí el rubro y el subrubro (tienen que existir en DUX)." });
+  else if (
+    subrubrosDeDux &&
+    !subrubrosDeDux.some(
+      ({ rubro, subrubro }) =>
+        normalizeText(rubro) === normalizeText(input.rubro ?? "") &&
+        normalizeText(subrubro) === normalizeText(input.subrubro ?? ""),
+    )
+  )
+    errores.push({
+      campo: "subrubro",
+      mensaje: `${input.rubro} › ${input.subrubro} no existe en DUX: hay que crearlo primero allá, la API no crea subrubros.`,
+    });
   if (!(input.nombre ?? "").trim()) errores.push({ campo: "nombre", mensaje: "Falta el nombre del producto." });
+  for (const mensaje of problemasDelNombre(input.nombre ?? "")) errores.push({ campo: "nombre", mensaje });
   if (!input.costoDocena || input.costoDocena <= 0)
     errores.push({ campo: "costoDocena", mensaje: "El costo de la docena tiene que ser mayor a $ 0." });
   if (!(input.colores ?? []).length)
@@ -62,8 +94,19 @@ export function erroresDeAlta(input: Partial<CatalogoAltaInput>, skusExistentes:
   return errores;
 }
 
-export function avisosDeAlta(input: Partial<CatalogoAltaInput>, marcas: string[]): AltaProblema[] {
+export function avisosDeAlta(
+  input: Partial<CatalogoAltaInput>,
+  marcas: string[],
+  prefijoDelSubrubro?: string | null,
+): AltaProblema[] {
   const avisos: AltaProblema[] = [];
+  const sku = (input.sku ?? "").trim().toUpperCase();
+  if (sku && prefijoDelSubrubro && prefijoDeCodigo(sku) !== prefijoDelSubrubro) {
+    avisos.push({
+      campo: "sku",
+      mensaje: `${sku} no sigue el prefijo de este subrubro, que es ${prefijoDelSubrubro}.`,
+    });
+  }
   const peso = input.pesoBultoKg ?? 0;
   if (peso > 0 && peso <= 20 && (peso < PESO_MIN_KG || peso > PESO_MAX_KG)) {
     avisos.push({

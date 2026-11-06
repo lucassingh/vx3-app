@@ -164,7 +164,7 @@ las fechas en que se usó. Sin ella, las copias de esas semanas no se pueden lee
   Responde `{ ok: true, runId }`. Sin el secreto responde 401.
 - **La sincronización con DUX** (productos, stock y precios, las ventas de los últimos
   35 días y las clientas) corre a las 05:00 de Argentina y con el botón **Sincronizar
-  ahora** de Configuración → Integraciones. Son unos 190 requests y menos de 4 minutos.
+  ahora** de Configuración → Integraciones. Son unos 250 requests y menos de 5 minutos.
   Nunca hay dos a la vez: la segunda avisa y no arranca. La frecuencia se cambia en la
   línea de `/api/cron/dux` en `vercel.json` (y el texto en
   `src/modules/platform/integraciones/estado.ts`). Solo lee: la app no escribe en DUX.
@@ -355,6 +355,7 @@ se puede deshacer desde la misma pantalla. Las deciden los roles que editan el c
 | `DUX_ID_EMPRESA`            | `9432`                       | `9432`                         |
 | `DUX_ID_SUCURSAL_ECOMMERCE` | `1`                          | `1`                            |
 | `DUX_ID_SUCURSAL_LOCAL`     | `2`                          | `2`                            |
+| `DUX_ID_DEPOSITO`           | `18516`                      | `18516`                        |
 
 Las previews ven las variables de QA, pero ignoran `CREDENTIALS_KEY`: con
 `APP_ENV=preview` no se conectan a DUX. El token de DUX no es una variable: está cifrado

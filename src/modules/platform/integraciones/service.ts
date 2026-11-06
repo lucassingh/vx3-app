@@ -205,6 +205,7 @@ function nombreDeOperacion(operacion: string): string {
   const [, mes, sucursal] = /^ventas_historial:(.+):(.+)$/.exec(operacion) ?? [];
   if (mes && sucursal) return `Historial de ventas · ${mes} · sucursal ${sucursal}`;
   if (operacion === "fichas") return "Fichas de clientas";
+  if (operacion === "codigos") return "Códigos usados";
   if (operacion === "catalogo") return "Importación del catálogo";
   return LECTURAS_DUX[operacion] ?? operacion;
 }
