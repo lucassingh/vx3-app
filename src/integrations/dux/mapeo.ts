@@ -17,6 +17,7 @@ export function aErpItem(item: DuxItem): ErpItem {
     rubro: item.rubro?.nombre ?? null,
     subrubro: item.sub_rubro?.nombre ?? null,
     marca: item.marca?.marca ?? null,
+    marcaCodigo: item.marca?.codigo_marca ?? null,
     proveedorId: item.proveedor?.id_proveedor ?? null,
     proveedor: item.proveedor?.proveedor ?? null,
     costoCentavos: centavos(item.costo),

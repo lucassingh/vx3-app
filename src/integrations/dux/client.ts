@@ -7,7 +7,19 @@ import type { LimiteDeTasa } from "@/lib/rate-limit";
 import type { PedidoDeComprobantes } from "@/modules/inventory/erp-gateway";
 import { POR_PAGINA_DUX } from "./paginas";
 import { clasificarRespuestaDux } from "./respuesta";
-import { duxPaginaClientesSchema, duxPaginaFacturasSchema, duxPaginaItemsSchema } from "./schemas";
+import {
+  duxListasSchema,
+  duxMonedasSchema,
+  duxPaginaClientesSchema,
+  duxPaginaFacturasSchema,
+  duxPaginaItemsSchema,
+  duxPersonalesSchema,
+  duxProveedoresSchema,
+  duxRubrosSchema,
+  duxStockSchema,
+  duxSubRubrosSchema,
+  duxSucursalesSchema,
+} from "./schemas";
 
 /**
  * Adaptador de la API de DUX (`solucion_doc/04` §1, `tecnica.md` §7). Solo lee: no
@@ -80,10 +92,36 @@ export function createDuxClient(config: DuxConfig, { limites, esperasMs = ESPERA
     return validar(duxPaginaClientesSchema, (await v2.get(ruta)).cuerpo, ruta);
   };
 
+  const pagina = async <S extends z.ZodType>(esquema: S, recurso: string, offset: number, extra = "") => {
+    const ruta = `/v2/${recurso}?offset=${offset}&limit=${POR_PAGINA_DUX}${extra}`;
+    return validar(esquema, (await v2.get(ruta)).cuerpo, ruta);
+  };
+
   return {
     listarItems,
     listarFacturas,
     listarClientes,
+
+    /** Filtra por código: puede traer otros parecidos, así que quien lo usa tiene que buscar el exacto. */
+    buscarItem: async (codigo: string) => {
+      const ruta = `/v2/items?cod_item=${encodeURIComponent(codigo)}&offset=0&limit=${POR_PAGINA_DUX}`;
+      return validar(duxPaginaItemsSchema, (await v2.get(ruta)).cuerpo, ruta);
+    },
+
+    /** Los ID que pide la escritura. Solo leen. */
+    referencias: {
+      rubros: (offset = 0) => pagina(duxRubrosSchema, "rubros", offset),
+      subRubros: (offset = 0) => pagina(duxSubRubrosSchema, "sub-rubros", offset),
+      proveedores: (offset = 0) => pagina(duxProveedoresSchema, "proveedores", offset),
+      listasDePrecio: () => pagina(duxListasSchema, "listas-precio-venta", 0),
+      monedas: () => pagina(duxMonedasSchema, "monedas", 0),
+      personales: () => pagina(duxPersonalesSchema, "personales", 0),
+      sucursales: () => pagina(duxSucursalesSchema, "sucursales", 0),
+    },
+
+    /** Todos los códigos de un depósito, inhabilitados incluidos. */
+    listarStock: (idDeposito: number, offset = 0) =>
+      pagina(duxStockSchema, "stock", offset, `&id_deposito=${idDeposito}`),
 
     /**
      * Prueba las dos versiones, porque fallan por motivos distintos: la v1 es la única

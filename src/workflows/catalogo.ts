@@ -1,4 +1,5 @@
 import { formatNumber } from "@/lib/format";
+import { estadoDelCorte, marcarElCorte } from "@/modules/catalog/corte";
 import { logger } from "@/lib/logger";
 import {
   armarDesdeLasCopias,
@@ -27,11 +28,19 @@ export const OPERACION_DEL_CATALOGO = "catalogo";
 /** Las esperas de Google pueden sumar varios minutos. Es solo por si el Workflow muere antes. */
 export const VENCE_IMPORTACION_MS = 30 * 60_000;
 
-export async function importarCatalogo(origen: OrigenDeCorrida, bloqueo: string) {
+/** Después del corte no se lee Google: el catálogo se arma con las copias, que ahora son la fuente, y con DUX. */
+const SIN_LEER = { ok: true as const, llamadas: 0, registros: 0 };
+
+/** `corte`: la última importación. Si sale bien, marca el corte; si falla, sigue todo como estaba. */
+export async function importarCatalogo(origen: OrigenDeCorrida, bloqueo: string, corte = false) {
   "use workflow";
 
   try {
     const corrida = await abrirImportacion(origen);
+    if (!corte && (await catalogoCortado())) {
+      const resumen = await armarCatalogoDesdeLasCopias();
+      return await cerrarImportacion(corrida, { sheet: SIN_LEER, drive: SIN_LEER, resumen });
+    }
     const sheet = await leerSheetDelCatalogo();
     if (!sheet.ok) return await cerrarImportacionFallida(corrida, sheet, sheet.motivo);
     const drive = await leerDriveDelCatalogo();
@@ -42,7 +51,9 @@ export async function importarCatalogo(origen: OrigenDeCorrida, bloqueo: string)
         drive.motivo,
       );
     const resumen = await armarCatalogoDesdeLasCopias();
-    return await cerrarImportacion(corrida, { sheet, drive, resumen });
+    const cerrada = await cerrarImportacion(corrida, { sheet, drive, resumen });
+    if (corte) await marcarElCorteDelCatalogo(origen);
+    return cerrada;
   } finally {
     await soltarBloqueoDelCatalogo(bloqueo);
   }
@@ -63,8 +74,22 @@ export async function importarCatalogoTrasDux(origen: OrigenDeCorrida) {
 export async function tomarBloqueoTrasDux() {
   "use step";
 
-  if (!(await credencialEnmascarada("google"))) return null;
+  // Después del corte, Google ya no hace falta: se puede sacar la clave y el catálogo sigue andando.
+  if (!(await credencialEnmascarada("google")) && !(await estadoDelCorte())) return null;
   return tomarBloqueo(BLOQUEO_DEL_CATALOGO, VENCE_IMPORTACION_MS);
+}
+
+export async function catalogoCortado() {
+  "use step";
+
+  return (await estadoDelCorte()) !== null;
+}
+
+export async function marcarElCorteDelCatalogo(origen: OrigenDeCorrida) {
+  "use step";
+
+  await marcarElCorte(origen.triggeredBy ?? "Automático");
+  logger.info({ por: origen.triggeredBy }, "catálogo: corte hecho");
 }
 
 export async function abrirImportacion(origen: OrigenDeCorrida) {
@@ -112,7 +137,7 @@ export async function cerrarImportacion(
     status: "ok",
     calls: sheet.llamadas + drive.llamadas,
     records: productos,
-    detail: `Productos: ${n(productos)}, ${n(enLasTres)} en las tres fuentes. Nuevos: ${n(nuevos)}. Cambiados: ${n(cambiados)}. Ya no están: ${n(yaNoEstan)}. Para revisar: ${n(paraRevisar)}. Filas del Sheet: ${n(sheet.registros)}. Archivos de Drive: ${n(drive.registros)}.`,
+    detail: `Productos: ${n(productos)}, ${n(enLasTres)} en las tres fuentes. Nuevos: ${n(nuevos)}. Cambiados: ${n(cambiados)}. Ya no están: ${n(yaNoEstan)}. Para revisar: ${n(paraRevisar)}.${sheet.llamadas + drive.llamadas === 0 ? " Con el corte hecho, no se lee Google." : ` Filas del Sheet: ${n(sheet.registros)}. Archivos de Drive: ${n(drive.registros)}.`}`,
   });
   logger.info({ corrida: corrida.id, ...resumen }, "catálogo importado");
   return { status: "ok" as const };

@@ -113,6 +113,64 @@ describe("createHttpClient", () => {
     expect(esperar).not.toHaveBeenCalled();
   });
 
+  describe("escribir", () => {
+    const CUERPO = { cod_item: "LN1" };
+
+    it("manda el método, el cuerpo y el tipo de contenido", async () => {
+      const { cliente, fetch } = armar([respuesta(201, { datos: {} })]);
+
+      await cliente.escribir("POST", "/items", CUERPO);
+
+      const [, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+      expect(init).toMatchObject({ method: "POST", headers: { "Content-Type": "application/json" } });
+      expect(init.body).toBe(JSON.stringify(CUERPO));
+    });
+
+    it("no repite un 5xx: puede haber quedado hecho", async () => {
+      const { cliente, fetch } = armar([respuesta(500), respuesta(201)]);
+
+      await expect(cliente.escribir("POST", "/items", CUERPO)).rejects.toThrow("no se sabe si quedó hecho");
+
+      expect(fetch).toHaveBeenCalledOnce();
+    });
+
+    it("no repite si se cae la red", async () => {
+      const fetch = vi.fn(async () => {
+        throw new TypeError("fetch failed");
+      });
+      const cliente = createHttpClient({
+        servicio: "Prueba",
+        baseUrl: "https://x.prueba",
+        fetch,
+        esperar: async () => {},
+      });
+
+      await expect(cliente.escribir("POST", "/items", CUERPO)).rejects.toThrow("no se sabe si quedó hecho");
+
+      expect(fetch).toHaveBeenCalledOnce();
+    });
+
+    it("repite un 429, porque ese pedido no se procesó", async () => {
+      const { cliente, fetch } = armar([respuesta(429), respuesta(201)]);
+
+      expect((await cliente.escribir("POST", "/items", CUERPO)).status).toBe(201);
+
+      expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it("con los 429 agotados, tampoco afirma que quedó hecho", async () => {
+      const { cliente } = armar([respuesta(429), respuesta(429), respuesta(429), respuesta(429)]);
+
+      await expect(cliente.escribir("POST", "/items", CUERPO)).rejects.toThrow("Revisalo antes de volver a intentar");
+    });
+
+    it("un error del proveedor llega con su mensaje", async () => {
+      const { cliente } = armar([respuesta(404)]);
+
+      await expect(cliente.escribir("PUT", "/items/LN1", CUERPO)).rejects.toThrow("Respondió HTTP 404");
+    });
+  });
+
   it("cuenta cada intento, reintentos incluidos", async () => {
     const alIntentar = vi.fn();
     const { cliente } = armar([respuesta(503), respuesta(200)], { alIntentar });

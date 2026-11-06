@@ -261,7 +261,7 @@ function ProductosHeader({ children }: { children: React.ReactNode }) {
       <div className="w-full">
         <CardTitle>Productos</CardTitle>
         <CardDescription>
-          Se arma cada noche desde el Sheet, Drive y DUX. Los datos se corrigen ahí: la ficha dice dónde.
+          Se arma cada noche con DUX y la ficha de cada producto. La ficha dice dónde se corrige cada dato.
         </CardDescription>
       </div>
       {children}

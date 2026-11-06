@@ -17,8 +17,28 @@ export function isActivePath(pathname: string | null, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** Pantallas a las que se llega desde otra: no tienen item en el menú, pero sí migas. */
+const DESDE_OTRA_PANTALLA: Record<string, { padre: string; title: string; description: string }> = {
+  "/productos/editar": {
+    padre: "/productos/catalogo",
+    title: "Editar producto",
+    description: "La ficha y las fotos. Se actualiza en la app y, en producción, en la tienda.",
+  },
+};
+
 /** Busca una ruta en la navegación del aside y en la del menú de usuario. */
 export function findRoute(pathname: string): RouteMatch | undefined {
+  const interna = DESDE_OTRA_PANTALLA[pathname];
+  if (interna) {
+    const padre = findRoute(interna.padre);
+    return (
+      padre && {
+        ...padre,
+        link: { ...padre.link, href: pathname, title: interna.title, description: interna.description },
+      }
+    );
+  }
+
   for (const section of navigation) {
     for (const item of section.items) {
       if (item.items) {

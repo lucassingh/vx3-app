@@ -1,13 +1,17 @@
+import type { HandleUploadBody } from "@vercel/blob/client";
 import type { RecompraEstado, Segmento, StockEstado } from "@/lib/api/types";
 import {
   casosDeUnBloque,
+  controlDelCatalogo,
   decisionesDeRevision,
   facetasDelCatalogo,
   fichaDelProducto,
   kpisDelCatalogo,
   listarProductos,
+  parecidosDelAlta,
   resumenDeRevision,
 } from "@/modules/catalog/consultas";
+import { listarBorradores, opcionesDeAlta } from "@/modules/catalog/alta-consultas";
 import { leerQueryDelCatalogo } from "@/modules/catalog/filtros";
 import {
   clientasUnificadas,
@@ -23,6 +27,8 @@ import {
   resultadosDeRecompra,
 } from "@/modules/customers/recompra";
 import { espejoDeStock, estadoDelEspejo, kpisDelEspejo, rubrosDelEspejo } from "@/modules/inventory/espejo-stock";
+import { baseDelStore, permisoDeSubida } from "@/integrations/blob";
+import { CLAVE_DE_FOTO, FOTO_MAX_BYTES, TIPOS_DE_FOTO } from "@/modules/catalog/fotos";
 import type { ApiDomain } from "./domains";
 import { errorResponse, readInt, readJson, type Route } from "./route";
 
@@ -125,6 +131,50 @@ const queryDelCatalogo = (url: URL) => leerQueryDelCatalogo((nombre) => url.sear
 
 /** El catálogo armado desde el Sheet, Drive y DUX (1.8). El alta, los combos y el control final siguen simulados. */
 const catalogo: Route[] = [
+  { method: "GET", pattern: /^\/catalogo\/control$/, handler: async () => Response.json(await controlDelCatalogo()) },
+  // Sin sesión y sin `catalogo.editar` no se llega acá: lo resuelve el despachador.
+  {
+    method: "POST",
+    pattern: /^\/catalogo\/alta\/fotos$/,
+    handler: async ({ request }) => {
+      if (!baseDelStore()) return errorResponse(503, "Este ambiente todavía no tiene dónde guardar fotos.");
+      const body = await readJson<HandleUploadBody>(request);
+      if (body?.type !== "blob.generate-client-token") return errorResponse(400, "Ese pedido no es de una subida.");
+      try {
+        return Response.json(
+          await permisoDeSubida(request, body as HandleUploadBody, {
+            claveValida: (clave) => CLAVE_DE_FOTO.test(clave),
+            tipos: TIPOS_DE_FOTO,
+            maxBytes: FOTO_MAX_BYTES,
+          }),
+        );
+      } catch (error) {
+        return errorResponse(400, error instanceof Error ? error.message : "No se pudo dar el permiso.");
+      }
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/alta\/opciones$/,
+    handler: async () => Response.json(await opcionesDeAlta()),
+  },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/alta\/borradores$/,
+    handler: async () => Response.json(await listarBorradores()),
+  },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/alta\/parecidos$/,
+    handler: async ({ url }) =>
+      Response.json(
+        await parecidosDelAlta({
+          q: url.searchParams.get("q") ?? "",
+          rubro: url.searchParams.get("rubro") ?? undefined,
+          subrubro: url.searchParams.get("subrubro") ?? undefined,
+        }),
+      ),
+  },
   { method: "GET", pattern: /^\/catalogo\/revision$/, handler: async () => Response.json(await resumenDeRevision()) },
   {
     method: "GET",

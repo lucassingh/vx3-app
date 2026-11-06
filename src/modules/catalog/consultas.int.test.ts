@@ -1,7 +1,7 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
-import type { CatalogoFacetas, CatalogoFicha, CatalogoFila } from "@/lib/api/contracts/catalogo";
+import type { CatalogoControl, CatalogoFacetas, CatalogoFicha, CatalogoFila } from "@/lib/api/contracts/catalogo";
 import { dispatchApiRequest } from "@/lib/api/dispatch";
 import type { Kpi, Paginated } from "@/lib/api/types";
 import { listarProductos } from "./consultas";
@@ -127,6 +127,10 @@ const limpiar = async () => {
 };
 
 beforeEach(limpiar);
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 afterAll(async () => {
   await limpiar();
@@ -350,7 +354,7 @@ describe("la ficha", () => {
         {
           id: "uno",
           miniatura: "https://drive.google.com/thumbnail?id=uno&sz=w800",
-          enDrive: "https://drive.google.com/file/d/uno/view",
+          original: "https://drive.google.com/file/d/uno/view",
         },
         { id: "dos" },
       ],
@@ -379,6 +383,188 @@ describe("la ficha", () => {
 
     expect((await ficha("LN1")).status).toBe(404);
     expect((await ficha("NOEXISTE1")).status).toBe(404);
+  });
+});
+
+describe("las fotos subidas en la app", () => {
+  const MEDIA = "https://abc.public.blob.vercel-storage.com";
+  const subida = async (baseCode: string, position: number, storageKey: string) => {
+    const { id } = await db.catalogProduct.findUniqueOrThrow({ where: { baseCode } });
+    await db.catalogPhoto.create({
+      data: { id: newId(), productId: id, storageKey, name: "subida.jpg", position, width: 800, height: 600 },
+    });
+  };
+
+  beforeEach(() => {
+    vi.stubEnv("MEDIA_URL", MEDIA);
+  });
+
+  it("la lista muestra la principal igual, venga de Drive o del store", async () => {
+    await producto("LN1", { fotos: ["en-drive"] });
+    await producto("LN2");
+    await subida("LN2", 0, "catalogo/nueva.jpg");
+
+    const { data } = await listarProductos({});
+
+    expect(data.find(({ sku }) => sku === "LN1")?.foto).toContain("en-drive");
+    expect(data.find(({ sku }) => sku === "LN2")?.foto).toBe(`${MEDIA}/catalogo/nueva.jpg`);
+  });
+
+  it("la ficha las muestra en orden, con su original", async () => {
+    await producto("LN1", { fotos: ["en-drive"] });
+    await subida("LN1", 1, "catalogo/nueva.jpg");
+
+    const {
+      cuerpo: { fotos, foto },
+    } = await pedir<CatalogoFicha>("/catalogo/productos/LN1");
+
+    expect(foto).toContain("en-drive");
+    expect(fotos).toMatchObject([
+      { nombre: "en-drive.jpg", original: "https://drive.google.com/file/d/en-drive/view" },
+      {
+        nombre: "subida.jpg",
+        miniatura: `${MEDIA}/catalogo/nueva.jpg`,
+        original: `${MEDIA}/catalogo/nueva.jpg`,
+        ancho: 800,
+        alto: 600,
+      },
+    ]);
+  });
+
+  it("sin store en este ambiente, una subida no se muestra rota", async () => {
+    vi.stubEnv("MEDIA_URL", "");
+    await producto("LN1");
+    await subida("LN1", 0, "catalogo/nueva.jpg");
+
+    const {
+      cuerpo: { fotos, foto },
+    } = await pedir<CatalogoFicha>("/catalogo/productos/LN1");
+
+    expect(fotos).toEqual([]);
+    expect(foto).toBeNull();
+  });
+
+  it("una foto tiene un solo origen", async () => {
+    await producto("LN1");
+    const { id: productId } = await db.catalogProduct.findUniqueOrThrow({ where: { baseCode: "LN1" } });
+
+    const fila = { id: newId(), productId, name: "x", position: 0 };
+    await expect(db.catalogPhoto.create({ data: fila })).rejects.toThrow();
+    await expect(
+      db.catalogPhoto.create({ data: { ...fila, driveId: "uno", storageKey: "catalogo/dos.jpg" } }),
+    ).rejects.toThrow();
+  });
+});
+
+describe("el control final", () => {
+  const control = async () => {
+    const { status, cuerpo } = await pedir<CatalogoControl[]>("/catalogo/control");
+    expect(status).toBe(200);
+    return Object.fromEntries(cuerpo.map((chequeo) => [chequeo.id, chequeo]));
+  };
+  const enLaTienda = (sku: string, cambios: Record<string, unknown> = {}) =>
+    db.storeProduct.create({
+      data: {
+        id: BigInt(sku.length + Math.floor(Math.random() * 1_000_000)),
+        sku,
+        name: sku,
+        published: true,
+        section: "MUJER",
+        categoryIds: [],
+        imageCount: 1,
+        priceCents: 100n,
+        readAt: new Date(),
+        ...cambios,
+      },
+    });
+  const seLeyo = () =>
+    db.syncRun.create({
+      data: {
+        id: newId(),
+        integration: "tiendanube",
+        operation: "lectura",
+        status: "ok",
+        trigger: "cron",
+        startedAt: new Date(),
+        finishedAt: new Date(),
+        calls: 1,
+        records: 1,
+      },
+    });
+
+  afterEach(async () => {
+    await db.storeProduct.deleteMany();
+    await db.syncRun.deleteMany({ where: { integration: "tiendanube" } });
+  });
+
+  it("sale de lo que ya se leyó, y marca lo que está mal", async () => {
+    await db.duxItem.createMany({
+      data: [
+        itemDeDux("LN1", { baseCode: "LN1" }),
+        itemDeDux("LN1-6", { baseCode: "LN1", packQuantity: 6, kind: "pack" }),
+      ],
+    });
+    await producto("LN1", { bulkCode: "LN1-6", fotos: [] });
+    await seLeyo();
+    await enLaTienda("OTRO-6", { section: null });
+
+    const { precio, foto, secciones, "tienda-bulto": bulto, "tienda-falta": falta } = await control();
+
+    expect(precio?.fallas[0]).toMatchObject({ sku: "LN1", detalle: "LN1-6 no tiene precio." });
+    expect(foto?.fallas[0]).toMatchObject({ sku: "LN1" });
+    expect(bulto?.fallas[0]).toMatchObject({ sku: "OTRO-6" });
+    expect(falta?.fallas[0]).toMatchObject({ detalle: "LN1-6 no está en la tienda." });
+    expect(secciones?.fallas).toHaveLength(1);
+  });
+
+  it("sin haber leído la tienda, no marca como faltante todo lo activo", async () => {
+    await db.duxItem.create({ data: itemDeDux("LN1-6", { baseCode: "LN1", packQuantity: 6, kind: "pack" }) });
+    await producto("LN1", { bulkCode: "LN1-6" });
+
+    const { "tienda-falta": falta } = await control();
+
+    expect(falta).toMatchObject({ fallas: [], aviso: expect.stringContaining("Todavía no se leyó") });
+  });
+
+  it("los históricos no se revisan", async () => {
+    await producto("LN1", { bulkCode: null, lifecycle: "historico", fotos: [] });
+
+    const { precio, foto } = await control();
+
+    expect(precio?.revisados).toBe(0);
+    expect(foto?.revisados).toBe(0);
+  });
+
+  describe("en la ficha", () => {
+    const estado = async () => (await pedir<CatalogoFicha>("/catalogo/productos/LN1")).cuerpo.enLaTienda;
+
+    beforeEach(async () => {
+      await producto("LN1", { bulkCode: "LN1-6" });
+    });
+
+    it("sin haber leído la tienda no se sabe", async () => {
+      expect(await estado()).toBeNull();
+    });
+
+    it("no está", async () => {
+      await seLeyo();
+
+      expect(await estado()).toBe("no_esta");
+    });
+
+    it("publicado", async () => {
+      await seLeyo();
+      await enLaTienda("LN1-6");
+
+      expect(await estado()).toBe("publicado");
+    });
+
+    it("pausado", async () => {
+      await seLeyo();
+      await enLaTienda("LN1-6", { published: false });
+
+      expect(await estado()).toBe("pausado");
+    });
   });
 });
 

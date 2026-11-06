@@ -1,3 +1,4 @@
+import { FILA_DE_LA_APP } from "./fila-de-la-app";
 import { leerCodigo, normalizarCodigo, type TipoDeCodigo } from "./codigos";
 
 /**
@@ -319,7 +320,8 @@ export function armarCatalogo({
       problemasDeEnvio,
       enSheet: fila !== null,
       enDux: propios.length > 0,
-      filaDelSheet: fila?.fila ?? null,
+      // Una fila cargada en la app no es del Sheet: ahí no hay nada para ir a corregir.
+      filaDelSheet: fila && fila.fila < FILA_DE_LA_APP ? fila.fila : null,
       skuDeVenta: visto.sku_venta?.trim() ? normalizarCodigo(visto.sku_venta) : null,
       enDuxDice: {
         rubro: principal?.rubro ?? null,

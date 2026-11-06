@@ -8,8 +8,8 @@
  *      la base quede igual a schema.prisma (prisma migrate diff): si alguien
  *      cambió el esquema sin crear la migración, falla acá.
  *   3. Corre el proyecto "integration" de Vitest apuntando a esa branch.
- *   4. Borra la branch, aunque los tests fallen. Si el proceso muere antes,
- *      Neon la borra sola a las 2 horas (expires_at).
+ *   4. Borra la branch, aunque los tests fallen o se cancele la corrida. Si el
+ *      proceso muere antes, Neon la borra sola a las 2 horas (expires_at).
  *
  * Necesita NEON_API_KEY y NEON_PROJECT_ID (.env.local o los secrets de la CI).
  * NEON_PARENT_BRANCH cambia la branch de origen (por defecto, develop).
@@ -27,7 +27,17 @@ try {
 neonEnv();
 const { NEON_PARENT_BRANCH = "develop" } = process.env;
 
+// Al cancelar, la CI y Ctrl+C le mandan la señal a todo el grupo: sin esto, este proceso se corta
+// junto con los tests y no llega a borrar la branch. Se sigue de largo hasta el finally.
+let cancelada = false;
+for (const senal of ["SIGINT", "SIGTERM"]) {
+  process.on(senal, () => {
+    cancelada = true;
+  });
+}
+
 function run(label, args, env) {
+  if (cancelada) return 1;
   console.log(`\n→ ${label}`);
   const { status } = spawnSync(process.execPath, args, { stdio: "inherit", env: { ...process.env, ...env } });
   return status ?? 1;
@@ -89,6 +99,10 @@ try {
   exitCode = 1;
 } finally {
   await deleteBranch(created, startedAt);
+  // Queda a la vista en la corrida: sirve para ver cuánto margen hay contra el tope.
+  if (process.env.GITHUB_ACTIONS) {
+    console.log(`::notice title=Integración::${Math.round((Date.now() - startedAt) / 60_000)} min`);
+  }
 }
 
 process.exit(exitCode);

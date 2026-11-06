@@ -1,4 +1,7 @@
 import type { CatalogoAltaInput } from "@/lib/api/types";
+import { normalizeText } from "@/lib/utils";
+import { prefijoDeCodigo, problemasDelNombre } from "./alta";
+import { normalizarCodigo } from "./codigos";
 
 /**
  * Reglas del alta de producto. Las bloqueantes son las de RN-98 y RN-84; marca
@@ -13,7 +16,18 @@ export const PESO_MIN_KG = 0.03;
 export const PESO_MAX_KG = 5;
 export const MEDIDA_MAX_CM = 150;
 
-export function erroresDeAlta(input: Partial<CatalogoAltaInput>, skusExistentes: string[]): AltaProblema[] {
+/** Lo que solo sabe el servidor: la API vuelve a validar con esto. */
+export type ContextoDelAlta = {
+  /** Con los inhabilitados y los vendidos: un número no se reusa nunca (RN-03). */
+  codigosUsados?: readonly string[];
+  subrubrosDeDux?: readonly { rubro: string; subrubro: string }[];
+};
+
+export function erroresDeAlta(
+  input: Partial<CatalogoAltaInput>,
+  skusExistentes: string[],
+  { codigosUsados = [], subrubrosDeDux }: ContextoDelAlta = {},
+): AltaProblema[] {
   const errores: AltaProblema[] = [];
   const sku = (input.sku ?? "").trim().toUpperCase();
 
@@ -29,12 +43,33 @@ export function erroresDeAlta(input: Partial<CatalogoAltaInput>, skusExistentes:
   else if (skusExistentes.includes(sku))
     errores.push({
       campo: "sku",
-      mensaje: `${sku} ya existe en DUX. Si es el mismo producto con otros colores, usá el reciclado de SKU.`,
+      mensaje: `${sku} ya existe en DUX. Si es el mismo producto con otros colores, editalo: suma la foto y ajusta el color (RN-04).`,
+    });
+  else if (codigosUsados.some((usado) => normalizarCodigo(usado).split("-")[0] === normalizarCodigo(sku)))
+    errores.push({
+      campo: "sku",
+      mensaje: `Ese número ya se usó en DUX, esté o no habilitado: ${sku} no se puede reusar.`,
     });
 
   if (!input.rubro || !input.subrubro)
     errores.push({ campo: "subrubro", mensaje: "Elegí el rubro y el subrubro (tienen que existir en DUX)." });
-  if (!(input.nombre ?? "").trim()) errores.push({ campo: "nombre", mensaje: "Falta el nombre del producto." });
+  else if (
+    subrubrosDeDux &&
+    !subrubrosDeDux.some(
+      ({ rubro, subrubro }) =>
+        normalizeText(rubro) === normalizeText(input.rubro ?? "") &&
+        normalizeText(subrubro) === normalizeText(input.subrubro ?? ""),
+    )
+  )
+    errores.push({
+      campo: "subrubro",
+      mensaje: `${input.rubro} › ${input.subrubro} no existe en DUX: hay que crearlo primero allá, la API no crea subrubros.`,
+    });
+  if (!input.proveedorId) errores.push({ campo: "proveedorId", mensaje: "Elegí el proveedor." });
+  if (!(input.prenda ?? "").trim()) errores.push({ campo: "prenda", mensaje: "Falta la prenda y su detalle." });
+  if (!(input.color ?? "").trim())
+    errores.push({ campo: "color", mensaje: "Elegí qué dice el nombre sobre los colores." });
+  for (const mensaje of problemasDelNombre(input.nombre ?? "")) errores.push({ campo: "nombre", mensaje });
   if (!input.costoDocena || input.costoDocena <= 0)
     errores.push({ campo: "costoDocena", mensaje: "El costo de la docena tiene que ser mayor a $ 0." });
   if (!(input.colores ?? []).length)
@@ -62,8 +97,19 @@ export function erroresDeAlta(input: Partial<CatalogoAltaInput>, skusExistentes:
   return errores;
 }
 
-export function avisosDeAlta(input: Partial<CatalogoAltaInput>, marcas: string[]): AltaProblema[] {
+export function avisosDeAlta(
+  input: Partial<CatalogoAltaInput>,
+  marcas: string[],
+  prefijoDelSubrubro?: string | null,
+): AltaProblema[] {
   const avisos: AltaProblema[] = [];
+  const sku = (input.sku ?? "").trim().toUpperCase();
+  if (sku && prefijoDelSubrubro && prefijoDeCodigo(sku) !== prefijoDelSubrubro) {
+    avisos.push({
+      campo: "sku",
+      mensaje: `${sku} no sigue el prefijo de este subrubro, que es ${prefijoDelSubrubro}.`,
+    });
+  }
   const peso = input.pesoBultoKg ?? 0;
   if (peso > 0 && peso <= 20 && (peso < PESO_MIN_KG || peso > PESO_MAX_KG)) {
     avisos.push({
@@ -80,22 +126,4 @@ export function avisosDeAlta(input: Partial<CatalogoAltaInput>, marcas: string[]
   if (!input.marca) avisos.push({ campo: "marca", mensaje: "Sin marca: el producto queda incompleto para el bot." });
   if (!input.tela) avisos.push({ campo: "tela", mensaje: "Sin tela: el bot no va a poder filtrar por tela." });
   return avisos;
-}
-
-/** Nombre según RN-05: rubro + marca + detalle + aclaración + curva. La terminación del pack la agrega el sistema. */
-export function nombreGenerado(parts: {
-  base: string;
-  marca: string;
-  detalle: string;
-  aclaracion: string;
-  talles: string;
-}) {
-  const head = [parts.base, parts.marca, parts.detalle]
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join(" ");
-  return [head, parts.aclaracion.trim(), parts.talles.trim() && `curva de talles ${parts.talles.trim()}`]
-    .filter(Boolean)
-    .join(" - ")
-    .toUpperCase();
 }

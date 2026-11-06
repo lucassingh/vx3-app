@@ -147,7 +147,7 @@ describe("la lista del día", () => {
       ids.map((id) => clienta(id)),
       AHORA,
     );
-    for (const id of ids) await compra(id, hace(8), { precio: BigInt(id) * 10_000n });
+    await Promise.all(ids.map((id) => compra(id, hace(8), { precio: BigInt(id) * 10_000n })));
     await recalcularClientas(AHORA);
 
     const { hoy, enCola, tope } = await listaDeRecompra(HOY);
@@ -206,7 +206,7 @@ describe("la lista del día", () => {
       ids.map((id) => clienta(id)),
       AHORA,
     );
-    for (const id of ids) await compra(id, hace(8), { precio: BigInt(id) * 10_000n });
+    await Promise.all(ids.map((id) => compra(id, hace(8), { precio: BigInt(id) * 10_000n })));
     await recalcularClientas(AHORA);
     const antes = await listaDeRecompra(HOY);
 

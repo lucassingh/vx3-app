@@ -111,6 +111,19 @@ const DESCRIPCION: Record<
     texto: (_, d) => `Confirmó ${String(d?.confirmados ?? 0)} históricos`,
   },
   "catalogo.deshacer": { categoria: "stock", texto: () => "Deshizo una decisión del catálogo" },
+  "catalogo.dux_item": { categoria: "precios", texto: (_, d) => `Creó ${texto(d, "codigo")} en DUX` },
+  "catalogo.tienda": {
+    categoria: "precios",
+    texto: (_, d) =>
+      texto(d, "accion") === "foto"
+        ? `Subió una foto de ${texto(d, "sku")} a la tienda`
+        : `Creó ${texto(d, "sku")} en la tienda, oculto`,
+  },
+  "catalogo.tienda_visible": { categoria: "precios", texto: (_, d) => `Mostró ${texto(d, "sku")} en la tienda` },
+  "catalogo.edito": { categoria: "stock", texto: (_, d) => `Editó la ficha de ${texto(d, "sku")}` },
+  "catalogo.corte": { categoria: "reglas", texto: () => "Hizo el corte del catálogo" },
+  "catalogo.corte_atras": { categoria: "reglas", texto: () => "Volvió atrás el corte del catálogo" },
+  "catalogo.bajo_xls": { categoria: "precios", texto: (_, d) => `Bajó ${texto(d, "archivo")} para importar en DUX` },
   "credencial.cargada": { categoria: "accesos", texto: (_, d) => `Cargó la credencial de ${texto(d, "integracion")}` },
   "usuario.password_reseteada": {
     categoria: "accesos",

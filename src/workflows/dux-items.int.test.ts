@@ -32,6 +32,7 @@ function item(codigo: string, cambios: Partial<ErpItem> = {}): ErpItem {
     rubro: "LESS",
     subrubro: null,
     marca: null,
+    marcaCodigo: null,
     proveedorId: null,
     proveedor: null,
     costoCentavos: 100_000,
@@ -74,6 +75,14 @@ afterAll(async () => {
 });
 
 describe("barrido de productos, stock y precios", () => {
+  it("guarda el código de la marca: para escribir, DUX lo pide, y en muchas no es su nombre", async () => {
+    responderCon([item("LN1", { marca: "UOMO", marcaCodigo: "UO-7" })]);
+
+    await barrerItemsDux(ORIGEN);
+
+    expect(await fila("LN1")).toMatchObject({ brand: "UOMO", brandCode: "UO-7" });
+  });
+
   it("guarda lo que dice el ERP, con el código leído", async () => {
     responderCon([
       item("MSU2-1-12", { rubro: "MEDIAS" }),

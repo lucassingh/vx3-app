@@ -9,7 +9,27 @@ Lo que cambia en cada versión de producción. Cada versión es un tag `vX.Y.Z` 
 
 Entran los primeros datos reales: la app lee de DUX los productos, el stock, los precios,
 las ventas y las clientas, arma el catálogo con el Sheet y las fotos de Drive, y guarda todo
-en su base. Solo lee: no escribe nada en DUX, en el Sheet ni en Drive.
+en su base. Del Sheet y Drive solo lee. En DUX y en Tienda Nube escribe una sola cosa, y solo en
+producción: los productos nuevos que se publican desde el alta, y lo que se edita después del corte.
+
+### Alta y publicación
+
+- El alta de producto corre sobre datos reales: rubros, subrubros y proveedores salen de DUX, y el
+  SKU sugerido cuenta los códigos inhabilitados y vendidos.
+- Antes de crear, muestra lo parecido del catálogo, con los históricos, y lleva a su ficha.
+- Los borradores quedan guardados, y son de todo el equipo.
+- Las fotos suben directo a un almacenamiento propio, con orden y foto principal.
+- Publicar en DUX crea un código por vez. Si se corta, retoma sin duplicar. Si la API no
+  responde, baja los tres `.xls`, iguales a los del Hub.
+- Publicar en Tienda Nube crea el producto oculto, y lo muestra recién con precio y foto. Nunca
+  crea una categoría: si falta, frena y lo dice.
+- El control final vuelve al catálogo, con seis chequeos sobre lo leído de DUX y de la tienda. La
+  ficha dice si el producto está publicado, pausado o no está en la tienda.
+- Un botón hace el corte: la última importación y, desde ahí, se edita la ficha en la app. Se puede
+  volver atrás.
+- La tarjeta de Tienda Nube en Integraciones es real, y la tienda se lee cada noche.
+- Fuera de producción no se escribe nada en la tienda, y en DUX solo con su conjunto de datos de
+  prueba: las pantallas lo dicen.
 
 ### Stock
 

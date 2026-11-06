@@ -6,7 +6,8 @@ import { ExternalServiceError } from "@/lib/errors";
 import { BLOQUEO_DEL_CATALOGO, DECISION_DE_FOTO } from "@/modules/catalog/importar";
 import { guardarCredencial } from "@/modules/platform/credentials/service";
 import { hayCorridaEnCurso, tomarBloqueo } from "@/modules/platform/sync-runs";
-import { arrancarImportacionDelCatalogo } from "./arrancar-catalogo";
+import { deshacerElCorte, estadoDelCorte } from "@/modules/catalog/corte";
+import { arrancarElCorte, arrancarImportacionDelCatalogo } from "./arrancar-catalogo";
 import { importarCatalogo, importarCatalogoTrasDux, VENCE_IMPORTACION_MS } from "./catalogo";
 
 // Sin el compilador de workflow, "use workflow" y "use step" no hacen nada: acá corre como funciones comunes.
@@ -351,6 +352,228 @@ describe("cuando algo falla, el catálogo anterior queda entero", () => {
     expect(await producto("LN1")).toEqual(antes);
     expect(await hayCorridaEnCurso("google")).toBe(false);
     expect(await corrida()).toMatchObject({ status: "error", detail: "La corrida se cortó antes de terminar." });
+  });
+});
+
+describe("lo subido en la app", () => {
+  const subida = async (baseCode: string) => {
+    const { id } = await producto(baseCode);
+    await db.catalogPhoto.create({
+      data: { id: newId(), productId: id, storageKey: "catalogo/nueva.jpg", name: "nueva.jpg", position: 5 },
+    });
+  };
+  const clave = async (baseCode: string) =>
+    (await producto(baseCode)).photos.flatMap(({ storageKey }) => storageKey ?? []);
+
+  it("sobrevive a una importación que cambia el producto, y las de Drive se renuevan", async () => {
+    await importar();
+    await subida("LN1");
+    conFuentes([{ sku: "LN1", tela: "OTRA" }, { sku: "LN2" }], "LN1.jpg", "LN2.jpg");
+
+    expect(await importar()).toEqual({ status: "ok" });
+
+    const { fabric, photos } = await producto("LN1");
+    expect(fabric).toBe("OTRA");
+    expect(photos.map(({ driveId, storageKey }) => driveId ?? storageKey)).toEqual([
+      "id-LN1.jpg",
+      "catalogo/nueva.jpg",
+    ]);
+  });
+
+  it("sobrevive a una importación donde el producto no cambió", async () => {
+    await importar();
+    await subida("LN1");
+
+    await importar();
+
+    expect(await clave("LN1")).toEqual(["catalogo/nueva.jpg"]);
+  });
+
+  it("un producto que deja de estar suelta sus fotos de Drive, pero conserva la suya", async () => {
+    await importar();
+    await subida("LN1");
+    conFuentes([{ sku: "LN2" }], "LN2.jpg");
+    await db.duxItem.deleteMany({ where: { baseCode: "LN1" } });
+
+    await importar();
+
+    const { present, photos } = await producto("LN1");
+    expect(present).toBe(false);
+    expect(photos.map(({ storageKey }) => storageKey)).toEqual(["catalogo/nueva.jpg"]);
+  });
+});
+
+describe("el corte", () => {
+  const cortar = async () => {
+    const bloqueo = await tomarBloqueo(BLOQUEO_DEL_CATALOGO, VENCE_IMPORTACION_MS);
+    return importarCatalogo(ORIGEN, bloqueo!, true);
+  };
+  const googleCaido = () => {
+    google.planilla = async () => {
+      throw new ExternalServiceError("Google", "Google no respondió.");
+    };
+    google.carpeta = async () => {
+      throw new ExternalServiceError("Google", "Google no respondió.");
+    };
+  };
+
+  it("hace la última importación y, si sale bien, queda hecho", async () => {
+    conFuentes([{ sku: "LN1", tela: "ULTIMA" }, { sku: "LN2" }], "LN1.jpg", "LN2.jpg");
+
+    expect(await cortar()).toEqual({ status: "ok" });
+
+    expect((await producto("LN1")).fabric).toBe("ULTIMA");
+    expect(await estadoDelCorte()).toMatchObject({ por: "Prueba" });
+    expect(await hayCorridaEnCurso("google")).toBe(false);
+  });
+
+  it("si Google falla, no corta: sigue todo como estaba", async () => {
+    await importar();
+    const antes = await producto("LN1");
+    googleCaido();
+
+    expect(await cortar()).toEqual({ status: "error" });
+
+    expect(await estadoDelCorte()).toBeNull();
+    expect(await producto("LN1")).toEqual(antes);
+  });
+
+  it("después, no le pide nada a Google, y sigue leyendo DUX", async () => {
+    await cortar();
+    googleCaido();
+    await db.duxItem.update({ where: { code: "LN1" }, data: { name: "LN1 RENOMBRADO - UNIDAD" } });
+    await db.duxItem.createMany({ data: [itemDeDux("LN9"), itemDeDux("LN9-6")] });
+
+    expect(await importar()).toEqual({ status: "ok" });
+
+    expect((await producto("LN1")).name).toContain("RENOMBRADO");
+    expect(await producto("LN9")).toMatchObject({ inDux: true, inSheet: false });
+    expect(await corrida()).toMatchObject({
+      status: "ok",
+      calls: 0,
+      detail: expect.stringContaining("Con el corte hecho, no se lee Google."),
+    });
+  });
+
+  it("después de sincronizar con DUX se arma igual, aunque se saque la clave de Google", async () => {
+    await cortar();
+    googleCaido();
+    await db.integrationCredential.deleteMany({ where: { integration: "google" } });
+    await db.duxItem.createMany({ data: [itemDeDux("LN9"), itemDeDux("LN9-6")] });
+
+    await importarCatalogoTrasDux(ORIGEN);
+
+    expect((await producto("LN9")).inDux).toBe(true);
+  });
+
+  it("lo que está en el Sheet ya no pisa lo editado en la app", async () => {
+    await cortar();
+    conFuentes([{ sku: "LN1", tela: "CAMBIO EN EL SHEET" }, { sku: "LN2" }], "LN1.jpg");
+
+    await importar();
+
+    expect((await producto("LN1")).fabric).toBe("ALGODON");
+  });
+
+  it("volver atrás: la próxima lee el Sheet de nuevo, y lo editado se pisa", async () => {
+    await cortar();
+    const fila = await db.catalogSheetRow.findFirstOrThrow({ where: { rowNumber: 2 } });
+    await db.catalogSheetRow.update({
+      where: { id: fila.id },
+      data: { shown: { ...(fila.shown as object), tela: "EDITADO EN LA APP" } },
+    });
+    await importarCatalogoSinCorte();
+    expect((await producto("LN1")).fabric).toBe("EDITADO EN LA APP");
+
+    await deshacerElCorte();
+    conFuentes([{ sku: "LN1", tela: "DEL SHEET" }, { sku: "LN2" }], "LN1.jpg");
+    await importar();
+
+    expect((await producto("LN1")).fabric).toBe("DEL SHEET");
+  });
+
+  it("las decisiones se mantienen, con corte y con vuelta atrás", async () => {
+    conFuentes([{ sku: "LN1" }, { sku: "LN2" }], "LN1.jpg", "IMG_0702.JPG");
+    await db.catalogDecision.create({
+      data: {
+        id: newId(),
+        type: DECISION_DE_FOTO,
+        key: "id-IMG_0702.JPG",
+        value: { producto: "LN2" },
+        decidedByLabel: "Prueba",
+        decidedAt: new Date(),
+      },
+    });
+    const dondeEsta = async () => (await producto("LN2")).photos.map(({ driveId }) => driveId);
+
+    await cortar();
+    expect(await dondeEsta()).toContain("id-IMG_0702.JPG");
+
+    await importarCatalogoSinCorte();
+    expect(await dondeEsta()).toContain("id-IMG_0702.JPG");
+
+    await deshacerElCorte();
+    await importar();
+    expect(await dondeEsta()).toContain("id-IMG_0702.JPG");
+  });
+
+  it("el botón lo lanza como la última importación", async () => {
+    workflow.start.mockResolvedValue({ runId: "wrun_02" });
+
+    expect(await arrancarElCorte(ORIGEN)).toEqual({ arrancada: true, runId: "wrun_02" });
+
+    const [funcion, argumentos] = workflow.start.mock.calls[0] as [unknown, unknown[]];
+    expect(funcion).toBe(importarCatalogo);
+    expect(argumentos[2]).toBe(true);
+    expect(await arrancarElCorte(ORIGEN)).toEqual({ arrancada: false });
+  });
+
+  it("si no se pudo lanzar, suelta el bloqueo", async () => {
+    workflow.start.mockRejectedValue(new Error("sin workflow"));
+
+    await expect(arrancarElCorte(ORIGEN)).rejects.toThrow("sin workflow");
+
+    expect(await hayCorridaEnCurso("google")).toBe(false);
+  });
+
+  const importarCatalogoSinCorte = () => importar();
+});
+
+describe("las filas cargadas en la app", () => {
+  const filaDeLaApp = (sku: string, tela: string, cambios: Record<string, unknown> = {}) =>
+    db.catalogSheetRow.create({
+      data: {
+        id: newId(),
+        rowNumber: 1_000_001 + Math.floor(Math.random() * 1000),
+        source: "app",
+        shown: { SKU: sku, "Nombre de DUX": `${sku} DE LA APP`, tela, categoria_tn: "LESS" },
+        raw: { SKU: sku, tela },
+        readAt: new Date(),
+        ...cambios,
+      },
+    });
+
+  beforeEach(async () => {
+    await db.duxItem.createMany({ data: [itemDeDux("ZZ1"), itemDeDux("ZZ1-6")] });
+  });
+
+  it("una importación no las borra", async () => {
+    await filaDeLaApp("ZZ1", "DE LA APP");
+
+    await importar();
+    await importar();
+
+    expect(await producto("ZZ1")).toMatchObject({ fabric: "DE LA APP", inSheet: true, sheetRow: null });
+  });
+
+  it("si el Sheet ya tiene ese código, manda el Sheet, y no queda repetido", async () => {
+    await filaDeLaApp("LN1", "DE LA APP");
+
+    await importar();
+
+    expect(await producto("LN1")).toMatchObject({ fabric: "ALGODON", sheetRow: 2 });
+    const casos = await db.catalogReviewCase.findMany({ where: { baseCode: "LN1" } });
+    expect(casos.filter(({ block }) => block === "codigo_repetido")).toEqual([]);
   });
 });
 

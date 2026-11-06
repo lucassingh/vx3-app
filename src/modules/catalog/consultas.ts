@@ -2,12 +2,16 @@ import "server-only";
 import { cache } from "react";
 import { getDb } from "@/db/client";
 import type { Prisma } from "@/generated/prisma/client";
+import { mediaUrl } from "@/integrations/blob";
 import { urlDeMiniatura } from "@/integrations/google/client";
 import type {
   CatalogoFacetas,
+  CatalogoControl,
+  CatalogoEnLaTienda,
   CatalogoFaltante,
   CatalogoFicha,
   CatalogoFila,
+  CatalogoParecido,
   CatalogoQuery,
   RevisionCaso,
   RevisionDecision,
@@ -15,6 +19,9 @@ import type {
 } from "@/lib/api/contracts/catalogo";
 import type { Kpi, Paginated } from "@/lib/api/types";
 import { normalizarCodigo } from "./codigos";
+import { losMasParecidos } from "./alta";
+import { armarControl } from "./control";
+import { estadoDelCorte } from "./corte";
 import { coloresDe, facetasDe, pasaLosFiltros, type ProductoFiltrable } from "./filtros";
 import { DECISION_DE_FOTO, DECISION_DE_HISTORICO } from "./importar";
 import { BLOQUES } from "./revision";
@@ -43,7 +50,16 @@ const FALTANTE: Record<DatoQueFalta, { dato: string; bloquea: boolean; fuente: "
 
 const enDrive = (driveId: string) => `https://drive.google.com/file/d/${driveId}/view`;
 
-const ATRIBUTOS: Record<string, string> = {
+type OrigenDeFoto = { driveId: string | null; storageKey: string | null };
+
+/** Una foto de Drive o subida en la app se muestra igual. Sin store en este ambiente, una subida no tiene dirección. */
+const miniaturaDe = ({ driveId, storageKey }: OrigenDeFoto, ancho?: number): string | null =>
+  storageKey ? mediaUrl(storageKey) : driveId ? urlDeMiniatura(driveId, ancho) : null;
+
+const originalDe = ({ driveId, storageKey }: OrigenDeFoto): string | null =>
+  storageKey ? mediaUrl(storageKey) : driveId ? enDrive(driveId) : null;
+
+export const ATRIBUTOS: Record<string, string> = {
   copa: "Copa",
   encaje: "Encaje",
   push_up: "Push up",
@@ -230,10 +246,10 @@ export async function listarProductos(
     leerEspejo(pagina.flatMap(({ baseCode, bulkCode }) => (bulkCode ? [baseCode, bulkCode] : [baseCode]))),
     getDb().catalogPhoto.findMany({
       where: { position: 0, productId: { in: pagina.map(({ id }) => id) } },
-      select: { productId: true, driveId: true },
+      select: { productId: true, driveId: true, storageKey: true },
     }),
   ]);
-  const fotoDe = new Map(primeras.map(({ productId, driveId }) => [productId, urlDeMiniatura(driveId)]));
+  const fotoDe = new Map(primeras.map((foto) => [foto.productId, miniaturaDe(foto)]));
 
   return {
     data: pagina.map((fila) => aFila(fila, espejo, fotoDe.get(fila.id) ?? null)),
@@ -244,6 +260,92 @@ export async function listarProductos(
   };
 }
 
+/** Con los históricos: no se dan de alta de nuevo, vuelven con su mismo SKU (RN-125). Sin combos: no se cargan acá (RN-98). */
+export async function parecidosDelAlta(consulta: {
+  q: string;
+  rubro?: string;
+  subrubro?: string;
+}): Promise<CatalogoParecido[]> {
+  const parecidos = losMasParecidos(
+    (await leerProductos())
+      .filter(({ isCombo }) => !isCombo)
+      .map((fila) => ({ ...fila, rubro: fila.category, subrubro: fila.subcategory, texto: fila.searchText })),
+    consulta,
+  );
+  const primeras = await getDb().catalogPhoto.findMany({
+    where: { position: 0, productId: { in: parecidos.map(({ id }) => id) } },
+    select: { productId: true, driveId: true, storageKey: true },
+  });
+  const fotoDe = new Map(primeras.map((foto) => [foto.productId, miniaturaDe(foto)]));
+  return parecidos.map((fila) => ({
+    sku: fila.baseCode,
+    nombre: fila.name,
+    colores: coloresDe(fila.colors),
+    vigencia: fila.lifecycle,
+    deTemporada: fila.seasonal,
+    foto: fotoDe.get(fila.id) ?? null,
+  }));
+}
+
+/** Con lo que ya se leyó: no le pide nada a DUX ni a la tienda. */
+export async function controlDelCatalogo(): Promise<CatalogoControl[]> {
+  const db = getDb();
+  const [productos, codigos, tienda, lecturas] = await Promise.all([
+    db.catalogProduct.findMany({
+      where: { present: true, lifecycle: { not: "historico" } },
+      select: {
+        baseCode: true,
+        name: true,
+        isCombo: true,
+        lifecycle: true,
+        bulkCode: true,
+        _count: { select: { photos: true } },
+      },
+    }),
+    db.duxItem.findMany({
+      where: { present: true },
+      select: { normalizedCode: true, baseCode: true, kind: true, packQuantity: true, prices: true },
+    }),
+    db.storeProduct.findMany({ select: { id: true, sku: true, name: true, published: true, section: true } }),
+    db.syncRun.count({ where: { integration: "tiendanube", status: "ok" } }),
+  ]);
+  return armarControl({
+    productos: productos.map((producto) => ({
+      sku: producto.baseCode,
+      nombre: producto.name,
+      esCombo: producto.isCombo,
+      activo: producto.lifecycle === "activo",
+      bulto: producto.bulkCode,
+      fotos: producto._count.photos,
+    })),
+    codigos: codigos.map((codigo) => ({
+      codigo: codigo.normalizedCode,
+      base: codigo.baseCode,
+      tipo: codigo.kind,
+      cantidad: codigo.packQuantity,
+      precios: codigo.prices as { list: string; cents: number }[],
+    })),
+    tienda: tienda.map(({ id, sku, name, published, section }) => ({
+      id,
+      sku,
+      nombre: name,
+      publicado: published,
+      seccion: section,
+    })),
+    seLeyoLaTienda: lecturas > 0,
+  });
+}
+
+/** Null si la tienda todavía no se leyó: no se sabe. */
+async function estadoEnLaTienda(bulto: string | null): Promise<CatalogoEnLaTienda | null> {
+  const db = getDb();
+  if ((await db.syncRun.count({ where: { integration: "tiendanube", status: "ok" } })) === 0) return null;
+  if (!bulto) return "no_esta";
+  const fila = await db.storeProduct.findFirst({ where: { sku: bulto }, select: { published: true } });
+  if (!fila) return "no_esta";
+  return fila.published ? "publicado" : "pausado";
+}
+
 export async function fichaDelProducto(sku: string): Promise<CatalogoFicha | null> {
   const producto = await getDb().catalogProduct.findFirst({
     where: { baseCode: normalizarCodigo(sku), present: true },
@@ -251,14 +353,23 @@ export async function fichaDelProducto(sku: string): Promise<CatalogoFicha | nul
   });
   if (!producto) return null;
 
+  const editable = (await estadoDelCorte()) !== null;
   const espejo = await leerEspejo(producto.presentations.map(({ code }) => code));
   const [primera] = producto.photos;
-  const fila = aFila(producto, espejo, primera ? urlDeMiniatura(primera.driveId) : null);
+  const fila = aFila(producto, espejo, primera ? miniaturaDe(primera) : null);
   const atributos = producto.attributes as Record<string, string>;
   const conMedidas = producto.lengthCm && producto.widthCm && producto.heightCm;
 
   return {
     ...fila,
+    enLaTienda: await estadoEnLaTienda(producto.bulkCode),
+    editable,
+    // Después del corte, lo que antes se corregía en el Sheet o en Drive se corrige acá.
+    faltantes: editable
+      ? fila.faltantes.map((faltante) =>
+          /Sheet|Drive/.test(faltante.seCorrigeEn) ? { ...faltante, seCorrigeEn: "la ficha del producto" } : faltante,
+        )
+      : fila.faltantes,
     tela: producto.fabric,
     coloresTexto: producto.colors,
     talles: producto.sizes,
@@ -289,14 +400,21 @@ export async function fichaDelProducto(sku: string): Promise<CatalogoFicha | nul
         };
       })
       .toSorted((a, b) => (a.prendas ?? 0) - (b.prendas ?? 0)),
-    fotos: producto.photos.map(({ driveId, name, width, height }) => ({
-      id: driveId,
-      nombre: name,
-      miniatura: urlDeMiniatura(driveId, ANCHO_EN_LA_FICHA),
-      enDrive: enDrive(driveId),
-      ancho: width,
-      alto: height,
-    })),
+    fotos: producto.photos.flatMap((foto) => {
+      const miniatura = miniaturaDe(foto, ANCHO_EN_LA_FICHA);
+      const original = originalDe(foto);
+      if (!miniatura || !original) return [];
+      return [
+        {
+          id: foto.driveId ?? foto.storageKey ?? foto.id,
+          nombre: foto.name,
+          miniatura,
+          original,
+          ancho: foto.width,
+          alto: foto.height,
+        },
+      ];
+    }),
   };
 }
 
@@ -336,6 +454,7 @@ export async function casosDeUnBloque({
   pageSize: number;
 }): Promise<Paginated<RevisionCaso>> {
   const db = getDb();
+  const cortado = (await estadoDelCorte()) !== null;
   const total = await db.catalogReviewCase.count({ where: { block: bloque } });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const actual = Math.min(page, totalPages);
@@ -366,7 +485,12 @@ export async function casosDeUnBloque({
         nombre: caso.baseCode ? (nombres.get(caso.baseCode) ?? null) : null,
         prioridad: caso.priority,
         descripcion: caso.description,
-        seCorrigeEn: caso.fixIn === "sheet" && caso.sheetRow ? `Sheet, fila ${caso.sheetRow}` : fuente,
+        seCorrigeEn:
+          cortado && caso.fixIn !== "dux"
+            ? "la ficha del producto"
+            : caso.fixIn === "sheet" && caso.sheetRow
+              ? `Sheet, fila ${caso.sheetRow}`
+              : fuente,
         foto:
           caso.block === "fotos_sueltas"
             ? {

@@ -165,6 +165,8 @@ model DuxItem {
   category       String?
   subcategory    String?
   brand          String?
+  /// El código que pide DUX para escribir: en muchas marcas no es su nombre.
+  brandCode      String?     @map("brand_code")
   supplierId     Int?        @map("supplier_id")
   supplier       String?
   costCents      BigInt      @map("cost_cents")
@@ -194,6 +196,32 @@ model DuxItem {
 
 /// Un comprobante de la v1 de /facturas. Incluye anulados y notas de crédito, marcados:
 /// no se suman a la venta, pero tienen que verse si cambian.
+/// Todos los códigos que existen en DUX, inhabilitados incluidos (`/v2/stock`). Un número no se
+/// reusa nunca (RN-03). Solo se agrega: que DUX deje de mandarlo no quiere decir que no haya existido.
+model DuxUsedCode {
+  code           String   @id
+  normalizedCode String   @map("normalized_code")
+  firstSeenAt    DateTime @map("first_seen_at") @db.Timestamptz(6)
+
+  @@index([normalizedCode])
+  @@map("dux_used_codes")
+}
+
+/// Rubros, subrubros, proveedores y listas de DUX, con su ID. Se reemplazan en cada sincronización.
+model DuxReference {
+  /// "rubro", "subrubro", "proveedor" o "lista".
+  kind     String
+  duxId    Int      @map("dux_id")
+  /// El rubro de un subrubro; 0 en los demás. Hay IDs de subrubro repetidos entre rubros.
+  parentId Int      @default(0) @map("parent_id")
+  name     String
+  enabled  Boolean
+  readAt   DateTime @map("read_at") @db.Timestamptz(6)
+
+  @@id([kind, parentId, duxId])
+  @@map("dux_references")
+}
+
 model DuxInvoice {
   id            String           @id @db.Uuid
   duxId         Int              @unique @map("dux_id")
@@ -357,6 +385,10 @@ model CatalogSheetRow {
   /// El valor crudo, por encabezado: un "1,5" escrito como texto se nota acá.
   raw       Json
   readAt    DateTime @map("read_at") @db.Timestamptz(6)
+  /// "sheet" o "app": lo cargado en la app no se pisa con una importación.
+  source    String   @default("sheet")
+  /// Las fotos subidas en la app, en orden.
+  appPhotos Json?    @map("app_photos")
 
   @@map("catalog_sheet_rows")
 }
@@ -448,14 +480,16 @@ model CatalogPresentation {
 }
 
 model CatalogPhoto {
-  id        String         @id @db.Uuid
-  productId String         @map("product_id") @db.Uuid
-  product   CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
-  driveId   String         @unique @map("drive_id")
-  name      String
-  position  Int
-  width     Int?
-  height    Int?
+  id         String         @id @db.Uuid
+  productId  String         @map("product_id") @db.Uuid
+  product    CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// De Drive, hasta el pase; subida en la app, en `storageKey`. Una foto tiene una de las dos.
+  driveId    String?        @unique @map("drive_id")
+  storageKey String?        @unique @map("storage_key")
+  name       String
+  position   Int
+  width      Int?
+  height     Int?
 
   @@index([productId])
   @@map("catalog_photos")
@@ -585,4 +619,39 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([occurredAt])
   @@map("audit_logs")
+}
+
+/// Un alta sin terminar. Guarda lo que cargó la persona, tal cual: no se valida hasta publicar.
+model CatalogDraft {
+  id             String    @id @db.Uuid
+  data           Json
+  createdById    String?   @map("created_by_id")
+  createdByLabel String    @map("created_by_label")
+  createdAt      DateTime  @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @map("updated_at") @db.Timestamptz(6)
+  /// Cómo va la publicación en DUX, código por código. Con alguno creado, el borrador ya no se puede cambiar.
+  steps          Json?
+  duxDoneAt      DateTime? @map("dux_done_at") @db.Timestamptz(6)
+  /// Cómo va la publicación en la tienda.
+  storeState     Json?     @map("store_state")
+  storeDoneAt    DateTime? @map("store_done_at") @db.Timestamptz(6)
+
+  @@map("catalog_drafts")
+}
+
+/// Lo publicado en Tienda Nube, tal como estaba en la última lectura. Se reemplaza entera.
+model StoreProduct {
+  id          BigInt   @id
+  sku         String?
+  name        String
+  published   Boolean
+  /// La sección raíz. Null: no cuelga de ninguna, y no aparece en ningún menú de la tienda.
+  section     String?
+  categoryIds Int[]    @map("category_ids")
+  imageCount  Int      @map("image_count")
+  priceCents  BigInt   @map("price_cents")
+  readAt      DateTime @map("read_at") @db.Timestamptz(6)
+
+  @@index([sku])
+  @@map("store_products")
 }

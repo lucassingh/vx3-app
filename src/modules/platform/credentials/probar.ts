@@ -1,6 +1,7 @@
 import "server-only";
 import { duxClient } from "@/integrations/dux";
 import { fuentesDelCatalogo, googleClient } from "@/integrations/google";
+import { tiendaNube } from "@/integrations/tiendanube";
 import type { PruebaConexion } from "@/lib/api/types";
 import { isAppError } from "@/lib/errors";
 import { formatNumber } from "@/lib/format";
@@ -31,6 +32,10 @@ const PRUEBAS: Record<IntegracionConCredencial, () => Promise<string>> = {
     ]
       .filter(Boolean)
       .join(" ");
+  },
+  tiendanube: async () => {
+    const { nombre } = await (await tiendaNube({ esperasMs: ESPERAS_MS })).probarConexion();
+    return `Tienda Nube respondió: ${nombre}.`;
   },
 };
 

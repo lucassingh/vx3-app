@@ -3,7 +3,10 @@ import { formatNumber } from "@/lib/format";
 import { recalcularClientas } from "@/modules/customers/fichas";
 import { abrirCorrida, cerrarCorrida, soltarBloqueo, type OrigenDeCorrida } from "@/modules/platform/sync-runs";
 import { importarCatalogoTrasDux } from "./catalogo";
+import { leerCodigosDux } from "./dux-codigos";
 import { barrerItemsDux } from "./dux-items";
+import { leerReferenciasDux } from "./dux-referencias";
+import { leerTiendaNube } from "./tienda";
 import { leerClientasDux } from "./dux-clientas";
 import { leerVentasDux, traerHistorialDeVentasDux } from "./dux-ventas";
 
@@ -20,11 +23,15 @@ export async function sincronizarDux(origen: OrigenDeCorrida, bloqueo: string) {
     const { status: items } = await barrerItemsDux(origen);
     const { status: ventas } = await leerVentasDux(origen);
     const { status: clientas } = await leerClientasDux(origen);
+    await leerCodigosDux(origen);
+    await leerReferenciasDux(origen);
     await recalcularFichasDux(origen);
     resumen = { items, ventas, clientas };
   } finally {
     await soltarBloqueoDux(bloqueo);
   }
+  // Para el control final. Si falla, lo de DUX ya quedó hecho.
+  await leerTiendaNube(origen);
   // Necesita lo que DUX acaba de traer. Si falla, lo de DUX ya quedó hecho.
   await importarCatalogoTrasDux(origen);
   return resumen;

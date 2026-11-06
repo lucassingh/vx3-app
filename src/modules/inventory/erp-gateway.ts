@@ -13,6 +13,8 @@ export type ErpItem = {
   rubro: string | null;
   subrubro: string | null;
   marca: string | null;
+  /** El que pide el ERP para escribir: en muchas marcas no es su nombre. */
+  marcaCodigo: string | null;
   proveedorId: number | null;
   proveedor: string | null;
   costoCentavos: number;
@@ -29,6 +31,17 @@ export type ErpItem = {
 };
 
 export type PaginaDeItems = { items: ErpItem[]; total: number; hayMas: boolean };
+
+/** Lo que el alta ofrece, y lo que el ERP pide por ID al crear un producto. */
+export type ErpReferencias = {
+  rubros: { id: number; nombre: string }[];
+  subrubros: { id: number; rubroId: number; nombre: string }[];
+  proveedores: { id: number; nombre: string; habilitado: boolean }[];
+  listas: { id: number; nombre: string; habilitado: boolean }[];
+};
+
+/** Los códigos que existen en el ERP, habilitados o no. */
+export type PaginaDeCodigos = { codigos: string[]; hayMas: boolean };
 
 export type ErpLinea = {
   codigo: string;
@@ -81,6 +94,10 @@ export type ErpClienta = {
 export type PaginaDeClientas = { clientas: ErpClienta[]; hayMas: boolean };
 
 export interface ErpGateway {
+  listarCodigos(offset: number): Promise<PaginaDeCodigos>;
+  listarReferencias(): Promise<ErpReferencias>;
+  /** Un código exacto. Null si el ERP no lo tiene. */
+  buscarItem(codigo: string): Promise<{ codigo: string; nombre: string } | null>;
   listarItems(offset: number): Promise<PaginaDeItems>;
   listarClientas(offset: number): Promise<PaginaDeClientas>;
   listarComprobantes(pedido: PedidoDeComprobantes): Promise<PaginaDeComprobantes>;

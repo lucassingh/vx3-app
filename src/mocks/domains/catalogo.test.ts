@@ -26,7 +26,12 @@ const input: CatalogoAltaInput = {
   tela: "Encaje",
   colores: ["Negro", "Blanco"],
   talles: "85 a 105",
-  aclaracion: "colores y diseños de la foto",
+  prenda: "CONJUNTO ARMADO TRES PIEZAS CON PUNTILLA",
+  color: "COLORES Y DISEÑOS DE LA FOTO",
+  copa: "",
+  atributos: {},
+  opcionales: {},
+  fotos: [],
   costoDocena: 58_000,
   pesoBultoKg: 0.7,
   medidasCm: [32, 18, 9],
@@ -42,7 +47,7 @@ describe("catálogo", () => {
     const sub = body.rubros
       .find((r) => r.rubro === "Conjuntos")
       ?.subrubros.find((s) => s.nombre === "Armado tres piezas");
-    expect(sub).toMatchObject({ prefijo: "CJATN", proximoSku: "CJATN42", nombreBase: "Conjunto armado tres piezas" });
+    expect(sub).toMatchObject({ prefijo: "CJATN", proximoSku: "CJATN42" });
   });
 
   it("bloquea el alta con un SKU que termina en pack (RN-98) y publica uno válido", async () => {

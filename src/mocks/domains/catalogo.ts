@@ -1,5 +1,5 @@
-import { calcularPresentaciones, ceilTo, margenDe } from "@/components/productos/motor-precios";
-import { erroresDeAlta } from "@/components/productos/reglas-alta";
+import { calcularPresentaciones, ceilTo, margenDe } from "@/modules/catalog/motor-precios";
+import { erroresDeAlta } from "@/modules/catalog/reglas-alta";
 import type {
   CatalogoAltaInput,
   CatalogoAltaOpciones,
@@ -150,6 +150,8 @@ const aFila = (item: CatalogoProducto): CatalogoFila => ({
 const aFicha = (item: CatalogoProducto): CatalogoFicha => ({
   ...aFila(item),
   tela: item.tela,
+  enLaTienda: null,
+  editable: false,
   coloresTexto: item.colores.join(", "),
   talles: item.talles,
   proveedor: item.proveedor,
@@ -310,15 +312,6 @@ function proximoSku(prefijo: string, skus: string[]) {
   return `${prefijo}${Math.max(ULTIMO_EN_DUX[prefijo] ?? 0, ...usados) + 1}`;
 }
 
-function nombreBaseDe(producto: ProductoSeed) {
-  if (producto.marca) {
-    const index = producto.nombre.indexOf(producto.marca);
-    if (index > 0) return producto.nombre.slice(0, index).trim();
-  }
-  const singular = producto.rubro.replace(/s$/, "");
-  return producto.subrubro === "Normal" ? singular : `${singular} ${producto.subrubro.toLowerCase()}`;
-}
-
 function altaOpciones(): CatalogoAltaOpciones {
   const items = getCatalogo().productos;
   const skus = items.map((item) => item.sku);
@@ -330,14 +323,10 @@ function altaOpciones(): CatalogoAltaOpciones {
     const existente = rubro.subrubros.find((sub) => sub.nombre === producto.subrubro);
     if (!existente) {
       const prefijo = prefijoDe(producto.sku);
-      const conMarca = items.find(
-        (item) => item.subrubro === producto.subrubro && item.rubro === producto.rubro && item.marca,
-      );
       rubro.subrubros.push({
         nombre: producto.subrubro,
         prefijo,
         proximoSku: proximoSku(prefijo, skus),
-        nombreBase: nombreBaseDe(conMarca ?? producto),
       });
     }
   }
@@ -345,7 +334,7 @@ function altaOpciones(): CatalogoAltaOpciones {
   return {
     rubros: [...rubros.values()],
     marcas: [...new Set(getCatalogo().productos.flatMap(({ marca }) => (marca ? [marca] : [])))].toSorted(),
-    proveedores: proveedores.map(({ id, nombre }) => ({ id, nombre })),
+    proveedores: proveedores.map(({ id, nombre }) => ({ id, nombre, conProductos: true })),
     telas: [
       "Algodón",
       "Algodón lycra",
@@ -382,13 +371,11 @@ function altaOpciones(): CatalogoAltaOpciones {
       "Terracota",
       "Surtidos",
     ],
-    aclaraciones: [
-      "diseño de la foto, colores sujetos a stock",
-      "colores y diseños de la foto",
-      "colores y diseños sujetos a stock, no de la foto",
-      "estampados sujetos a stock",
-    ],
-    skus: items.map((item) => ({ sku: item.sku, nombre: item.nombre, rubro: item.rubro })),
+    atributos: [],
+    codigosUsados: items.map((item) => item.sku),
+    mediaUrl: null,
+    escrituraEnDux: { puede: true, motivo: null },
+    escrituraEnLaTienda: { puede: true, motivo: null },
   };
 }
 
@@ -407,7 +394,7 @@ function nuevoProducto(input: Partial<CatalogoAltaInput>, estado: CatalogoEstado
     tela: input.tela || null,
     colores: input.colores ?? [],
     talles: input.talles ?? "",
-    aclaracion: input.aclaracion ?? "colores sujetos a stock",
+    aclaracion: input.color ?? "colores sujetos a stock",
     proveedorId: input.proveedorId ?? "",
     costoDocena: input.costoDocena ?? 0,
     pesoBultoKg: input.pesoBultoKg ?? 0,
@@ -445,18 +432,6 @@ async function publicar(request: Request) {
     catalogo.productos = [nuevoProducto(input, "publicado"), ...catalogo.productos.filter((item) => item.sku !== sku)];
   }
   return Response.json({ sku, paso, detalle: PASOS[paso](sku) });
-}
-
-async function guardarBorrador(request: Request) {
-  const { input } = await readJson<{ input: Partial<CatalogoAltaInput> }>(request);
-  const sku = (input?.sku ?? "").trim().toUpperCase();
-  if (!sku) return errorResponse(422, "Para guardar el borrador hace falta al menos el SKU.");
-  const catalogo = getCatalogo();
-  catalogo.productos = [
-    nuevoProducto(input ?? {}, "borrador"),
-    ...catalogo.productos.filter((item) => item.sku !== sku),
-  ];
-  return Response.json({ sku, paso: "borrador", detalle: "Borrador guardado en la app. No se publicó en DUX." });
 }
 
 /* ---- Combos sugeridos (RN-108, RN-109) ------------------------------------ */
@@ -628,8 +603,9 @@ export const routes: Route[] = [
         : errorResponse(404, `No existe el producto ${sku}.`);
     },
   },
+  { method: "GET", pattern: /^\/catalogo\/alta\/borradores$/, handler: () => Response.json([]) },
+  { method: "GET", pattern: /^\/catalogo\/alta\/parecidos$/, handler: () => Response.json([]) },
   { method: "GET", pattern: /^\/catalogo\/alta\/opciones$/, handler: () => Response.json(altaOpciones()) },
   { method: "POST", pattern: /^\/catalogo\/alta\/publicar$/, handler: ({ request }) => publicar(request) },
-  { method: "POST", pattern: /^\/catalogo\/alta\/borrador$/, handler: ({ request }) => guardarBorrador(request) },
   { method: "GET", pattern: /^\/catalogo\/combos$/, handler: ({ url }) => Response.json(combos(url)) },
 ];

@@ -10,6 +10,7 @@ import {
   CatalogoProductosCardSkeleton,
   CatalogoProductosSkeleton,
 } from "@/components/productos/catalogo-widgets";
+import { ControlFinal, ControlFinalSkeleton } from "@/components/productos/control-final";
 import { ProductoFromParams } from "@/components/productos/producto-detalle";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
@@ -22,7 +23,7 @@ export const metadata = getRouteMetadata(HREF);
 
 /**
  * M1 · Catálogo maestro: el producto armado desde el Sheet, Drive y DUX. Hasta el pase es de
- * consulta (`solucion_doc/06` §6.2): el alta y el control final vuelven con la 1.9.
+ * consulta (`solucion_doc/06` §6.2). El control final corre solo, con lo que ya se leyó.
  */
 export default async function CatalogoPage({ searchParams }: PageProps<"/productos/catalogo">) {
   await requirePageAccess("/productos/catalogo");
@@ -54,6 +55,10 @@ export default async function CatalogoPage({ searchParams }: PageProps<"/product
       <PageBody>
         <AsyncWidget title="los indicadores del catálogo" fallback={<CatalogoKpisSkeleton />}>
           <CatalogoKpis />
+        </AsyncWidget>
+
+        <AsyncWidget title="el control final" fallback={<ControlFinalSkeleton />}>
+          <ControlFinal />
         </AsyncWidget>
 
         <AsyncWidget title="los productos" fallback={<CatalogoProductosCardSkeleton />}>

@@ -34,6 +34,12 @@ function Seccion({ title, children }: { title: string; children: React.ReactNode
 }
 
 /** "Sin cargar" se puede completar; "No hay dato" es definitivo (RN-124); sin ninguno de los dos, no corresponde. */
+const EN_LA_TIENDA = {
+  publicado: { label: "Publicado en la tienda", tone: "success" },
+  pausado: { label: "Pausado en la tienda", tone: "warning" },
+  no_esta: { label: "No está en la tienda", tone: "neutral" },
+} as const;
+
 function DatoDelSheet({
   valor,
   dato,
@@ -62,6 +68,9 @@ function ProductoContent({ producto }: { producto: CatalogoFicha }) {
             {producto.sku}
           </Badge>
           <VigenciaBadge producto={producto} />
+          {producto.enLaTienda && (
+            <Badge variant={EN_LA_TIENDA[producto.enLaTienda].tone}>{EN_LA_TIENDA[producto.enLaTienda].label}</Badge>
+          )}
           <Badge variant="neutral">
             Prioridad {producto.prioridad}
             {producto.ranking && ` · puesto ${formatNumber(producto.ranking)}`}
@@ -71,6 +80,14 @@ function ProductoContent({ producto }: { producto: CatalogoFicha }) {
         <DialogDescription>
           {[producto.rubro, producto.subrubro].filter(Boolean).join(" · ") || "Sin rubro"}
         </DialogDescription>
+        {producto.editable && (
+          <Link
+            href={`/productos/editar?producto=${encodeURIComponent(producto.sku)}`}
+            className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+          >
+            Editar la ficha y las fotos
+          </Link>
+        )}
       </DialogHeader>
 
       <DialogBody className="space-y-5">
@@ -80,7 +97,7 @@ function ProductoContent({ producto }: { producto: CatalogoFicha }) {
               {producto.fotos.map((foto) => (
                 <li key={foto.id}>
                   <a
-                    href={foto.enDrive}
+                    href={foto.original}
                     target="_blank"
                     rel="noopener noreferrer"
                     title={foto.nombre}
@@ -92,7 +109,7 @@ function ProductoContent({ producto }: { producto: CatalogoFicha }) {
                       colores={producto.colores}
                       className="rounded-none"
                     />
-                    <span className="sr-only">Abrir {foto.nombre} en Drive (pestaña nueva)</span>
+                    <span className="sr-only">Abrir {foto.nombre} (pestaña nueva)</span>
                   </a>
                 </li>
               ))}
@@ -232,7 +249,11 @@ function ProductoContent({ producto }: { producto: CatalogoFicha }) {
           <ul className="flex flex-wrap gap-2 text-xs">
             <li>
               <Badge variant={producto.enSheet ? "success" : "warning"}>
-                {producto.enSheet ? `Sheet, fila ${producto.filaDelSheet}` : "No está en el Sheet"}
+                {!producto.enSheet
+                  ? "Sin ficha"
+                  : producto.filaDelSheet
+                    ? `Sheet, fila ${producto.filaDelSheet}`
+                    : "Ficha en la app"}
               </Badge>
             </li>
             <li>

@@ -7,7 +7,7 @@ import type { RespuestaHttp, Veredicto } from "@/lib/http-client";
 
 type Cuerpo = {
   message?: unknown;
-  error?: { mensaje?: unknown };
+  error?: { mensaje?: unknown; detalle?: unknown };
   id_solicitud?: unknown;
   datos?: unknown;
   results?: unknown;
@@ -19,6 +19,16 @@ const EMPRESA_NO_ENCONTRADA = /empresa no encontrada/i;
 function mensajeDe(cuerpo: Cuerpo): string | null {
   const mensaje = cuerpo.error?.mensaje ?? cuerpo.message;
   return typeof mensaje === "string" ? mensaje : null;
+}
+
+/** Qué campo rechazó y por qué. Sin el valor: puede traer datos de la respuesta. */
+function camposRechazados(cuerpo: Cuerpo): string {
+  const { detalle } = cuerpo.error ?? {};
+  if (!Array.isArray(detalle)) return "";
+  const campos = (detalle as { campo?: unknown; problema?: unknown }[])
+    .filter(({ campo, problema }) => typeof campo === "string" && typeof problema === "string")
+    .map(({ campo, problema }) => `${String(campo)}: ${String(problema)}`);
+  return campos.length > 0 ? ` (${campos.join("; ")})` : "";
 }
 
 export function clasificarRespuestaDux({ status, cuerpo }: RespuestaHttp): Veredicto {
@@ -37,7 +47,7 @@ export function clasificarRespuestaDux({ status, cuerpo }: RespuestaHttp): Vered
   }
   if (status >= 400) {
     const detalle = mensaje?.replace(/\.$/, "") ?? `HTTP ${status}`;
-    return { tipo: "error", mensaje: `DUX rechazó el pedido: ${detalle}.`, contexto };
+    return { tipo: "error", mensaje: `DUX rechazó el pedido: ${detalle}${camposRechazados(objeto)}.`, contexto };
   }
 
   // Con un ID de empresa equivocado responde 200: lo único que lo delata es el cuerpo.

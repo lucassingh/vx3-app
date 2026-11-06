@@ -1,0 +1,20 @@
+{
+  "cols": ["CODIGO COMPUESTO", "CODIGO COMPONENTE", "CANTIDAD"],
+  "filas": [
+    {
+      "CODIGO COMPUESTO": "ZZTEST3-3",
+      "CODIGO COMPONENTE": "ZZTEST3",
+      "CANTIDAD": 3
+    },
+    {
+      "CODIGO COMPUESTO": "ZZTEST3-6",
+      "CODIGO COMPONENTE": "ZZTEST3",
+      "CANTIDAD": 6
+    },
+    {
+      "CODIGO COMPUESTO": "ZZTEST3-12",
+      "CODIGO COMPONENTE": "ZZTEST3",
+      "CANTIDAD": 12
+    }
+  ]
+}

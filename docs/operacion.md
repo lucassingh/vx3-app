@@ -164,7 +164,7 @@ las fechas en que se usó. Sin ella, las copias de esas semanas no se pueden lee
   Responde `{ ok: true, runId }`. Sin el secreto responde 401.
 - **La sincronización con DUX** (productos, stock y precios, las ventas de los últimos
   35 días y las clientas) corre a las 05:00 de Argentina y con el botón **Sincronizar
-  ahora** de Configuración → Integraciones. Son unos 190 requests y menos de 4 minutos.
+  ahora** de Configuración → Integraciones. Son unos 260 requests y menos de 5 minutos.
   Nunca hay dos a la vez: la segunda avisa y no arranca. La frecuencia se cambia en la
   línea de `/api/cron/dux` en `vercel.json` (y el texto en
   `src/modules/platform/integraciones/estado.ts`). Solo lee: la app no escribe en DUX.
@@ -337,6 +337,72 @@ se puede deshacer desde la misma pantalla. Las deciden los roles que editan el c
 3. Apretar **Reimportar**.
 4. En Revisión, confirmar los históricos: Elías aprobó los 357 el 05/11.
 
+## 13. Alta, publicación y corte
+
+**Qué hace falta en cada ambiente:**
+
+1. Cargar `TIENDANUBE_STORE_ID` y el token de Tienda Nube desde Integraciones. **Probar conexión**
+   tiene que decir el nombre de la tienda.
+2. Apretar **Leer la tienda**: sin esa lectura, el control final no dice nada de la tienda. Después
+   se lee sola cada noche, con DUX. Son unos 8 pedidos.
+3. En producción, cargar `DUX_ID_UNIDAD_MEDIDA` y `DUX_ID_PERSONAL`. Sin ellas, el botón de DUX está
+   apagado y dice por qué, y se publica con los `.xls`.
+
+**Quién escribe dónde:**
+
+| Ambiente   | DUX                               | Tienda Nube                         |
+| ---------- | --------------------------------- | ----------------------------------- |
+| Producción | Sí                                | Sí                                  |
+| QA y local | Solo con `DUX_CABECERA_DE_PRUEBA` | No: se ve el pedido que se mandaría |
+| Previews   | No                                | No                                  |
+
+**Publicar un producto** (Productos → Alta):
+
+1. Cargar y guardar. Lo guardado es un borrador: no está en ningún lado.
+2. **Publicar en DUX.** Crea la prenda y sus packs de a uno. Con un código creado, el borrador ya no
+   se puede cambiar ni borrar: DUX no borra ni renombra por API.
+3. **Publicar en Tienda Nube.** Crea el producto oculto y sube las fotos.
+4. **Mostrar en la tienda**, a los pocos minutos: DUX tiene que completar el precio. Sin precio o sin
+   foto, no deja.
+
+El producto aparece en el catálogo con la próxima sincronización de DUX.
+
+**Si DUX falla.** Queda marcado el código que falló, con su motivo. **Retomar** lo busca antes de
+crearlo: si quedó hecho, no lo duplica. Si la API no responde, en **Importar a mano en DUX** se bajan
+los tres `.xls`, que salen iguales byte por byte a los del Hub (`src/lib/xls.ts`; lo prueban los
+archivos de `src/integrations/dux/fixtures/hub`). Se importan en orden en Productos → Importar:
+`1_productos` con "Productos", `2_compuestos` con "Compuesto" y `3_precios` con "Múltiples precios".
+Después se sube la foto a la prenda y a sus packs, y **Ya los importé: comprobar** lo verifica. Solo
+lee, así que anda en cualquier ambiente.
+
+**Si Tienda Nube falla.** Igual: queda el motivo, y retomar no duplica, porque cruza por SKU.
+Frena si el rubro no tiene regla (`src/modules/catalog/tienda.ts`, la misma tabla del Hub) o si falta
+la categoría: la app nunca crea una. La crea VX3 en la tienda, y se vuelve a intentar.
+
+**Control final** (Productos → Catálogo). Corre solo, con lo ya leído: bulto con precio, prenda fuera
+del mayorista, la tienda publica el bulto, lo activo está en la tienda y tiene foto, y las 7 secciones
+suman el total. Marca, no corrige.
+
+**El corte** (Productos → Revisión, solo admin):
+
+1. Acordar con el equipo medio día sin altas ni cambios en el Sheet.
+2. Resolver lo que quede en la cola para vender.
+3. **Hacer el corte.** Hace la última importación y, solo si sale bien, marca el corte. Ensayado el
+   06/11 contra el Sheet y Drive reales, en una branch: 11,6 s.
+4. Pasar el Sheet y la carpeta de Drive a solo lectura, sin borrarlos, y apagar las altas del Hub.
+
+Desde ahí no se lee Google, y el catálogo se sigue armando cada noche con las copias y DUX. La ficha
+de cada producto ofrece **Editar**: tela, colores, talles, atributos, peso, medidas y fotos. Se actualiza
+en la app y, por SKU, en la tienda. El nombre, el rubro, la marca, el costo y el precio se siguen cambiando
+en DUX y en el Hub. **La carpeta de Drive tiene que seguir pública:** de ahí salen las fotos viejas.
+
+**Volver atrás** (el mismo lugar). La próxima importación vuelve a leer el Sheet y Drive: lo editado
+en la app sobre esos productos se pisa. Las altas nuevas y las decisiones de la revisión se mantienen.
+
+**La primera escritura real** es con Elías mirando (decisión 1 de la 1.9), y confirma lo que la
+documentación de DUX no dice: `cod_kit`, si `precios` pide `tipo_valor`, y si acepta el costo de un
+compuesto. También, que DUX complete el precio de un producto oculto en la tienda (decisión 3).
+
 ## Variables y secretos de cada lugar
 
 **Vercel** (Settings → Environment Variables):
@@ -355,6 +421,14 @@ se puede deshacer desde la misma pantalla. Las deciden los roles que editan el c
 | `DUX_ID_EMPRESA`            | `9432`                       | `9432`                         |
 | `DUX_ID_SUCURSAL_ECOMMERCE` | `1`                          | `1`                            |
 | `DUX_ID_SUCURSAL_LOCAL`     | `2`                          | `2`                            |
+| `DUX_ID_DEPOSITO`           | `18516`                      | `18516`                        |
+| `MEDIA_URL`                 | la de `cli-vx3-media-prod`   | la de `cli-vx3-media-dev`      |
+| `TIENDANUBE_STORE_ID`       | el de la tienda              | el mismo                       |
+| `DUX_ID_UNIDAD_MEDIDA`      | a confirmar con DUX          | sin cargar                     |
+| `DUX_ID_PERSONAL`           | a confirmar con Elías        | sin cargar                     |
+
+`MEDIA_URL` y `BLOB_READ_WRITE_TOKEN` ya están en Vercel: las dejó conectar cada store al proyecto. En local, el token es
+siempre el del store `-dev`.
 
 Las previews ven las variables de QA, pero ignoran `CREDENTIALS_KEY`: con
 `APP_ENV=preview` no se conectan a DUX. El token de DUX no es una variable: está cifrado

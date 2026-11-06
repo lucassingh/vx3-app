@@ -155,7 +155,8 @@ describe("listarIntegraciones", () => {
   });
 
   it("lo que no está conectado aparece pendiente, con su PR y sin datos", async () => {
-    const pendientes = (await listarIntegraciones()).filter(({ id }) => id !== "dux" && id !== "google");
+    const conectadas = ["dux", "google", "tiendanube"];
+    const pendientes = (await listarIntegraciones()).filter(({ id }) => !conectadas.includes(id));
 
     expect(pendientes.length).toBeGreaterThan(0);
     for (const integracion of pendientes) {
@@ -165,6 +166,83 @@ describe("listarIntegraciones", () => {
       expect(integracion.metricas).toEqual([]);
       expect(integracion.credencial).toBeNull();
     }
+  });
+});
+
+describe("Tienda Nube", () => {
+  const tienda = async () => (await listarIntegraciones()).find(({ id }) => id === "tiendanube");
+  const conToken = () => guardarCredencial("tiendanube", "token-de-tienda-nube", { id: USUARIO, label: "Prueba" });
+  const lectura = (cambios: Parameters<typeof corrida>[1] = {}) =>
+    corrida("lectura", { integration: "tiendanube", ...cambios });
+  const producto = (id: bigint, section: string | null) => ({
+    id,
+    sku: `S${id}-6`,
+    name: "x",
+    published: true,
+    section,
+    categoryIds: [],
+    imageCount: 1,
+    priceCents: 100n,
+    readAt: new Date(),
+  });
+
+  afterEach(async () => {
+    await db.storeProduct.deleteMany();
+  });
+
+  it("sin token, dice que falta y no muestra datos", async () => {
+    expect(await tienda()).toMatchObject({
+      estado: "pendiente",
+      detalle: expect.stringContaining("Falta cargar el token"),
+      metricas: [],
+    });
+  });
+
+  it("con el token y sin leer, dice qué hacer", async () => {
+    await conToken();
+
+    expect(await tienda()).toMatchObject({ estado: "pendiente", detalle: expect.stringContaining("Leer la tienda") });
+  });
+
+  it("con todo en una sección, funciona, y muestra lo que leyó", async () => {
+    await conToken();
+    await lectura();
+    await db.storeProduct.createMany({ data: [producto(1n, "MUJER"), producto(2n, "HOMBRE")] });
+
+    expect(await tienda()).toMatchObject({
+      estado: "ok",
+      metricas: expect.arrayContaining([
+        { label: "Productos", value: "2" },
+        { label: "Fuera de las secciones", value: "0" },
+      ]),
+    });
+  });
+
+  it("un producto fuera de las secciones se avisa: no aparece en ningún menú", async () => {
+    await conToken();
+    await lectura();
+    await db.storeProduct.createMany({ data: [producto(1n, null)] });
+
+    expect(await tienda()).toMatchObject({
+      estado: "degradado",
+      detalle: "Hay 1 producto fuera de las secciones: no aparece en el menú de la tienda.",
+    });
+  });
+
+  it("si falló la última lectura, lo dice", async () => {
+    await conToken();
+    await lectura({ status: "error", detail: "Tienda Nube rechazó el token." });
+
+    expect(await tienda()).toMatchObject({ estado: "caido", detalle: "Tienda Nube rechazó el token." });
+  });
+
+  it("el registro la nombra", async () => {
+    await lectura();
+
+    expect((await registroDeSincronizaciones())[0]).toMatchObject({
+      integracion: "Tienda Nube",
+      operacion: "Lectura de la tienda",
+    });
   });
 });
 

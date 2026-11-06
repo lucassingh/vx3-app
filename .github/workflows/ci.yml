@@ -57,10 +57,16 @@ jobs:
         run: npm run build
 
   integration:
-    name: Integración (branch efímera de Neon)
+    name: Integración (parte ${{ matrix.parte }} de 3)
     runs-on: ubuntu-latest
     # Es un tope, no una meta: al pasarlo, el job se cancela sin decir qué test iba corriendo.
     timeout-minutes: 20
+    # Con 455 tests, una sola tanda pasaba los 20 minutos: la base está en San Pablo y el runner, lejos.
+    # De a tres, cada una contra su propia branch. Si una falla, las otras terminan y dicen lo suyo.
+    strategy:
+      fail-fast: false
+      matrix:
+        parte: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
 
@@ -72,7 +78,7 @@ jobs:
       - run: npm ci
 
       - name: Migraciones, sincronía del esquema y tests de integración
-        run: npm run test:int
+        run: npm run test:int -- --shard=${{ matrix.parte }}/3
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
           NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
