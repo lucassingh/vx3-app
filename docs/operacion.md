@@ -1,4 +1,4 @@
-| `DUX_ID_PERSONAL`| a confirmar con Elías| sin cargar|| `DUX_ID_UNIDAD_MEDIDA`| a confirmar con DUX| sin cargar|| `MEDIA_URL`| la de `cli-vx3-media-prod`| la de `cli-vx3-media-dev`|# Guía de operación
+# Guía de operación
 
 Qué hacer cuando algo se rompe a las 2 de la mañana. Cada caso dice cómo darse
 cuenta, qué hacer y cómo verificar que quedó bien. Los secretos están en
@@ -422,10 +422,10 @@ compuesto. También, que DUX complete el precio de un producto oculto en la tien
 | `DUX_ID_SUCURSAL_ECOMMERCE` | `1`                          | `1`                            |
 | `DUX_ID_SUCURSAL_LOCAL`     | `2`                          | `2`                            |
 | `DUX_ID_DEPOSITO`           | `18516`                      | `18516`                        |
-| `MEDIA_URL`                 | la de `cli-vx3-media-dev`    | la de `cli-vx3-media-prod`     |
+| `MEDIA_URL`                 | la de `cli-vx3-media-prod`   | la de `cli-vx3-media-dev`      |
 | `TIENDANUBE_STORE_ID`       | el de la tienda              | el mismo                       |
-| `DUX_ID_UNIDAD_MEDIDA`      | sin cargar                   | a confirmar con DUX            |
-| `DUX_ID_PERSONAL`           | sin cargar                   | a confirmar con Elías          |
+| `DUX_ID_UNIDAD_MEDIDA`      | a confirmar con DUX          | sin cargar                     |
+| `DUX_ID_PERSONAL`           | a confirmar con Elías        | sin cargar                     |
 
 `MEDIA_URL` y `BLOB_READ_WRITE_TOKEN` ya están en Vercel: las dejó conectar cada store al proyecto. En local, el token es
 siempre el del store `-dev`.
