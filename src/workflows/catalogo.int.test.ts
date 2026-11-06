@@ -3,11 +3,11 @@ import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
 import type { ArchivoDeDrive, PestanaDelSheet } from "@/integrations/google/client";
 import { ExternalServiceError } from "@/lib/errors";
-import { DECISION_DE_FOTO } from "@/modules/catalog/importar";
+import { BLOQUEO_DEL_CATALOGO, DECISION_DE_FOTO } from "@/modules/catalog/importar";
 import { guardarCredencial } from "@/modules/platform/credentials/service";
 import { hayCorridaEnCurso, tomarBloqueo } from "@/modules/platform/sync-runs";
 import { arrancarImportacionDelCatalogo } from "./arrancar-catalogo";
-import { BLOQUEO_DEL_CATALOGO, importarCatalogo, importarCatalogoTrasDux, VENCE_IMPORTACION_MS } from "./catalogo";
+import { importarCatalogo, importarCatalogoTrasDux, VENCE_IMPORTACION_MS } from "./catalogo";
 
 // Sin el compilador de workflow, "use workflow" y "use step" no hacen nada: acá corre como funciones comunes.
 const google = vi.hoisted(() => ({
@@ -196,7 +196,7 @@ describe("una importación completa", () => {
       calls: 2,
       records: 2,
       detail:
-        "Productos: 2, 2 en las tres fuentes. Nuevos: 2. Cambiados: 0. Ya no están: 0. Filas del Sheet: 2. Archivos de Drive: 3.",
+        "Productos: 2, 2 en las tres fuentes. Nuevos: 2. Cambiados: 0. Ya no están: 0. Para revisar: 0. Filas del Sheet: 2. Archivos de Drive: 3.",
     });
     expect(await db.catalogSheetRow.count()).toBe(2);
     expect(await db.catalogDriveFile.count()).toBe(3);

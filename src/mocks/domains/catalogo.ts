@@ -604,6 +604,18 @@ export const routes: Route[] = [
     pattern: /^\/catalogo\/ejemplo\/rubros$/,
     handler: () => Response.json([...new Set(getCatalogo().productos.map(({ rubro }) => rubro))]),
   },
+  // La cola sale de la importación: en la maqueta no hay nada para revisar.
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/revision$/,
+    handler: () => Response.json({ bloques: [], casos: 0, actualizadoEl: null }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/revision\/casos$/,
+    handler: ({ url }) => Response.json(paginate([], url, 20)),
+  },
+  { method: "GET", pattern: /^\/catalogo\/revision\/decisiones$/, handler: () => Response.json([]) },
   { method: "GET", pattern: /^\/catalogo\/control$/, handler: () => Response.json(control()) },
   { method: "GET", pattern: /^\/catalogo\/productos$/, handler: ({ url }) => Response.json(listar(url)) },
   {

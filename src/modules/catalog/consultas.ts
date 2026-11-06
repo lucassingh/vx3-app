@@ -9,10 +9,15 @@ import type {
   CatalogoFicha,
   CatalogoFila,
   CatalogoQuery,
+  RevisionCaso,
+  RevisionDecision,
+  RevisionResumen,
 } from "@/lib/api/contracts/catalogo";
 import type { Kpi, Paginated } from "@/lib/api/types";
 import { normalizarCodigo } from "./codigos";
 import { coloresDe, facetasDe, pasaLosFiltros, type ProductoFiltrable } from "./filtros";
+import { DECISION_DE_FOTO, DECISION_DE_HISTORICO } from "./importar";
+import { BLOQUES } from "./revision";
 import { etiquetaDePresentacion, LISTA_DEL_BULTO, type DatoQueFalta, type Faltante } from "./salud";
 
 /**
@@ -35,6 +40,8 @@ const FALTANTE: Record<DatoQueFalta, { dato: string; bloquea: boolean; fuente: "
   marca: { dato: "Marca", bloquea: false, fuente: "Sheet" },
   proveedor: { dato: "Proveedor", bloquea: false, fuente: "Sheet" },
 };
+
+const enDrive = (driveId: string) => `https://drive.google.com/file/d/${driveId}/view`;
 
 const ATRIBUTOS: Record<string, string> = {
   copa: "Copa",
@@ -286,9 +293,151 @@ export async function fichaDelProducto(sku: string): Promise<CatalogoFicha | nul
       id: driveId,
       nombre: name,
       miniatura: urlDeMiniatura(driveId, ANCHO_EN_LA_FICHA),
-      enDrive: `https://drive.google.com/file/d/${driveId}/view`,
+      enDrive: enDrive(driveId),
       ancho: width,
       alto: height,
     })),
   };
+}
+
+/* ---- Cola de revisión ---------------------------------------------------- */
+
+const FUENTE_DEL_CASO: Record<string, string> = { sheet: "Sheet", dux: "DUX", drive: "Drive", app: "En esta pantalla" };
+
+export async function resumenDeRevision(): Promise<RevisionResumen> {
+  const db = getDb();
+  const [porBloque, ultima] = await Promise.all([
+    db.catalogReviewCase.groupBy({ by: ["block"], _count: { _all: true } }),
+    db.syncRun.findFirst({
+      where: { integration: "google", operation: "catalogo", status: "ok" },
+      orderBy: { startedAt: "desc" },
+      select: { finishedAt: true },
+    }),
+  ]);
+  const importado = ultima !== null || porBloque.length > 0;
+  if (!importado) return { bloques: [], casos: 0, actualizadoEl: null };
+  const cuantos = new Map(porBloque.map(({ block, _count }) => [block, _count._all]));
+  const bloques = BLOQUES.map((bloque) => ({ ...bloque, casos: cuantos.get(bloque.id) ?? 0 }));
+  return {
+    bloques,
+    casos: bloques.reduce((suma, { casos }) => suma + casos, 0),
+    actualizadoEl: ultima?.finishedAt?.toISOString() ?? null,
+  };
+}
+
+/** Los más vendidos primero: es lo que conviene corregir antes. */
+export async function casosDeUnBloque({
+  bloque,
+  page,
+  pageSize,
+}: {
+  bloque: string;
+  page: number;
+  pageSize: number;
+}): Promise<Paginated<RevisionCaso>> {
+  const db = getDb();
+  const total = await db.catalogReviewCase.count({ where: { block: bloque } });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const actual = Math.min(page, totalPages);
+  const casos = await db.catalogReviewCase.findMany({
+    where: { block: bloque },
+    orderBy: [{ salesRank: { sort: "asc", nulls: "last" } }, { key: "asc" }],
+    skip: (actual - 1) * pageSize,
+    take: pageSize,
+  });
+  const codigos = casos.flatMap(({ baseCode }) => (baseCode ? [baseCode] : []));
+  const nombres = new Map(
+    (
+      await db.catalogProduct.findMany({
+        where: { baseCode: { in: codigos } },
+        select: { baseCode: true, name: true },
+      })
+    ).map(({ baseCode, name }) => [baseCode, name]),
+  );
+
+  return {
+    data: casos.map((caso) => {
+      const detalles = caso.details as { nombre?: string; sugerencias?: string[] };
+      const fuente = FUENTE_DEL_CASO[caso.fixIn] ?? caso.fixIn;
+      return {
+        id: caso.id,
+        clave: caso.key,
+        sku: caso.baseCode,
+        nombre: caso.baseCode ? (nombres.get(caso.baseCode) ?? null) : null,
+        prioridad: caso.priority,
+        descripcion: caso.description,
+        seCorrigeEn: caso.fixIn === "sheet" && caso.sheetRow ? `Sheet, fila ${caso.sheetRow}` : fuente,
+        foto:
+          caso.block === "fotos_sueltas"
+            ? {
+                nombre: detalles.nombre ?? caso.key,
+                miniatura: urlDeMiniatura(caso.key),
+                enDrive: enDrive(caso.key),
+                sugerencias: detalles.sugerencias ?? [],
+              }
+            : null,
+      };
+    }),
+    page: actual,
+    pageSize,
+    total,
+    totalPages,
+  };
+}
+
+export async function decisionesDeRevision(): Promise<RevisionDecision[]> {
+  const db = getDb();
+  const decisiones = await db.catalogDecision.findMany({
+    where: { type: { in: [DECISION_DE_FOTO, DECISION_DE_HISTORICO] } },
+    orderBy: { decidedAt: "desc" },
+  });
+  const archivos = new Map(
+    (
+      await db.catalogDriveFile.findMany({
+        where: { driveId: { in: decisiones.filter(({ type }) => type === DECISION_DE_FOTO).map(({ key }) => key) } },
+        select: { driveId: true, name: true },
+      })
+    ).map(({ driveId, name }) => [driveId, name]),
+  );
+
+  const confirmados = decisiones.filter(
+    ({ type, value }) => type === DECISION_DE_HISTORICO && (value as { confirmado: boolean }).confirmado,
+  );
+  const [ultima] = confirmados;
+  const enBloque: RevisionDecision[] = ultima
+    ? [
+        {
+          tipo: "historico",
+          clave: null,
+          descripcion:
+            confirmados.length === 1
+              ? "1 histórico confirmado"
+              : `${confirmados.length.toLocaleString("es-AR")} históricos confirmados`,
+          quien: ultima.decidedByLabel,
+          cuando: ultima.decidedAt.toISOString(),
+        },
+      ]
+    : [];
+
+  return [
+    ...enBloque,
+    ...decisiones
+      .filter((decision) => !confirmados.includes(decision))
+      .map(({ type, key, value, decidedByLabel, decidedAt }): RevisionDecision => {
+        const producto = (value as { producto?: string | null }).producto;
+        const archivo = archivos.get(key) ?? key;
+        return {
+          tipo: type === DECISION_DE_FOTO ? "foto" : "historico",
+          clave: key,
+          descripcion:
+            type === DECISION_DE_HISTORICO
+              ? `${key} no es histórico`
+              : producto
+                ? `${archivo} va en ${producto}`
+                : `${archivo} quedó descartada`,
+          quien: decidedByLabel,
+          cuando: decidedAt.toISOString(),
+        };
+      }),
+  ];
 }

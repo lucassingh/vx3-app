@@ -11,6 +11,7 @@ import { logger } from "@/lib/logger";
 import { normalizeText } from "@/lib/utils";
 import { armarCatalogo, type FilaDelSheet, type ItemDeDux, type ProductoArmado } from "./armar";
 import { leerPestana } from "./fuentes";
+import { casosDeRevision } from "./revision";
 import {
   DIAS_DE_VENTAS,
   DIAS_DEL_ANIO,
@@ -36,6 +37,10 @@ const CARPETA_RAIZ = "Repositorio Fotos";
 const TRANSACCION_LARGA = { timeout: 60_000, maxWait: 10_000 };
 
 export const DECISION_DE_FOTO = "foto";
+export const DECISION_DE_HISTORICO = "historico";
+
+/** Es el mismo bloqueo para leer las fuentes y para rearmar: nunca hay dos escribiendo el catálogo. */
+export const BLOQUEO_DEL_CATALOGO = "google";
 
 export type Lectura =
   { ok: true; llamadas: number; registros: number } | { ok: false; llamadas: number; motivo: string };
@@ -243,6 +248,7 @@ export type ResumenDeImportacion = {
   nuevos: number;
   cambiados: number;
   yaNoEstan: number;
+  paraRevisar: number;
 };
 
 /** Idempotente: lo que no cambió no se toca, ni su ID ni su fecha. */
@@ -251,7 +257,7 @@ export async function armarDesdeLasCopias(ahora: Date, hoy = businessTime.today(
   const [filasCrudas, archivosCrudos, decisiones, { items, espejo }, ventas, previos] = await Promise.all([
     db.catalogSheetRow.findMany({ orderBy: { rowNumber: "asc" } }),
     db.catalogDriveFile.findMany({ orderBy: { driveId: "asc" } }),
-    db.catalogDecision.findMany({ where: { type: DECISION_DE_FOTO } }),
+    db.catalogDecision.findMany({ where: { type: { in: [DECISION_DE_FOTO, DECISION_DE_HISTORICO] } } }),
     leerEspejo(),
     ventasDelAnio(hoy),
     db.catalogProduct.findMany({
@@ -259,7 +265,9 @@ export async function armarDesdeLasCopias(ahora: Date, hoy = businessTime.today(
     }),
   ]);
 
-  const { productos } = armarCatalogo({
+  const deTipo = (tipo: string) => decisiones.filter(({ type }) => type === tipo);
+  const historicos = deTipo(DECISION_DE_HISTORICO);
+  const armado = armarCatalogo({
     filas: filasCrudas.map(({ rowNumber, shown, raw }) => ({
       fila: rowNumber,
       visto: shown as Record<string, string>,
@@ -275,10 +283,27 @@ export async function armarDesdeLasCopias(ahora: Date, hoy = businessTime.today(
       alto: height,
     })),
     decisiones: {
-      fotos: new Map(decisiones.map(({ key, value }) => [key, (value as { producto: string | null }).producto])),
+      fotos: new Map(
+        deTipo(DECISION_DE_FOTO).map(({ key, value }) => [key, (value as { producto: string | null }).producto]),
+      ),
     },
   });
-  const evaluaciones = evaluarCatalogo({ productos, ventas, espejo, hoy });
+  const { productos } = armado;
+  const evaluaciones = evaluarCatalogo({
+    productos,
+    ventas,
+    espejo,
+    hoy,
+    noSonHistoricos: new Set(
+      historicos.filter(({ value }) => !(value as { confirmado: boolean }).confirmado).map(({ key }) => key),
+    ),
+  });
+  const casos = casosDeRevision({
+    armado,
+    evaluaciones,
+    espejo,
+    historicosDecididos: new Set(historicos.map(({ key }) => key)),
+  });
   const previoDe = new Map(previos.map((previo) => [previo.baseCode, previo]));
 
   const nuevos: AEscribir[] = [];
@@ -346,6 +371,10 @@ export async function armarDesdeLasCopias(ahora: Date, hoy = businessTime.today(
         })),
       ),
     });
+
+    // Se regenera entera: lo corregido en la fuente desaparece solo.
+    await tx.catalogReviewCase.deleteMany();
+    await tx.catalogReviewCase.createMany({ data: casos.map((caso) => ({ id: newId(), ...caso })) });
   }, TRANSACCION_LARGA);
 
   return {
@@ -354,5 +383,6 @@ export async function armarDesdeLasCopias(ahora: Date, hoy = businessTime.today(
     nuevos: nuevos.length,
     cambiados: cambiados.length,
     yaNoEstan: ausentes.length,
+    paraRevisar: casos.length,
   };
 }

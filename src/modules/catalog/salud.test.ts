@@ -138,6 +138,25 @@ describe("el estado del producto", () => {
   });
 });
 
+describe("la excepción de una persona", () => {
+  const conExcepcion = (espejo: Partial<CodigoDelEspejo>) =>
+    evaluarCatalogo({
+      productos: [producto("LN1")],
+      ventas: new Map(),
+      espejo: new Map(conPrecio("LN1", espejo)),
+      hoy: HOY,
+      noSonHistoricos: new Set(["LN1"]),
+    }).get("LN1")?.estado;
+
+  it("lo que iba a ser histórico queda agotado", () => {
+    expect(conExcepcion({})).toBe("agotado");
+  });
+
+  it("con stock es activo, como cualquiera", () => {
+    expect(conExcepcion({ stock: 6 })).toBe("activo");
+  });
+});
+
 describe("la prioridad", () => {
   const productos = ["LN1", "LN2", "LN3", "LN4", "LN5"].map((codigo) => producto(codigo));
   const conVentas = (montos: Record<string, number>) =>

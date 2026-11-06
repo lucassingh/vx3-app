@@ -155,6 +155,7 @@ export function evaluarCatalogo({
   ventas,
   espejo,
   hoy,
+  noSonHistoricos = new Set<string>(),
 }: {
   productos: ProductoArmado[];
   /** Por producto: solo lo vendido en el último año. */
@@ -162,6 +163,8 @@ export function evaluarCatalogo({
   /** Por código normalizado. */
   espejo: ReadonlyMap<string, CodigoDelEspejo>;
   hoy: string;
+  /** Los que una persona sacó de los históricos: quedan agotados. Si venden o entra stock, activos. */
+  noSonHistoricos?: ReadonlySet<string>;
 }): Map<string, EvaluacionDelProducto> {
   const porVentas = prioridades(productos, ventas);
   return new Map(
@@ -170,10 +173,16 @@ export function evaluarCatalogo({
       const deTemporada = RUBROS_DE_TEMPORADA.has(producto.rubro ?? "");
       const bulto = codigoDelBulto(producto);
       const faltantes = faltantesDelProducto(producto, bulto, espejo);
+      const estado = estadoDelProducto(producto, {
+        venta,
+        stock: stockDelProducto(producto, espejo),
+        deTemporada,
+        hoy,
+      });
       return [
         producto.codigo,
         {
-          estado: estadoDelProducto(producto, { venta, stock: stockDelProducto(producto, espejo), deTemporada, hoy }),
+          estado: estado === "historico" && noSonHistoricos.has(producto.codigo) ? "agotado" : estado,
           deTemporada,
           ...porVentas.get(producto.codigo)!,
           ventas90Centavos: venta?.centavos90 ?? 0,

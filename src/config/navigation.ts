@@ -248,6 +248,13 @@ export const navigation: NavSection[] = [
               "El producto armado desde el Sheet, Drive y DUX: fotos, atributos y lo que le falta para venderse.",
           },
           {
+            title: "Revisión",
+            href: "/productos/revision",
+            icon: ListChecks,
+            description:
+              "Lo que hay que corregir para vender: una sola lista, por ventas, que dice dónde se corrige y se vacía sola.",
+          },
+          {
             title: "Alta de producto",
             href: "/productos/alta",
             icon: PackagePlus,

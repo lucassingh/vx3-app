@@ -1,4 +1,4 @@
-import { WandSparkles } from "lucide-react";
+import { ListChecks, WandSparkles } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { PageBody, PageHeader } from "@/components/layout/page-header";
@@ -35,12 +35,20 @@ export default async function CatalogoPage({ searchParams }: PageProps<"/product
         title={route?.link.title ?? "Catálogo"}
         description={route?.link.description}
         actions={
-          <Button variant="outline" asChild>
-            <Link href="/productos/combos">
-              <WandSparkles />
-              Combos y flyers
-            </Link>
-          </Button>
+          <>
+            <Button variant="outline" asChild>
+              <Link href="/productos/combos">
+                <WandSparkles />
+                Combos y flyers
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/productos/revision">
+                <ListChecks />
+                Revisión
+              </Link>
+            </Button>
+          </>
         }
       />
       <PageBody>

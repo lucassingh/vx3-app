@@ -98,6 +98,19 @@ const DESCRIPCION: Record<
     categoria: "accesos",
     texto: (_, d) => `Cerró las sesiones de ${texto(d, "nombre")}`,
   },
+  "catalogo.foto": {
+    categoria: "stock",
+    texto: (_, d) =>
+      texto(d, "producto")
+        ? `Asignó la foto ${texto(d, "archivo")} a ${texto(d, "producto")}`
+        : `Descartó la foto ${texto(d, "archivo")}`,
+  },
+  "catalogo.no_historico": { categoria: "stock", texto: () => "Sacó un producto de los históricos" },
+  "catalogo.historicos": {
+    categoria: "stock",
+    texto: (_, d) => `Confirmó ${String(d?.confirmados ?? 0)} históricos`,
+  },
+  "catalogo.deshacer": { categoria: "stock", texto: () => "Deshizo una decisión del catálogo" },
   "credencial.cargada": { categoria: "accesos", texto: (_, d) => `Cargó la credencial de ${texto(d, "integracion")}` },
   "usuario.password_reseteada": {
     categoria: "accesos",

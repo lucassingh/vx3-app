@@ -2,6 +2,7 @@ import { formatNumber } from "@/lib/format";
 import { logger } from "@/lib/logger";
 import {
   armarDesdeLasCopias,
+  BLOQUEO_DEL_CATALOGO,
   leerYCopiarDrive,
   leerYCopiarSheet,
   type Lectura,
@@ -22,7 +23,6 @@ import {
  * pasan nada pesado.
  */
 
-export const BLOQUEO_DEL_CATALOGO = "google";
 export const OPERACION_DEL_CATALOGO = "catalogo";
 /** Las esperas de Google pueden sumar varios minutos. Es solo por si el Workflow muere antes. */
 export const VENCE_IMPORTACION_MS = 30 * 60_000;
@@ -107,12 +107,12 @@ export async function cerrarImportacion(
   "use step";
 
   const n = (valor: number) => formatNumber(valor);
-  const { productos, enLasTres, nuevos, cambiados, yaNoEstan } = resumen;
+  const { productos, enLasTres, nuevos, cambiados, yaNoEstan, paraRevisar } = resumen;
   await cerrarCorrida(corrida.id, {
     status: "ok",
     calls: sheet.llamadas + drive.llamadas,
     records: productos,
-    detail: `Productos: ${n(productos)}, ${n(enLasTres)} en las tres fuentes. Nuevos: ${n(nuevos)}. Cambiados: ${n(cambiados)}. Ya no están: ${n(yaNoEstan)}. Filas del Sheet: ${n(sheet.registros)}. Archivos de Drive: ${n(drive.registros)}.`,
+    detail: `Productos: ${n(productos)}, ${n(enLasTres)} en las tres fuentes. Nuevos: ${n(nuevos)}. Cambiados: ${n(cambiados)}. Ya no están: ${n(yaNoEstan)}. Para revisar: ${n(paraRevisar)}. Filas del Sheet: ${n(sheet.registros)}. Archivos de Drive: ${n(drive.registros)}.`,
   });
   logger.info({ corrida: corrida.id, ...resumen }, "catálogo importado");
   return { status: "ok" as const };

@@ -100,6 +100,42 @@ export type CatalogoFacetas = {
   proveedores: CatalogoFaceta[];
 };
 
+/* ---- Cola de revisión ---------------------------------------------------- */
+
+export type RevisionGrupo = "para_vender" | "historicos" | "despues";
+
+export type RevisionBloque = { id: string; grupo: RevisionGrupo; titulo: string; ayuda: string; casos: number };
+
+export type RevisionResumen = {
+  bloques: RevisionBloque[];
+  casos: number;
+  /** La última importación que anduvo. */
+  actualizadoEl: string | null;
+};
+
+export type RevisionCaso = {
+  id: string;
+  /** La llave natural: un código o un archivo de Drive. */
+  clave: string;
+  sku: string | null;
+  nombre: string | null;
+  prioridad: CatalogoPrioridad | null;
+  descripcion: string;
+  /** "Sheet, fila 57", "DUX", "Drive" o "En esta pantalla". */
+  seCorrigeEn: string;
+  /** Solo en una foto suelta. */
+  foto: { nombre: string; miniatura: string; enDrive: string; sugerencias: string[] } | null;
+};
+
+/** `clave` null: los históricos confirmados en bloque, en una sola línea. */
+export type RevisionDecision = {
+  tipo: "foto" | "historico";
+  clave: string | null;
+  descripcion: string;
+  quien: string;
+  cuando: string;
+};
+
 /* ---- La maqueta del alta, los combos y el control final: se reemplazan en la 1.9 ---- */
 
 export type CatalogoEstado = "borrador" | "listo" | "publicado" | "pausado";
@@ -253,6 +289,10 @@ export function catalogoEndpoints(request: ApiRequest) {
     productos: (query: CatalogoQuery & { page?: number; pageSize?: number } = {}) =>
       request<Paginated<CatalogoFila>>(`/catalogo/productos${toQueryString(query)}`),
     producto: (sku: string) => request<CatalogoFicha>(`/catalogo/productos/${encodeURIComponent(sku)}`),
+    revision: () => request<RevisionResumen>("/catalogo/revision"),
+    revisionCasos: (query: { bloque: string; page?: number; pageSize?: number }) =>
+      request<Paginated<RevisionCaso>>(`/catalogo/revision/casos${toQueryString(query)}`),
+    revisionDecisiones: () => request<RevisionDecision[]>("/catalogo/revision/decisiones"),
     /** Los rubros de la maqueta: los combos y las etiquetas siguen simulados, con sus propios productos. */
     rubrosDeEjemplo: () => request<string[]>("/catalogo/ejemplo/rubros"),
     control: () => request<CatalogoControl[]>("/catalogo/control"),

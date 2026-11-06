@@ -1,5 +1,13 @@
 import type { RecompraEstado, Segmento, StockEstado } from "@/lib/api/types";
-import { facetasDelCatalogo, fichaDelProducto, kpisDelCatalogo, listarProductos } from "@/modules/catalog/consultas";
+import {
+  casosDeUnBloque,
+  decisionesDeRevision,
+  facetasDelCatalogo,
+  fichaDelProducto,
+  kpisDelCatalogo,
+  listarProductos,
+  resumenDeRevision,
+} from "@/modules/catalog/consultas";
 import { leerQueryDelCatalogo } from "@/modules/catalog/filtros";
 import {
   clientasUnificadas,
@@ -117,6 +125,24 @@ const queryDelCatalogo = (url: URL) => leerQueryDelCatalogo((nombre) => url.sear
 
 /** El catálogo armado desde el Sheet, Drive y DUX (1.8). El alta, los combos y el control final siguen simulados. */
 const catalogo: Route[] = [
+  { method: "GET", pattern: /^\/catalogo\/revision$/, handler: async () => Response.json(await resumenDeRevision()) },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/revision\/casos$/,
+    handler: async ({ url }) =>
+      Response.json(
+        await casosDeUnBloque({
+          bloque: url.searchParams.get("bloque") ?? "",
+          page: readInt(url.searchParams.get("page"), 1),
+          pageSize: readInt(url.searchParams.get("pageSize"), 20, 100),
+        }),
+      ),
+  },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/revision\/decisiones$/,
+    handler: async () => Response.json(await decisionesDeRevision()),
+  },
   { method: "GET", pattern: /^\/catalogo\/kpis$/, handler: async () => Response.json(await kpisDelCatalogo()) },
   {
     method: "GET",
