@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createLogger } from "@/lib/logger";
 import { clasificarRespuestaDeTienda, createTiendaNubeClient, createTiendaNubeEscritura } from "./client";
 
-const CONFIG = { storeId: 5249984, token: "token-de-prueba-tn" };
+const CONFIG = { storeId: 1234, token: "token-de-prueba-tn" };
 const json = (cuerpo: unknown, status = 200) => new Response(JSON.stringify(cuerpo), { status });
 
 const dependencias = (fetch: unknown) => ({
@@ -41,10 +41,10 @@ describe("leer", () => {
     await createTiendaNubeClient(CONFIG, dependencias(fetch)).listarCategorias();
 
     const [url, init] = fetch.mock.calls[0]!;
-    expect(url).toContain("/v1/5249984/categories");
+    expect(url).toContain("/v1/1234/categories");
     expect(init?.headers).toMatchObject({
       Authentication: "bearer token-de-prueba-tn",
-      "User-Agent": expect.stringContaining("@ventasportres.com"),
+      "User-Agent": expect.stringContaining("ventasportres.com"),
     });
   });
 

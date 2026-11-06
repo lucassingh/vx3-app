@@ -14,8 +14,8 @@ export const URL_DE_TIENDA_NUBE = "https://api.tiendanube.com/v1";
 /** El más lento de los dos ritmos que usa el Hub: 300 ms entre productos y 360 entre fotos. */
 export const LIMITE_DE_TIENDA_NUBE = { clave: "tiendanube", intervaloMs: 360 };
 
-/** Tienda Nube pide un contacto en el User-Agent. Es el de VX3, el mismo que usa el Hub. */
-const USER_AGENT = "VentasPorTres/4.0 (elias@ventasportres.com)";
+/** Tienda Nube pide un contacto en el User-Agent: alcanza con la dirección de la tienda. */
+const USER_AGENT = "VX3 App (https://ventasportres.com)";
 
 const POR_PAGINA = 200;
 
