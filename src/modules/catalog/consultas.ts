@@ -6,6 +6,8 @@ import { mediaUrl } from "@/integrations/blob";
 import { urlDeMiniatura } from "@/integrations/google/client";
 import type {
   CatalogoFacetas,
+  CatalogoControl,
+  CatalogoEnLaTienda,
   CatalogoFaltante,
   CatalogoFicha,
   CatalogoFila,
@@ -18,6 +20,7 @@ import type {
 import type { Kpi, Paginated } from "@/lib/api/types";
 import { normalizarCodigo } from "./codigos";
 import { losMasParecidos } from "./alta";
+import { armarControl } from "./control";
 import { coloresDe, facetasDe, pasaLosFiltros, type ProductoFiltrable } from "./filtros";
 import { DECISION_DE_FOTO, DECISION_DE_HISTORICO } from "./importar";
 import { BLOQUES } from "./revision";
@@ -283,6 +286,65 @@ export async function parecidosDelAlta(consulta: {
   }));
 }
 
+/** Con lo que ya se leyó: no le pide nada a DUX ni a la tienda. */
+export async function controlDelCatalogo(): Promise<CatalogoControl[]> {
+  const db = getDb();
+  const [productos, codigos, tienda, lecturas] = await Promise.all([
+    db.catalogProduct.findMany({
+      where: { present: true, lifecycle: { not: "historico" } },
+      select: {
+        baseCode: true,
+        name: true,
+        isCombo: true,
+        lifecycle: true,
+        bulkCode: true,
+        _count: { select: { photos: true } },
+      },
+    }),
+    db.duxItem.findMany({
+      where: { present: true },
+      select: { normalizedCode: true, baseCode: true, kind: true, packQuantity: true, prices: true },
+    }),
+    db.storeProduct.findMany({ select: { id: true, sku: true, name: true, published: true, section: true } }),
+    db.syncRun.count({ where: { integration: "tiendanube", status: "ok" } }),
+  ]);
+  return armarControl({
+    productos: productos.map((producto) => ({
+      sku: producto.baseCode,
+      nombre: producto.name,
+      esCombo: producto.isCombo,
+      activo: producto.lifecycle === "activo",
+      bulto: producto.bulkCode,
+      fotos: producto._count.photos,
+    })),
+    codigos: codigos.map((codigo) => ({
+      codigo: codigo.normalizedCode,
+      base: codigo.baseCode,
+      tipo: codigo.kind,
+      cantidad: codigo.packQuantity,
+      precios: codigo.prices as { list: string; cents: number }[],
+    })),
+    tienda: tienda.map(({ id, sku, name, published, section }) => ({
+      id,
+      sku,
+      nombre: name,
+      publicado: published,
+      seccion: section,
+    })),
+    seLeyoLaTienda: lecturas > 0,
+  });
+}
+
+/** Null si la tienda todavía no se leyó: no se sabe. */
+async function estadoEnLaTienda(bulto: string | null): Promise<CatalogoEnLaTienda | null> {
+  const db = getDb();
+  if ((await db.syncRun.count({ where: { integration: "tiendanube", status: "ok" } })) === 0) return null;
+  if (!bulto) return "no_esta";
+  const fila = await db.storeProduct.findFirst({ where: { sku: bulto }, select: { published: true } });
+  if (!fila) return "no_esta";
+  return fila.published ? "publicado" : "pausado";
+}
+
 export async function fichaDelProducto(sku: string): Promise<CatalogoFicha | null> {
   const producto = await getDb().catalogProduct.findFirst({
     where: { baseCode: normalizarCodigo(sku), present: true },
@@ -298,6 +360,7 @@ export async function fichaDelProducto(sku: string): Promise<CatalogoFicha | nul
 
   return {
     ...fila,
+    enLaTienda: await estadoEnLaTienda(producto.bulkCode),
     tela: producto.fabric,
     coloresTexto: producto.colors,
     talles: producto.sizes,

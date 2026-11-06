@@ -37,7 +37,12 @@ export type CatalogoFila = {
   faltantes: CatalogoFaltante[];
 };
 
+/** Cómo está el bulto en la tienda, según la última lectura. */
+export type CatalogoEnLaTienda = "publicado" | "pausado" | "no_esta";
+
 export type CatalogoFicha = CatalogoFila & {
+  /** Null: la tienda todavía no se leyó. */
+  enLaTienda: CatalogoEnLaTienda | null;
   tela: string | null;
   /** Como está en el Sheet: "BLANCO, NEGRO Y BEIGE". */
   coloresTexto: string | null;
@@ -201,6 +206,8 @@ export type CatalogoControl = {
   regla: string;
   revisados: number;
   fallas: { sku: string; nombre: string; detalle: string }[];
+  /** Por qué este chequeo todavía no dice nada. */
+  aviso?: string | null;
 };
 
 /* ---- Alta --------------------------------------------------------------- */

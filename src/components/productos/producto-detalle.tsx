@@ -34,6 +34,12 @@ function Seccion({ title, children }: { title: string; children: React.ReactNode
 }
 
 /** "Sin cargar" se puede completar; "No hay dato" es definitivo (RN-124); sin ninguno de los dos, no corresponde. */
+const EN_LA_TIENDA = {
+  publicado: { label: "Publicado en la tienda", tone: "success" },
+  pausado: { label: "Pausado en la tienda", tone: "warning" },
+  no_esta: { label: "No está en la tienda", tone: "neutral" },
+} as const;
+
 function DatoDelSheet({
   valor,
   dato,
@@ -62,6 +68,9 @@ function ProductoContent({ producto }: { producto: CatalogoFicha }) {
             {producto.sku}
           </Badge>
           <VigenciaBadge producto={producto} />
+          {producto.enLaTienda && (
+            <Badge variant={EN_LA_TIENDA[producto.enLaTienda].tone}>{EN_LA_TIENDA[producto.enLaTienda].label}</Badge>
+          )}
           <Badge variant="neutral">
             Prioridad {producto.prioridad}
             {producto.ranking && ` · puesto ${formatNumber(producto.ranking)}`}

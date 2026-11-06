@@ -150,6 +150,7 @@ const aFila = (item: CatalogoProducto): CatalogoFila => ({
 const aFicha = (item: CatalogoProducto): CatalogoFicha => ({
   ...aFila(item),
   tela: item.tela,
+  enLaTienda: null,
   coloresTexto: item.colores.join(", "),
   talles: item.talles,
   proveedor: item.proveedor,

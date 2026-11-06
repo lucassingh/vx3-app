@@ -286,7 +286,11 @@ export async function subrubrosDeLasReferencias() {
 }
 
 export async function listarBorradores(): Promise<CatalogoBorrador[]> {
-  const filas = await getDb().catalogDraft.findMany({ orderBy: { updatedAt: "desc" } });
+  // Lo que ya se ve en la tienda dejó de ser un borrador: su estado está en el catálogo.
+  const filas = await getDb().catalogDraft.findMany({
+    where: { storeDoneAt: null },
+    orderBy: { updatedAt: "desc" },
+  });
   return filas.map(aBorrador);
 }
 

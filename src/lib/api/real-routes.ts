@@ -2,6 +2,7 @@ import type { HandleUploadBody } from "@vercel/blob/client";
 import type { RecompraEstado, Segmento, StockEstado } from "@/lib/api/types";
 import {
   casosDeUnBloque,
+  controlDelCatalogo,
   decisionesDeRevision,
   facetasDelCatalogo,
   fichaDelProducto,
@@ -130,6 +131,7 @@ const queryDelCatalogo = (url: URL) => leerQueryDelCatalogo((nombre) => url.sear
 
 /** El catálogo armado desde el Sheet, Drive y DUX (1.8). El alta, los combos y el control final siguen simulados. */
 const catalogo: Route[] = [
+  { method: "GET", pattern: /^\/catalogo\/control$/, handler: async () => Response.json(await controlDelCatalogo()) },
   // Sin sesión y sin `catalogo.editar` no se llega acá: lo resuelve el despachador.
   {
     method: "POST",

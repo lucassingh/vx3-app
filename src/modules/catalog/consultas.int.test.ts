@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
-import type { CatalogoFacetas, CatalogoFicha, CatalogoFila } from "@/lib/api/contracts/catalogo";
+import type { CatalogoControl, CatalogoFacetas, CatalogoFicha, CatalogoFila } from "@/lib/api/contracts/catalogo";
 import { dispatchApiRequest } from "@/lib/api/dispatch";
 import type { Kpi, Paginated } from "@/lib/api/types";
 import { listarProductos } from "./consultas";
@@ -453,6 +453,118 @@ describe("las fotos subidas en la app", () => {
     await expect(
       db.catalogPhoto.create({ data: { ...fila, driveId: "uno", storageKey: "catalogo/dos.jpg" } }),
     ).rejects.toThrow();
+  });
+});
+
+describe("el control final", () => {
+  const control = async () => {
+    const { status, cuerpo } = await pedir<CatalogoControl[]>("/catalogo/control");
+    expect(status).toBe(200);
+    return Object.fromEntries(cuerpo.map((chequeo) => [chequeo.id, chequeo]));
+  };
+  const enLaTienda = (sku: string, cambios: Record<string, unknown> = {}) =>
+    db.storeProduct.create({
+      data: {
+        id: BigInt(sku.length + Math.floor(Math.random() * 1_000_000)),
+        sku,
+        name: sku,
+        published: true,
+        section: "MUJER",
+        categoryIds: [],
+        imageCount: 1,
+        priceCents: 100n,
+        readAt: new Date(),
+        ...cambios,
+      },
+    });
+  const seLeyo = () =>
+    db.syncRun.create({
+      data: {
+        id: newId(),
+        integration: "tiendanube",
+        operation: "lectura",
+        status: "ok",
+        trigger: "cron",
+        startedAt: new Date(),
+        finishedAt: new Date(),
+        calls: 1,
+        records: 1,
+      },
+    });
+
+  afterEach(async () => {
+    await db.storeProduct.deleteMany();
+    await db.syncRun.deleteMany({ where: { integration: "tiendanube" } });
+  });
+
+  it("sale de lo que ya se leyó, y marca lo que está mal", async () => {
+    await db.duxItem.createMany({
+      data: [
+        itemDeDux("LN1", { baseCode: "LN1" }),
+        itemDeDux("LN1-6", { baseCode: "LN1", packQuantity: 6, kind: "pack" }),
+      ],
+    });
+    await producto("LN1", { bulkCode: "LN1-6", fotos: [] });
+    await seLeyo();
+    await enLaTienda("OTRO-6", { section: null });
+
+    const { precio, foto, secciones, "tienda-bulto": bulto, "tienda-falta": falta } = await control();
+
+    expect(precio?.fallas[0]).toMatchObject({ sku: "LN1", detalle: "LN1-6 no tiene precio." });
+    expect(foto?.fallas[0]).toMatchObject({ sku: "LN1" });
+    expect(bulto?.fallas[0]).toMatchObject({ sku: "OTRO-6" });
+    expect(falta?.fallas[0]).toMatchObject({ detalle: "LN1-6 no está en la tienda." });
+    expect(secciones?.fallas).toHaveLength(1);
+  });
+
+  it("sin haber leído la tienda, no marca como faltante todo lo activo", async () => {
+    await db.duxItem.create({ data: itemDeDux("LN1-6", { baseCode: "LN1", packQuantity: 6, kind: "pack" }) });
+    await producto("LN1", { bulkCode: "LN1-6" });
+
+    const { "tienda-falta": falta } = await control();
+
+    expect(falta).toMatchObject({ fallas: [], aviso: expect.stringContaining("Todavía no se leyó") });
+  });
+
+  it("los históricos no se revisan", async () => {
+    await producto("LN1", { bulkCode: null, lifecycle: "historico", fotos: [] });
+
+    const { precio, foto } = await control();
+
+    expect(precio?.revisados).toBe(0);
+    expect(foto?.revisados).toBe(0);
+  });
+
+  describe("en la ficha", () => {
+    const estado = async () => (await pedir<CatalogoFicha>("/catalogo/productos/LN1")).cuerpo.enLaTienda;
+
+    beforeEach(async () => {
+      await producto("LN1", { bulkCode: "LN1-6" });
+    });
+
+    it("sin haber leído la tienda no se sabe", async () => {
+      expect(await estado()).toBeNull();
+    });
+
+    it("no está", async () => {
+      await seLeyo();
+
+      expect(await estado()).toBe("no_esta");
+    });
+
+    it("publicado", async () => {
+      await seLeyo();
+      await enLaTienda("LN1-6");
+
+      expect(await estado()).toBe("publicado");
+    });
+
+    it("pausado", async () => {
+      await seLeyo();
+      await enLaTienda("LN1-6", { published: false });
+
+      expect(await estado()).toBe("pausado");
+    });
   });
 });
 

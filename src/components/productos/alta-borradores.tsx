@@ -128,7 +128,11 @@ export function AltaBorradores({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {borrador.quien} · {formatRelativeTime(borrador.cuando)}
-                    {enDux(borrador) ? " · Está en DUX" : conCodigos(borrador) ? " · A medio publicar" : ""}
+                    {enDux(borrador)
+                      ? " · Listo: falta la tienda"
+                      : conCodigos(borrador)
+                        ? " · A medio publicar"
+                        : " · Borrador"}
                   </p>
                 </div>
                 {abierto ? (
