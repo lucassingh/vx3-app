@@ -1,7 +1,106 @@
 import { toQueryString, type ApiRequest } from "../http";
-import type { Kpi } from "../types";
+import type { Kpi, Paginated } from "../types";
 
 /** M1 · Catálogo maestro (PIM): producto, salud, alta y combos. */
+
+/** Sale de las ventas y el stock (RN-125). Un histórico solo se ve buscándolo. */
+export type CatalogoVigencia = "activo" | "agotado" | "historico";
+export type CatalogoPrioridad = "A" | "B" | "C";
+export type CatalogoSalud = "listo" | "no_listo";
+
+/** Lo que le falta a un producto (RN-124). `no_hay_dato` es definitivo. */
+export type CatalogoFaltante = {
+  dato: string;
+  situacion: "falta" | "no_hay_dato";
+  /** Sin esto no se puede vender. Tela, marca y proveedor son deseables. */
+  bloquea: boolean;
+  /** "Sheet, fila 57", "DUX" o "Drive". */
+  seCorrigeEn: string;
+};
+
+export type CatalogoFila = {
+  sku: string;
+  nombre: string;
+  rubro: string | null;
+  subrubro: string | null;
+  marca: string | null;
+  colores: string[];
+  vigencia: CatalogoVigencia;
+  deTemporada: boolean;
+  prioridad: CatalogoPrioridad;
+  /** Miniatura: de Drive; si no hay, la de DUX. */
+  foto: string | null;
+  /** El código que se vende al por mayor (RN-101). Null: DUX no lo tiene. */
+  bulto: { codigo: string; label: string; precio: number } | null;
+  bultosDisponibles: number;
+  listoParaVender: boolean;
+  faltantes: CatalogoFaltante[];
+};
+
+export type CatalogoFicha = CatalogoFila & {
+  tela: string | null;
+  /** Como está en el Sheet: "BLANCO, NEGRO Y BEIGE". */
+  coloresTexto: string | null;
+  talles: string | null;
+  /** El último: un producto puede venir de varios (RN-128). */
+  proveedor: string | null;
+  atributos: { label: string; valor: string }[];
+  /** Largo, ancho y alto. */
+  medidasCm: [number, number, number] | null;
+  pesoKg: number | null;
+  /** Puesto por ventas de los últimos 90 días. */
+  ranking: number | null;
+  ultimaVenta: string | null;
+  enSheet: boolean;
+  filaDelSheet: number | null;
+  enDux: boolean;
+  presentaciones: {
+    codigo: string;
+    label: string;
+    prendas: number | null;
+    precio: number;
+    listas: string[];
+    esBulto: boolean;
+    disponible: number;
+    enDux: boolean;
+  }[];
+  fotos: {
+    id: string;
+    nombre: string;
+    miniatura: string;
+    enDrive: string;
+    ancho: number | null;
+    alto: number | null;
+  }[];
+};
+
+export type CatalogoQuery = {
+  q?: string;
+  rubro?: string;
+  subrubro?: string;
+  marca?: string;
+  tela?: string;
+  talle?: string;
+  color?: string;
+  proveedor?: string;
+  estado?: CatalogoVigencia;
+  salud?: CatalogoSalud;
+};
+
+/** `valor` es lo que va en la URL: sin tildes ni mayúsculas. */
+export type CatalogoFaceta = { valor: string; etiqueta: string; productos: number };
+
+export type CatalogoFacetas = {
+  rubros: CatalogoFaceta[];
+  subrubros: CatalogoFaceta[];
+  marcas: CatalogoFaceta[];
+  telas: CatalogoFaceta[];
+  talles: CatalogoFaceta[];
+  colores: CatalogoFaceta[];
+  proveedores: CatalogoFaceta[];
+};
+
+/* ---- La maqueta del alta, los combos y el control final: se reemplazan en la 1.9 ---- */
 
 export type CatalogoEstado = "borrador" | "listo" | "publicado" | "pausado";
 
@@ -56,21 +155,6 @@ export type CatalogoProducto = {
   fotos: CatalogoFoto[];
   /** Descripción armada con los atributos (RN-103), generada con IA y revisada (RF-M1-11). */
   descripcion: { texto: string; revisada: boolean };
-};
-
-export type CatalogoQuery = {
-  q?: string;
-  rubro?: string;
-  marca?: string;
-  proveedor?: string;
-  estado?: CatalogoEstado;
-  salud?: "completo" | "con_faltantes";
-};
-
-export type CatalogoFacetas = {
-  rubros: string[];
-  marcas: string[];
-  proveedores: { id: string; nombre: string }[];
 };
 
 /** Control final automático (RF-M1-09): cada chequeo con lo que falla. */
@@ -165,9 +249,12 @@ export type CatalogoCombosResultado = {
 export function catalogoEndpoints(request: ApiRequest) {
   return {
     kpis: () => request<Kpi[]>("/catalogo/kpis"),
-    facetas: () => request<CatalogoFacetas>("/catalogo/facetas"),
-    productos: (query: CatalogoQuery = {}) => request<CatalogoProducto[]>(`/catalogo/productos${toQueryString(query)}`),
-    producto: (sku: string) => request<CatalogoProducto>(`/catalogo/productos/${encodeURIComponent(sku)}`),
+    facetas: (query: CatalogoQuery = {}) => request<CatalogoFacetas>(`/catalogo/facetas${toQueryString(query)}`),
+    productos: (query: CatalogoQuery & { page?: number; pageSize?: number } = {}) =>
+      request<Paginated<CatalogoFila>>(`/catalogo/productos${toQueryString(query)}`),
+    producto: (sku: string) => request<CatalogoFicha>(`/catalogo/productos/${encodeURIComponent(sku)}`),
+    /** Los rubros de la maqueta: los combos y las etiquetas siguen simulados, con sus propios productos. */
+    rubrosDeEjemplo: () => request<string[]>("/catalogo/ejemplo/rubros"),
     control: () => request<CatalogoControl[]>("/catalogo/control"),
     altaOpciones: () => request<CatalogoAltaOpciones>("/catalogo/alta/opciones"),
     publicar: (input: CatalogoAltaInput, paso: CatalogoAltaPaso) =>

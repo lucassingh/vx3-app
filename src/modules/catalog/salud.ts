@@ -58,6 +58,19 @@ export function codigoDelBulto({ skuDeVenta, presentaciones, rubro }: ProductoAr
   return presentaciones.find((presentacion) => presentacion.cantidad === cantidad)?.codigo ?? null;
 }
 
+/** Cómo se llama cada presentación (RN-127): el -6 depende del rubro (RN-115). */
+export function etiquetaDePresentacion(
+  { tipo, cantidad }: { tipo: string; cantidad: number | null },
+  rubro: string | null,
+): string {
+  if (tipo === "combo") return "Combo";
+  if (cantidad === null) return "Unidad";
+  if (cantidad === 6) return esMedias(rubro) ? "Pack de 6" : "Media docena";
+  if (cantidad === 12) return "Una docena";
+  if (cantidad === 24) return "Dos docenas";
+  return `Pack de ${cantidad}`;
+}
+
 /** En prendas. Un combo tiene stock propio; un pack se calcula desde la prenda, salvo que no haya prenda. */
 function stockDelProducto({ presentaciones }: ProductoArmado, espejo: ReadonlyMap<string, CodigoDelEspejo>): number {
   const stockDe = (codigo: string) => espejo.get(codigo)?.stock ?? 0;

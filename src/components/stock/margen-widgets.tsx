@@ -223,6 +223,5 @@ export function CoeficientesCardSkeleton() {
 /* ---- Etiquetas ---------------------------------------------------------------- */
 
 export async function EtiquetasLoader() {
-  const facetas = await api.catalogo.facetas();
-  return <EtiquetasCard rubros={facetas.rubros} />;
+  return <EtiquetasCard rubros={await api.catalogo.rubrosDeEjemplo()} />;
 }

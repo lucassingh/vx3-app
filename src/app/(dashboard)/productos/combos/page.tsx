@@ -5,6 +5,7 @@ import { CombosGenerador } from "@/components/productos/combos-generador";
 import { Button } from "@/components/ui/button";
 import { LoadingLabel } from "@/components/ui/skeleton";
 import { AsyncWidget } from "@/components/views/async-widget";
+import { DatosSimulados } from "@/components/views/datos-simulados";
 import { CardSkeleton, SkeletonText } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
@@ -15,8 +16,11 @@ const HREF = "/productos/combos";
 export const metadata = getRouteMetadata(HREF);
 
 async function CombosLoader() {
-  const [facetas, inicial] = await Promise.all([api.catalogo.facetas(), api.catalogo.combos({ modo: "margen" })]);
-  return <CombosGenerador rubros={facetas.rubros} inicial={inicial} />;
+  const [rubros, inicial] = await Promise.all([
+    api.catalogo.rubrosDeEjemplo(),
+    api.catalogo.combos({ modo: "margen" }),
+  ]);
+  return <CombosGenerador rubros={rubros} inicial={inicial} />;
 }
 
 function CombosSkeleton() {
@@ -54,12 +58,15 @@ export default async function CombosPage() {
         title={route?.link.title ?? "Combos y flyers"}
         description={route?.link.description}
         actions={
-          <Button variant="outline" asChild>
-            <Link href="/productos/catalogo">
-              <LayoutGrid />
-              Ver catálogo
-            </Link>
-          </Button>
+          <>
+            <DatosSimulados pr="1.9" />
+            <Button variant="outline" asChild>
+              <Link href="/productos/catalogo">
+                <LayoutGrid />
+                Ver catálogo
+              </Link>
+            </Button>
+          </>
         }
       />
       <PageBody>

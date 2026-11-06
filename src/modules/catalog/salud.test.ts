@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { ProductoArmado } from "./armar";
 import { leerDato } from "./armar";
-import { codigoDelBulto, evaluarCatalogo, type CodigoDelEspejo, type VentaDelProducto } from "./salud";
+import {
+  codigoDelBulto,
+  etiquetaDePresentacion,
+  evaluarCatalogo,
+  type CodigoDelEspejo,
+  type VentaDelProducto,
+} from "./salud";
 
 const HOY = "2026-11-04";
 
@@ -217,6 +223,20 @@ describe("el bulto", () => {
     expect(codigoDelBulto(producto("LN1", { skuDeVenta: "LN1-12", presentaciones: packs("LN1", 6, 12) }))).toBe(
       "LN1-12",
     );
+  });
+});
+
+describe("cómo se llama cada presentación", () => {
+  it.each([
+    ["prenda", null, "LESS", "Unidad"],
+    ["pack", 3, "MALLAS", "Pack de 3"],
+    ["pack", 6, "LESS", "Media docena"],
+    ["pack", 6, "MEDIAS", "Pack de 6"],
+    ["pack", 12, "LESS", "Una docena"],
+    ["pack", 24, "MEDIAS", "Dos docenas"],
+    ["combo", null, "COMBOS", "Combo"],
+  ])("%s de %s en %s: %s", (tipo, cantidad, rubro, esperado) => {
+    expect(etiquetaDePresentacion({ tipo, cantidad }, rubro)).toBe(esperado);
   });
 });
 

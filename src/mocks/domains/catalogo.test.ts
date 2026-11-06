@@ -4,7 +4,7 @@ import type {
   CatalogoAltaInput,
   CatalogoAltaOpciones,
   CatalogoCombosResultado,
-  CatalogoProducto,
+  CatalogoFicha,
 } from "@/lib/api/types";
 import { resetDb } from "../db";
 import { handleMockRequest, MOCK_API_PREFIX } from "../router";
@@ -55,8 +55,8 @@ describe("catálogo", () => {
     for (const paso of ["dux", "precios", "tiendanube"]) {
       expect((await call("/catalogo/alta/publicar", post({ input, paso }))).status).toBe(200);
     }
-    const { body } = await call<CatalogoProducto>("/catalogo/productos/CJATN42");
-    expect(body).toMatchObject({ estado: "publicado", bulto: { codigo: "CJATN42-6", precio: 37_700 } });
+    const { body } = await call<CatalogoFicha>("/catalogo/productos/CJATN42");
+    expect(body).toMatchObject({ vigencia: "activo", bulto: { codigo: "CJATN42-6", precio: 37_700 } });
   });
 
   it("arma combos de 4 a 6 bultos entre $ 45.000 y $ 60.000 con los SKUs forzados", async () => {

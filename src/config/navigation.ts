@@ -244,7 +244,8 @@ export const navigation: NavSection[] = [
             title: "Catálogo",
             href: "/productos/catalogo",
             icon: LayoutGrid,
-            description: "La fuente única del producto: atributos, fotos, salud y dónde está publicado.",
+            description:
+              "El producto armado desde el Sheet, Drive y DUX: fotos, atributos y lo que le falta para venderse.",
           },
           {
             title: "Alta de producto",
