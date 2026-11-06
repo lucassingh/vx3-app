@@ -476,9 +476,9 @@ model CatalogPresentation {
 }
 
 model CatalogPhoto {
-  id        String         @id @db.Uuid
-  productId String         @map("product_id") @db.Uuid
-  product   CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id         String         @id @db.Uuid
+  productId  String         @map("product_id") @db.Uuid
+  product    CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
   /// De Drive, hasta el pase; subida en la app, en `storageKey`. Una foto tiene una de las dos.
   driveId    String?        @unique @map("drive_id")
   storageKey String?        @unique @map("storage_key")
@@ -619,15 +619,35 @@ model AuditLog {
 
 /// Un alta sin terminar. Guarda lo que cargó la persona, tal cual: no se valida hasta publicar.
 model CatalogDraft {
-  id             String   @id @db.Uuid
+  id             String    @id @db.Uuid
   data           Json
-  createdById    String?  @map("created_by_id")
-  createdByLabel String   @map("created_by_label")
-  createdAt      DateTime @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime @map("updated_at") @db.Timestamptz(6)
+  createdById    String?   @map("created_by_id")
+  createdByLabel String    @map("created_by_label")
+  createdAt      DateTime  @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @map("updated_at") @db.Timestamptz(6)
   /// Cómo va la publicación en DUX, código por código. Con alguno creado, el borrador ya no se puede cambiar.
   steps          Json?
   duxDoneAt      DateTime? @map("dux_done_at") @db.Timestamptz(6)
+  /// Cómo va la publicación en la tienda.
+  storeState     Json?     @map("store_state")
+  storeDoneAt    DateTime? @map("store_done_at") @db.Timestamptz(6)
 
   @@map("catalog_drafts")
+}
+
+/// Lo publicado en Tienda Nube, tal como estaba en la última lectura. Se reemplaza entera.
+model StoreProduct {
+  id          BigInt   @id
+  sku         String?
+  name        String
+  published   Boolean
+  /// La sección raíz. Null: no cuelga de ninguna, y no aparece en ningún menú de la tienda.
+  section     String?
+  categoryIds Int[]    @map("category_ids")
+  imageCount  Int      @map("image_count")
+  priceCents  BigInt   @map("price_cents")
+  readAt      DateTime @map("read_at") @db.Timestamptz(6)
+
+  @@index([sku])
+  @@map("store_products")
 }

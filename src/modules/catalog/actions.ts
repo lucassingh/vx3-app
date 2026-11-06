@@ -7,6 +7,7 @@ import { borrarBorrador, borrarFotosSinUso, guardarBorrador } from "./alta-consu
 import { CLAVE_DE_FOTO, FOTOS_POR_PRODUCTO } from "./fotos";
 import { ARCHIVOS_DE_IMPORTACION } from "./publicar";
 import { avanzarEnDux, comprobarEnDux, hojaDeImportacion } from "./publicar-dux";
+import { avanzarEnLaTienda, mostrarEnLaTienda, pedidoDeLaTienda } from "./publicar-tienda";
 import {
   confirmarHistoricosPendientes,
   decidirFoto,
@@ -191,4 +192,43 @@ export const bajarArchivoDeImportacion = defineAction({
       base64: Buffer.from(escribirXls(columnas, filas)).toString("base64"),
     };
   },
+});
+
+/* ---- Publicar en Tienda Nube ---- */
+
+export const avanzarPublicacionEnLaTienda = defineAction({
+  name: "catalogo.publicarEnLaTienda",
+  input: z.object({ id: z.uuid() }),
+  permission: "catalogo.editar",
+  handler: async ({ id }, { audit }) => {
+    const { borrador, hecho } = await avanzarEnLaTienda(id);
+    if (hecho) {
+      await audit({ action: "catalogo.tienda", entityType: "producto", entityId: hecho.sku, after: hecho });
+    }
+    return borrador;
+  },
+});
+
+export const mostrarProductoEnLaTienda = defineAction({
+  name: "catalogo.mostrarEnLaTienda",
+  input: z.object({ id: z.uuid() }),
+  permission: "catalogo.editar",
+  handler: async ({ id }, { audit }) => {
+    const borrador = await mostrarEnLaTienda(id);
+    await audit({
+      action: "catalogo.tienda_visible",
+      entityType: "producto",
+      entityId: borrador.input.sku,
+      after: { sku: borrador.input.sku },
+    });
+    return borrador;
+  },
+});
+
+/** Solo arma el pedido: es lo que se puede hacer fuera de producción. */
+export const verPedidoDeLaTienda = defineAction({
+  name: "catalogo.verPedidoDeLaTienda",
+  input: z.object({ id: z.uuid() }),
+  permission: "catalogo.editar",
+  handler: async ({ id }) => pedidoDeLaTienda(id),
 });

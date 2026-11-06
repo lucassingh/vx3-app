@@ -223,6 +223,7 @@ export type CatalogoAltaOpciones = {
   /** Dónde se ven las fotos subidas. Null: este ambiente no tiene store. */
   mediaUrl: string | null;
   escrituraEnDux: CatalogoEscrituraEnDux;
+  escrituraEnLaTienda: CatalogoEscrituraEnDux;
 };
 
 /** `clave`: dónde queda en el store. La dirección completa depende del ambiente. */
@@ -273,6 +274,34 @@ export type CatalogoBorrador = {
   cuando: string;
   /** Null: todavía no se empezó a publicar. */
   publicacion: { pasos: CatalogoPasoDeDux[]; enDux: boolean } | null;
+  /** Null: todavía no se empezó a publicar en la tienda. */
+  tienda: CatalogoEstadoEnLaTienda | null;
+};
+
+export type CatalogoEstadoEnLaTienda = {
+  /** Null: todavía no se creó. */
+  productoId: number | null;
+  /** Cuántas fotos ya están. */
+  fotos: number;
+  visible: boolean;
+  detalle: string | null;
+  error: boolean;
+};
+
+/** Lo que se mandaría, para verlo antes y fuera de producción. */
+export type CatalogoPedidoDeLaTienda = {
+  /** Null: el rubro no tiene regla. */
+  ruta: string[] | null;
+  categoriaId: number | null;
+  problema: string | null;
+  pedido: {
+    name: { es: string };
+    description: { es: string };
+    published: boolean;
+    categories: number[];
+    variants: { sku: string; price: string; weight?: number; width?: number; height?: number; depth?: number }[];
+  };
+  fotos: string[];
 };
 
 export type CatalogoEscrituraEnDux = { puede: boolean; motivo: string | null };

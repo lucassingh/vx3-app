@@ -20,6 +20,7 @@ import { AltaBorradores } from "@/components/productos/alta-borradores";
 import { AltaFotos } from "@/components/productos/alta-fotos";
 import { AltaParecidos } from "@/components/productos/alta-parecidos";
 import { AltaPublicarEnDux } from "@/components/productos/alta-publicar-dux";
+import { AltaPublicarEnTienda } from "@/components/productos/alta-publicar-tienda";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -208,6 +209,7 @@ export function AltaForm({
         inicial={formulario.input}
         borradorId={abiertoId}
         publicacion={borradores.find(({ id }) => id === abiertoId)?.publicacion ?? null}
+        tienda={borradores.find(({ id }) => id === abiertoId)?.tienda ?? null}
         real={real}
         puedeEditar={puedeEditar}
         alGuardar={alGuardar}
@@ -221,6 +223,7 @@ function Formulario({
   inicial,
   borradorId,
   publicacion,
+  tienda,
   real,
   puedeEditar,
   alGuardar,
@@ -229,6 +232,7 @@ function Formulario({
   inicial?: CatalogoAltaInput;
   borradorId: string | null;
   publicacion: CatalogoBorrador["publicacion"];
+  tienda: CatalogoBorrador["tienda"];
   real: boolean;
   puedeEditar: boolean;
   alGuardar: (borrador: CatalogoBorrador) => void;
@@ -1073,6 +1077,15 @@ function Formulario({
                     {publicando ? <LoaderCircle aria-hidden className="animate-spin" /> : <Upload />}
                     {publicando ? "Publicando…" : "Publicar en DUX y Tienda Nube"}
                   </Button>
+                )}
+                {real && publicacion?.enDux && borradorId && (
+                  <AltaPublicarEnTienda
+                    borradorId={borradorId}
+                    estado={tienda}
+                    totalDeFotos={campos.fotos.length}
+                    escritura={opciones.escrituraEnLaTienda}
+                    alActualizar={alGuardar}
+                  />
                 )}
                 {!congelado && (
                   <Button variant="outline" onClick={guardar} disabled={publicando || guardando}>

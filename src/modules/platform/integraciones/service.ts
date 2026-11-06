@@ -7,7 +7,14 @@ import { formatNumber } from "@/lib/format";
 import { NOMBRE_INTEGRACION, usaCredencial } from "../credentials/integraciones";
 import { credencialEnmascarada } from "../credentials/service";
 import { hayCorridaEnCurso } from "../sync-runs";
-import { estadoDeDux, estadoDeGoogle, frecuenciaDeDux, LECTURAS_DUX, type UltimaCorrida } from "./estado";
+import {
+  estadoDeDux,
+  estadoDeGoogle,
+  estadoDeLaTienda,
+  frecuenciaDeDux,
+  LECTURAS_DUX,
+  type UltimaCorrida,
+} from "./estado";
 
 /**
  * Panel de integraciones (RF-M0-04): lo que muestra sale de las corridas reales. Lo que
@@ -18,12 +25,6 @@ type Pendiente = Pick<Integracion, "id" | "nombre" | "tipo" | "detalle">;
 
 /** En el orden en que se conectan (`solucion_doc/07`). Cada una sale de acá con la PR que la conecta. */
 const PENDIENTES: Pendiente[] = [
-  {
-    id: "tiendanube",
-    nombre: "Tienda Nube",
-    tipo: "App de VX3",
-    detalle: "Publicación de productos y precios. Se conecta en la PR 1.9.",
-  },
   {
     id: "meta",
     nombre: "Meta Ads",
@@ -133,6 +134,44 @@ async function integracionGoogle(): Promise<Integracion> {
   };
 }
 
+/** Publica lo nuevo, y lee lo publicado cada noche para el control final. */
+async function integracionTiendaNube(): Promise<Integracion> {
+  const db = getDb();
+  const [credencial, ultima, productos, visibles, fuera] = await Promise.all([
+    credencialEnmascarada("tiendanube"),
+    db.syncRun.findFirst({
+      where: { integration: "tiendanube", status: { not: "en_curso" } },
+      orderBy: { startedAt: "desc" },
+    }),
+    db.storeProduct.count(),
+    db.storeProduct.count({ where: { published: true } }),
+    db.storeProduct.count({ where: { section: null } }),
+  ]);
+  const { estado, motivo } = estadoDeLaTienda({
+    tieneCredencial: Boolean(credencial),
+    ultima: ultima as UltimaCorrida | null,
+    fueraDeLasSecciones: fuera,
+    ahora: new Date(),
+  });
+  return {
+    id: "tiendanube",
+    nombre: "Tienda Nube",
+    tipo: "API · publica solo en producción",
+    estado,
+    detalle: motivo,
+    frecuencia: "Se lee cada noche, con DUX",
+    ultimoSync: ultima?.status === "ok" ? (ultima.finishedAt?.toISOString() ?? null) : null,
+    metricas: ultima
+      ? [
+          { label: "Productos", value: formatNumber(productos) },
+          { label: "Visibles", value: formatNumber(visibles) },
+          { label: "Fuera de las secciones", value: formatNumber(fuera) },
+        ]
+      : [],
+    credencial,
+  };
+}
+
 async function integracionDux(): Promise<Integracion> {
   const db = getDb();
   const dux = { integration: "dux" };
@@ -183,7 +222,12 @@ async function integracionDux(): Promise<Integracion> {
 }
 
 export async function listarIntegraciones(): Promise<Integracion[]> {
-  return [await integracionDux(), await integracionGoogle(), ...PENDIENTES.map(aPendiente)];
+  return [
+    await integracionDux(),
+    await integracionGoogle(),
+    await integracionTiendaNube(),
+    ...PENDIENTES.map(aPendiente),
+  ];
 }
 
 export type FilaDelRegistro = {
@@ -208,6 +252,7 @@ function nombreDeOperacion(operacion: string): string {
   if (operacion === "codigos") return "Códigos usados";
   if (operacion === "referencias") return "Rubros, proveedores y listas";
   if (operacion === "catalogo") return "Importación del catálogo";
+  if (operacion === "lectura") return "Lectura de la tienda";
   return LECTURAS_DUX[operacion] ?? operacion;
 }
 

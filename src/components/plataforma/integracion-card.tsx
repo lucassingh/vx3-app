@@ -76,6 +76,12 @@ const LECTURA: Record<
     aviso: () => "El catálogo se está importando",
     falla: () => "No se pudo importar el catálogo",
   },
+  tiendanube: {
+    boton: "Leer la tienda",
+    enCurso: "Leyendo…",
+    aviso: () => "Se leyó lo publicado en la tienda",
+    falla: () => "No se pudo leer la tienda",
+  },
 };
 
 /** Prueba la conexión y la rechaza si la integración no respondió (para toast.promise). */

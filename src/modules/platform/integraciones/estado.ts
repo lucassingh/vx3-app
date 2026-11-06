@@ -66,6 +66,39 @@ export function estadoDeDux({ tieneCredencial, ultimas, ahora }: Entrada): {
 
 const soloError = ({ status }: UltimaCorrida) => status === "error";
 
+/** Sale de la última lectura de la tienda. Si falló, la foto anterior sigue entera. */
+export function estadoDeLaTienda({
+  tieneCredencial,
+  ultima,
+  fueraDeLasSecciones,
+  ahora,
+}: {
+  tieneCredencial: boolean;
+  ultima: UltimaCorrida | null;
+  fueraDeLasSecciones: number;
+  ahora: Date;
+}): { estado: IntegracionEstado; motivo: string } {
+  if (!tieneCredencial) {
+    return {
+      estado: "pendiente",
+      motivo: "Publicación de productos, y lectura de lo publicado. Falta cargar el token.",
+    };
+  }
+  if (!ultima) return { estado: "pendiente", motivo: "El token está cargado: apretá Leer la tienda." };
+  if (ultima.status !== "ok") return { estado: "caido", motivo: ultima.detail ?? "Falló la última lectura." };
+  if (!estaAlDia(ultima.finishedAt, ahora)) {
+    const horas = Math.floor((ahora.getTime() - (ultima.finishedAt?.getTime() ?? 0)) / HORA_MS);
+    return { estado: "degradado", motivo: `La última lectura terminó hace ${horas} horas.` };
+  }
+  if (fueraDeLasSecciones > 0) {
+    return {
+      estado: "degradado",
+      motivo: `${fueraDeLasSecciones === 1 ? "Hay 1 producto" : `Hay ${fueraDeLasSecciones} productos`} fuera de las secciones: no ${fueraDeLasSecciones === 1 ? "aparece" : "aparecen"} en el menú de la tienda.`,
+    };
+  }
+  return { estado: "ok", motivo: "Lo publicado está al día, y todo cuelga de una sección." };
+}
+
 /** Sale de la última importación del catálogo. Si falló, el catálogo anterior sigue entero. */
 export function estadoDeGoogle({
   tieneCredencial,

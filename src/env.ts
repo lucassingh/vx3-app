@@ -116,6 +116,8 @@ const esquemaServidor = z.object({
   // De dónde sale el catálogo hasta el pase. No son secretos: la clave está cifrada en la base.
   GOOGLE_SHEET_ID: opcional(z.string().min(1)),
   GOOGLE_FOTOS_CARPETA_ID: opcional(z.string().min(1)),
+  // La tienda de VX3: hay una sola. El token se carga cifrado desde Configuración → Integraciones.
+  TIENDANUBE_STORE_ID: opcional(enteroPositivo),
   // El store público de fotos de este ambiente. Las dos las crea Vercel al conectar el store.
   BLOB_READ_WRITE_TOKEN: opcional(z.string().min(1)),
   MEDIA_URL: opcional(z.url("tiene que ser una URL")),

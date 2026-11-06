@@ -6,6 +6,7 @@ import { leerCuentaDeServicio } from "@/integrations/google/cuenta";
 import { ConflictError } from "@/lib/errors";
 import { arrancarImportacionDelCatalogo } from "@/workflows/arrancar-catalogo";
 import { arrancarSincronizacionDux } from "@/workflows/arrancar-dux";
+import { leerTiendaNube } from "@/workflows/tienda";
 import { INTEGRACIONES_CON_CREDENCIAL, NOMBRE_INTEGRACION } from "./integraciones";
 import { probarConexion } from "./probar";
 import { guardarCredencial } from "./service";
@@ -57,6 +58,12 @@ export const sincronizarIntegracion = defineAction({
   permission: "plataforma.editar",
   handler: async ({ integracion: id }, { user, log }) => {
     const origen = { trigger: "manual" as const, triggeredBy: user.name };
+    // Son unos 8 pedidos: se hace acá mismo, sin lanzar un workflow.
+    if (id === "tiendanube") {
+      const { status } = await leerTiendaNube(origen);
+      log.info({ integracion: id, status }, "lectura manual");
+      return { runId: null };
+    }
     const resultado =
       id === "google" ? await arrancarImportacionDelCatalogo(origen) : await arrancarSincronizacionDux(origen);
     if (!resultado.arrancada) {

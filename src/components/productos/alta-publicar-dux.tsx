@@ -176,7 +176,7 @@ export function AltaPublicarEnDux({
       {enDux ? (
         <p className="flex items-center gap-2 text-sm font-medium" role="status">
           <PackageCheck aria-hidden className="size-4 text-success" />
-          Está en DUX. Sigue Tienda Nube.
+          Está en DUX.
         </p>
       ) : (
         <>

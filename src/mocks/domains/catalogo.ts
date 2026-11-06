@@ -373,6 +373,7 @@ function altaOpciones(): CatalogoAltaOpciones {
     codigosUsados: items.map((item) => item.sku),
     mediaUrl: null,
     escrituraEnDux: { puede: true, motivo: null },
+    escrituraEnLaTienda: { puede: true, motivo: null },
   };
 }
 

@@ -1,6 +1,7 @@
 import "server-only";
 import { baseDelStore, borrarDelStore } from "@/integrations/blob";
 import { destinoDeEscritura } from "@/integrations/dux/escritura";
+import { destinoDeLaTienda } from "@/integrations/tiendanube/client";
 import { serverEnv } from "@/env";
 import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
@@ -10,6 +11,7 @@ import type {
   CatalogoAltaOpciones,
   CatalogoBorrador,
   CatalogoEscrituraEnDux,
+  CatalogoEstadoEnLaTienda,
   CatalogoPasoDeDux,
 } from "@/lib/api/contracts/catalogo";
 import { ConflictError, isAppError, NotFoundError } from "@/lib/errors";
@@ -115,6 +117,18 @@ export function escrituraEnDux(): CatalogoEscrituraEnDux {
       motivo: "Falta confirmar con DUX la unidad de medida y quién figura como responsable de la carga.",
     };
   }
+  return { puede: true, motivo: null };
+}
+
+/** Fuera de producción se arma el pedido y se muestra, sin mandarlo. */
+export function escrituraEnLaTienda(): CatalogoEscrituraEnDux {
+  try {
+    destinoDeLaTienda(process.env.APP_ENV);
+  } catch (error) {
+    if (isAppError(error)) return { puede: false, motivo: error.message };
+    throw error;
+  }
+  if (!serverEnv().TIENDANUBE_STORE_ID) return { puede: false, motivo: "Falta TIENDANUBE_STORE_ID en este ambiente." };
   return { puede: true, motivo: null };
 }
 
@@ -234,6 +248,7 @@ export async function opcionesDeAlta(): Promise<CatalogoAltaOpciones> {
     codigosUsados: usados,
     mediaUrl: baseDelStore(),
     escrituraEnDux: escrituraEnDux(),
+    escrituraEnLaTienda: escrituraEnLaTienda(),
   };
 }
 
@@ -246,12 +261,14 @@ export const aBorrador = (fila: {
   updatedAt: Date;
   steps: Prisma.JsonValue | null;
   duxDoneAt: Date | null;
+  storeState: Prisma.JsonValue | null;
 }): CatalogoBorrador => ({
   id: fila.id,
   input: fila.data as CatalogoAltaInput,
   quien: fila.createdByLabel,
   cuando: fila.updatedAt.toISOString(),
   publicacion: fila.steps ? { pasos: fila.steps as CatalogoPasoDeDux[], enDux: fila.duxDoneAt !== null } : null,
+  tienda: (fila.storeState as CatalogoEstadoEnLaTienda | null) ?? null,
 });
 
 /** Con un código creado en DUX, lo que se está publicando ya no se puede cambiar: DUX no borra ni renombra por API. */

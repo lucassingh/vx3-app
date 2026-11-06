@@ -112,6 +112,14 @@ const DESCRIPCION: Record<
   },
   "catalogo.deshacer": { categoria: "stock", texto: () => "Deshizo una decisión del catálogo" },
   "catalogo.dux_item": { categoria: "precios", texto: (_, d) => `Creó ${texto(d, "codigo")} en DUX` },
+  "catalogo.tienda": {
+    categoria: "precios",
+    texto: (_, d) =>
+      texto(d, "accion") === "foto"
+        ? `Subió una foto de ${texto(d, "sku")} a la tienda`
+        : `Creó ${texto(d, "sku")} en la tienda, oculto`,
+  },
+  "catalogo.tienda_visible": { categoria: "precios", texto: (_, d) => `Mostró ${texto(d, "sku")} en la tienda` },
   "catalogo.bajo_xls": { categoria: "precios", texto: (_, d) => `Bajó ${texto(d, "archivo")} para importar en DUX` },
   "credencial.cargada": { categoria: "accesos", texto: (_, d) => `Cargó la credencial de ${texto(d, "integracion")}` },
   "usuario.password_reseteada": {
