@@ -85,13 +85,28 @@ export async function connectionUrls(created, database) {
   return { role: own.owner_name, pooled: await uri(true), direct: await uri(false) };
 }
 
+/** Neon rechaza una operación mientras el proyecto tiene otra en curso: con la integración en paralelo, pasa seguido. */
+const ESPERAS_PARA_BORRAR_MS = [2_000, 5_000, 10_000, 20_000, 30_000];
+
 export async function deleteBranch(created, startedAt) {
-  try {
-    await neon("DELETE", `/branches/${created.branch.id}`);
-    console.log(
-      `\n→ Branch ${created.branch.name} borrada (${Math.round((Date.now() - startedAt) / 1000)} s en total)`,
-    );
-  } catch (error) {
-    console.error(`No se pudo borrar la branch ${created.branch.name}; Neon la borra sola a las 2 horas.`, error);
+  const { name, id } = created.branch;
+  for (let intento = 0; ; intento++) {
+    try {
+      await neon("DELETE", `/branches/${id}`);
+      break;
+    } catch (error) {
+      const motivo = error instanceof Error ? error.message : String(error);
+      // Un intento anterior pudo haberla borrado sin llegar a confirmarlo.
+      if (motivo.includes("respondió 404")) break;
+      const espera = ESPERAS_PARA_BORRAR_MS[intento];
+      if (espera === undefined) {
+        console.error(`No se pudo borrar la branch ${name}; Neon la borra sola a las 2 horas.`, motivo);
+        // Queda a la vista en la corrida: acumular branches puede llegar al límite del plan de Neon.
+        if (process.env.GITHUB_ACTIONS) console.log(`::warning title=Branch sin borrar::${name}: ${motivo}`);
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, espera));
+    }
   }
+  console.log(`\n→ Branch ${name} borrada (${Math.round((Date.now() - startedAt) / 1000)} s en total)`);
 }
