@@ -102,6 +102,12 @@ export function createDuxClient(config: DuxConfig, { limites, esperasMs = ESPERA
     listarFacturas,
     listarClientes,
 
+    /** Filtra por código: puede traer otros parecidos, así que quien lo usa tiene que buscar el exacto. */
+    buscarItem: async (codigo: string) => {
+      const ruta = `/v2/items?cod_item=${encodeURIComponent(codigo)}&offset=0&limit=${POR_PAGINA_DUX}`;
+      return validar(duxPaginaItemsSchema, (await v2.get(ruta)).cuerpo, ruta);
+    },
+
     /** Los ID que pide la escritura. Solo leen. */
     referencias: {
       rubros: (offset = 0) => pagina(duxRubrosSchema, "rubros", offset),

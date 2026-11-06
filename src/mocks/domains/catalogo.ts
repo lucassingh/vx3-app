@@ -372,6 +372,7 @@ function altaOpciones(): CatalogoAltaOpciones {
     atributos: [],
     codigosUsados: items.map((item) => item.sku),
     mediaUrl: null,
+    escrituraEnDux: { puede: true, motivo: null },
   };
 }
 

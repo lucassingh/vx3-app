@@ -265,6 +265,16 @@ describe("seguridad", () => {
   });
 });
 
+describe("buscarItem", () => {
+  it("pide el código, sin dejar que un guion o una barra cambien la ruta", async () => {
+    const { cliente, fetch } = armar([json({ datos: [], paginacion: { total: 0, hay_mas: false } })]);
+
+    await cliente.buscarItem("CTSPN20/6");
+
+    expect(String((fetch.mock.calls[0] as unknown[])[0])).toContain("/v2/items?cod_item=CTSPN20%2F6&offset=0");
+  });
+});
+
 describe("todasLasPaginas", () => {
   const pagina = (cuantas: number) => Array.from({ length: cuantas }, (_, i) => i);
 

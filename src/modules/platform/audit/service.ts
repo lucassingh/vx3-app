@@ -111,6 +111,8 @@ const DESCRIPCION: Record<
     texto: (_, d) => `Confirmó ${String(d?.confirmados ?? 0)} históricos`,
   },
   "catalogo.deshacer": { categoria: "stock", texto: () => "Deshizo una decisión del catálogo" },
+  "catalogo.dux_item": { categoria: "precios", texto: (_, d) => `Creó ${texto(d, "codigo")} en DUX` },
+  "catalogo.bajo_xls": { categoria: "precios", texto: (_, d) => `Bajó ${texto(d, "archivo")} para importar en DUX` },
   "credencial.cargada": { categoria: "accesos", texto: (_, d) => `Cargó la credencial de ${texto(d, "integracion")}` },
   "usuario.password_reseteada": {
     categoria: "accesos",

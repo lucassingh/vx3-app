@@ -93,6 +93,11 @@ export async function erpGateway(opciones: Opciones = {}): Promise<ErpGateway> {
         ),
       };
     },
+    buscarItem: async (codigo) => {
+      const { datos } = await cliente.buscarItem(codigo);
+      const exacto = datos.find(({ cod_item: propio }) => propio === codigo);
+      return exacto ? { codigo: exacto.cod_item, nombre: exacto.item } : null;
+    },
     listarCodigos: async (offset) => {
       const { DUX_ID_DEPOSITO: deposito } = serverEnv();
       if (!deposito) throw new ExternalServiceError("DUX", "Falta DUX_ID_DEPOSITO en este ambiente.");

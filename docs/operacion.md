@@ -357,6 +357,8 @@ se puede deshacer desde la misma pantalla. Las deciden los roles que editan el c
 | `DUX_ID_SUCURSAL_LOCAL`     | `2`                          | `2`                            |
 | `DUX_ID_DEPOSITO`           | `18516`                      | `18516`                        |
 | `MEDIA_URL`                 | la de `cli-vx3-media-dev`    | la de `cli-vx3-media-prod`     |
+| `DUX_ID_UNIDAD_MEDIDA`      | sin cargar                   | a confirmar con DUX            |
+| `DUX_ID_PERSONAL`           | sin cargar                   | a confirmar con Elías          |
 
 `MEDIA_URL` y `BLOB_READ_WRITE_TOKEN` ya están en Vercel: las dejó conectar cada store al proyecto. En local, el token es
 siempre el del store `-dev`.

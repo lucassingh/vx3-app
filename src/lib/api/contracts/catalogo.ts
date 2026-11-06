@@ -222,6 +222,7 @@ export type CatalogoAltaOpciones = {
   codigosUsados: string[];
   /** Dónde se ven las fotos subidas. Null: este ambiente no tiene store. */
   mediaUrl: string | null;
+  escrituraEnDux: CatalogoEscrituraEnDux;
 };
 
 /** `clave`: dónde queda en el store. La dirección completa depende del ambiente. */
@@ -257,7 +258,24 @@ export type CatalogoAltaInput = {
 /** Lo que ya existe y se parece: se abre su ficha antes de crear otro (RN-04, RN-125). */
 export type CatalogoParecido = Pick<CatalogoFila, "sku" | "nombre" | "colores" | "vigencia" | "foto" | "deTemporada">;
 
-export type CatalogoBorrador = { id: string; input: CatalogoAltaInput; quien: string; cuando: string };
+/** Un código de la publicación en DUX. `error` y `pendiente` se retoman: antes de crear, siempre se busca. */
+export type CatalogoPasoDeDux = {
+  codigo: string;
+  nombre: string;
+  estado: "pendiente" | "creado" | "error";
+  detalle: string | null;
+};
+
+export type CatalogoBorrador = {
+  id: string;
+  input: CatalogoAltaInput;
+  quien: string;
+  cuando: string;
+  /** Null: todavía no se empezó a publicar. */
+  publicacion: { pasos: CatalogoPasoDeDux[]; enDux: boolean } | null;
+};
+
+export type CatalogoEscrituraEnDux = { puede: boolean; motivo: string | null };
 
 export type CatalogoAltaPaso = "dux" | "precios" | "tiendanube";
 

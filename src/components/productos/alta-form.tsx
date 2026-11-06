@@ -19,6 +19,7 @@ import { useId, useState, useTransition } from "react";
 import { AltaBorradores } from "@/components/productos/alta-borradores";
 import { AltaFotos } from "@/components/productos/alta-fotos";
 import { AltaParecidos } from "@/components/productos/alta-parecidos";
+import { AltaPublicarEnDux } from "@/components/productos/alta-publicar-dux";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -166,7 +167,7 @@ export function AltaForm({
   opciones: CatalogoAltaOpciones;
   borradores: CatalogoBorrador[];
   abierto: CatalogoBorrador | null;
-  /** Con el catálogo real, publicar todavía no existe: llega en los próximos pasos de esta fase. */
+  /** Con el catálogo real se publica de verdad; si no, es la maqueta. */
   real: boolean;
   puedeEditar: boolean;
 }) {
@@ -206,6 +207,7 @@ export function AltaForm({
         opciones={opciones}
         inicial={formulario.input}
         borradorId={abiertoId}
+        publicacion={borradores.find(({ id }) => id === abiertoId)?.publicacion ?? null}
         real={real}
         puedeEditar={puedeEditar}
         alGuardar={alGuardar}
@@ -218,6 +220,7 @@ function Formulario({
   opciones,
   inicial,
   borradorId,
+  publicacion,
   real,
   puedeEditar,
   alGuardar,
@@ -225,6 +228,7 @@ function Formulario({
   opciones: CatalogoAltaOpciones;
   inicial?: CatalogoAltaInput;
   borradorId: string | null;
+  publicacion: CatalogoBorrador["publicacion"];
   real: boolean;
   puedeEditar: boolean;
   alGuardar: (borrador: CatalogoBorrador) => void;
@@ -251,6 +255,8 @@ function Formulario({
   const [publicado, setPublicado] = useState<string | null>(null);
   const [guardando, startGuardado] = useTransition();
   const [guardadoA, setGuardadoA] = useState<string | null>(null);
+
+  const congelado = publicacion?.pasos.some(({ estado }) => estado === "creado") ?? false;
 
   const familia = rubroActual?.familia ?? "lenceria";
   const esMedias = familia === "medias";
@@ -299,7 +305,8 @@ function Formulario({
   const subrubrosDeDux = opciones.rubros.flatMap(({ rubro, subrubros }) =>
     subrubros.map(({ nombre: subrubro }) => ({ rubro, subrubro })),
   );
-  const errores = erroresDeAlta(input, [], { codigosUsados: opciones.codigosUsados, subrubrosDeDux });
+  // Con códigos en DUX, el suyo ya figura entre los usados, y ya no hay nada que corregir acá.
+  const errores = congelado ? [] : erroresDeAlta(input, [], { codigosUsados: opciones.codigosUsados, subrubrosDeDux });
   const avisos = avisosDeAlta(input, opciones.marcas, subActual?.prefijo);
   if (campos.fotos.length === 0)
     avisos.push({ campo: "fotos", mensaje: "Sin foto, Tienda Nube no publica el bulto (RN-09)." });
@@ -374,9 +381,18 @@ function Formulario({
       .finally(() => setPublicando(false));
   };
 
-  const revisarSinPublicar = () => {
-    if (revisar())
-      toast.success("Está completo", { description: "Guardalo como borrador hasta que se pueda publicar." });
+  /** Publicar y bajar los archivos salen de lo guardado: nunca de algo distinto a lo que se ve. */
+  const guardarAntes = async (): Promise<string | null> => {
+    if (congelado) return borradorId;
+    if (!revisar()) return null;
+    const resultado = await guardarBorradorDeAlta({ id: borradorId, input });
+    if (!resultado.ok) {
+      toast.error("No se pudo guardar el borrador", { description: resultado.error.message });
+      return null;
+    }
+    alGuardar(resultado.data);
+    setGuardadoA(resultado.data.cuando);
+    return resultado.data.id;
   };
 
   const guardar = () =>
@@ -403,7 +419,7 @@ function Formulario({
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-      <div className="min-w-0 space-y-6">
+      <fieldset className="min-w-0 space-y-6" disabled={congelado}>
         <Card>
           <CardHeader>
             <div>
@@ -544,11 +560,13 @@ function Formulario({
                   {...invalid("prenda")}
                 />
               </Field>
-              <AltaParecidos
-                busqueda={[campos.prenda, campos.marca].filter(Boolean).join(" ")}
-                rubro={campos.rubro}
-                subrubro={campos.subrubro}
-              />
+              {!congelado && (
+                <AltaParecidos
+                  busqueda={[campos.prenda, campos.marca].filter(Boolean).join(" ")}
+                  rubro={campos.rubro}
+                  subrubro={campos.subrubro}
+                />
+              )}
               <Field id={id("marca")} label="Marca" hint="Las que existen en DUX. Una nueva se crea primero allá.">
                 <NativeSelect
                   id={id("marca")}
@@ -923,10 +941,10 @@ function Formulario({
         <AltaFotos
           fotos={campos.fotos}
           mediaUrl={opciones.mediaUrl}
-          puedeEditar={puedeEditar}
+          puedeEditar={puedeEditar && !congelado}
           alCambiar={(cambio) => setCampos((actuales) => ({ ...actuales, fotos: cambio(actuales.fotos) }))}
         />
-      </div>
+      </fieldset>
 
       <aside className="space-y-6 xl:sticky xl:top-20 xl:self-start" aria-label="Resumen del alta">
         <Card>
@@ -1043,23 +1061,27 @@ function Formulario({
             ) : puedeEditar ? (
               <div className="flex flex-col gap-2">
                 {real ? (
-                  <Button onClick={revisarSinPublicar}>
-                    <CircleCheck />
-                    Revisar si está completo
-                  </Button>
+                  <AltaPublicarEnDux
+                    borradorId={borradorId}
+                    publicacion={publicacion}
+                    escritura={opciones.escrituraEnDux}
+                    guardarAntes={guardarAntes}
+                    alActualizar={alGuardar}
+                  />
                 ) : (
                   <Button onClick={publicar} disabled={publicando}>
                     {publicando ? <LoaderCircle aria-hidden className="animate-spin" /> : <Upload />}
                     {publicando ? "Publicando…" : "Publicar en DUX y Tienda Nube"}
                   </Button>
                 )}
-                <Button variant="outline" onClick={guardar} disabled={publicando || guardando}>
-                  {guardando ? <LoaderCircle aria-hidden className="animate-spin" /> : <Save />}
-                  {guardando ? "Guardando…" : borradorId ? "Guardar los cambios" : "Guardar borrador"}
-                </Button>
+                {!congelado && (
+                  <Button variant="outline" onClick={guardar} disabled={publicando || guardando}>
+                    {guardando ? <LoaderCircle aria-hidden className="animate-spin" /> : <Save />}
+                    {guardando ? "Guardando…" : borradorId ? "Guardar los cambios" : "Guardar borrador"}
+                  </Button>
+                )}
                 <p className="text-xs text-muted-foreground" role="status">
-                  {guardadoA && `Guardado a las ${formatTime(guardadoA)}. `}
-                  {real && "Publicar en DUX y Tienda Nube todavía no está habilitado."}
+                  {guardadoA && `Guardado a las ${formatTime(guardadoA)}.`}
                 </p>
               </div>
             ) : (

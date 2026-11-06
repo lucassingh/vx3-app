@@ -110,6 +110,9 @@ const esquemaServidor = z.object({
   DUX_ID_SUCURSAL_LOCAL: opcional(enteroPositivo),
   DUX_ID_DEPOSITO: opcional(enteroPositivo),
   DUX_CABECERA_DE_PRUEBA: opcional(z.string()),
+  // Los pide `POST /v2/items`, y no hay ruta que los liste: los confirma VX3 (d37).
+  DUX_ID_UNIDAD_MEDIDA: opcional(enteroPositivo),
+  DUX_ID_PERSONAL: opcional(enteroPositivo),
   // De dónde sale el catálogo hasta el pase. No son secretos: la clave está cifrada en la base.
   GOOGLE_SHEET_ID: opcional(z.string().min(1)),
   GOOGLE_FOTOS_CARPETA_ID: opcional(z.string().min(1)),

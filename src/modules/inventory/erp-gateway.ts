@@ -13,6 +13,8 @@ export type ErpItem = {
   rubro: string | null;
   subrubro: string | null;
   marca: string | null;
+  /** El que pide el ERP para escribir: en muchas marcas no es su nombre. */
+  marcaCodigo: string | null;
   proveedorId: number | null;
   proveedor: string | null;
   costoCentavos: number;
@@ -94,6 +96,8 @@ export type PaginaDeClientas = { clientas: ErpClienta[]; hayMas: boolean };
 export interface ErpGateway {
   listarCodigos(offset: number): Promise<PaginaDeCodigos>;
   listarReferencias(): Promise<ErpReferencias>;
+  /** Un código exacto. Null si el ERP no lo tiene. */
+  buscarItem(codigo: string): Promise<{ codigo: string; nombre: string } | null>;
   listarItems(offset: number): Promise<PaginaDeItems>;
   listarClientas(offset: number): Promise<PaginaDeClientas>;
   listarComprobantes(pedido: PedidoDeComprobantes): Promise<PaginaDeComprobantes>;

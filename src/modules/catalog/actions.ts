@@ -1,9 +1,12 @@
 "use server";
 
 import { z } from "zod";
+import { escribirXls } from "@/lib/xls";
 import { defineAction } from "@/lib/action";
 import { borrarBorrador, borrarFotosSinUso, guardarBorrador } from "./alta-consultas";
 import { CLAVE_DE_FOTO, FOTOS_POR_PRODUCTO } from "./fotos";
+import { ARCHIVOS_DE_IMPORTACION } from "./publicar";
+import { avanzarEnDux, comprobarEnDux, hojaDeImportacion } from "./publicar-dux";
 import {
   confirmarHistoricosPendientes,
   decidirFoto,
@@ -148,5 +151,44 @@ export const descartarFotosSubidas = defineAction({
   handler: async ({ claves }) => {
     await borrarFotosSinUso(claves);
     return { descartadas: claves.length };
+  },
+});
+
+/* ---- Publicar en DUX ---- */
+
+/** Un paso por llamada: cada código se ve avanzar en la pantalla, y ningún pedido queda colgado esperando a DUX. */
+export const avanzarPublicacionEnDux = defineAction({
+  name: "catalogo.publicarEnDux",
+  input: z.object({ id: z.uuid() }),
+  permission: "catalogo.editar",
+  handler: async ({ id }, { audit }) => {
+    const { borrador, creado } = await avanzarEnDux(id);
+    if (creado) {
+      await audit({ action: "catalogo.dux_item", entityType: "producto", entityId: creado.codigo, after: creado });
+    }
+    return borrador;
+  },
+});
+
+/** Después de importar los `.xls` a mano. */
+export const comprobarImportacionEnDux = defineAction({
+  name: "catalogo.comprobarEnDux",
+  input: z.object({ id: z.uuid() }),
+  permission: "catalogo.editar",
+  handler: async ({ id }) => comprobarEnDux(id),
+});
+
+/** Es una acción, y no una descarga directa, porque trae costos: con permiso de edición y queda registrada. */
+export const bajarArchivoDeImportacion = defineAction({
+  name: "catalogo.bajarXls",
+  input: z.object({ id: z.uuid(), archivo: z.enum(ARCHIVOS_DE_IMPORTACION) }),
+  permission: "catalogo.editar",
+  handler: async ({ id, archivo }, { audit }) => {
+    const { columnas, filas } = await hojaDeImportacion(id, archivo);
+    await audit({ action: "catalogo.bajo_xls", entityType: "borrador", entityId: id, after: { archivo } });
+    return {
+      nombre: `${archivo}.xls`,
+      base64: Buffer.from(escribirXls(columnas, filas)).toString("base64"),
+    };
   },
 });

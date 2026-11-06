@@ -1,10 +1,18 @@
 import "server-only";
 import { baseDelStore, borrarDelStore } from "@/integrations/blob";
+import { destinoDeEscritura } from "@/integrations/dux/escritura";
+import { serverEnv } from "@/env";
 import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
-import type { Prisma } from "@/generated/prisma/client";
-import type { CatalogoAltaInput, CatalogoAltaOpciones, CatalogoBorrador } from "@/lib/api/contracts/catalogo";
-import { NotFoundError } from "@/lib/errors";
+import { Prisma } from "@/generated/prisma/client";
+import type {
+  CatalogoAltaInput,
+  CatalogoAltaOpciones,
+  CatalogoBorrador,
+  CatalogoEscrituraEnDux,
+  CatalogoPasoDeDux,
+} from "@/lib/api/contracts/catalogo";
+import { ConflictError, isAppError, NotFoundError } from "@/lib/errors";
 import { normalizeText } from "@/lib/utils";
 import type { ErpReferencias } from "@/modules/inventory/erp-gateway";
 import { prefijoDeCodigo, prefijoDelSubrubro, proximoCodigo } from "./alta";
@@ -58,7 +66,7 @@ export async function guardarReferencias(
 }
 
 /** Hay códigos en un solo lado: lo inhabilitado está en `/v2/stock`, y lo vendido que ya no existe, en los comprobantes. */
-async function codigosConocidos(donde: Prisma.StringFilter = {}): Promise<string[]> {
+export async function codigosConocidos(donde: Prisma.StringFilter = {}): Promise<string[]> {
   const db = getDb();
   const [items, usados, vendidos] = await Promise.all([
     db.duxItem.findMany({ where: { normalizedCode: donde }, select: { normalizedCode: true } }),
@@ -90,6 +98,24 @@ export async function codigoSugerido(
   const prefijo = prefijoDelSubrubro(rubro, subrubro, await leerPrendas());
   if (!prefijo) return null;
   return { prefijo, codigo: proximoCodigo(prefijo, await codigosConocidos({ startsWith: prefijo })) };
+}
+
+/** Si este ambiente puede escribir, y si no, por qué. No toca DUX. */
+export function escrituraEnDux(): CatalogoEscrituraEnDux {
+  const { DUX_ID_UNIDAD_MEDIDA, DUX_ID_PERSONAL, DUX_CABECERA_DE_PRUEBA } = serverEnv();
+  try {
+    destinoDeEscritura(process.env.APP_ENV, DUX_CABECERA_DE_PRUEBA);
+  } catch (error) {
+    if (isAppError(error)) return { puede: false, motivo: error.message };
+    throw error;
+  }
+  if (!DUX_ID_UNIDAD_MEDIDA || !DUX_ID_PERSONAL) {
+    return {
+      puede: false,
+      motivo: "Falta confirmar con DUX la unidad de medida y quién figura como responsable de la carga.",
+    };
+  }
+  return { puede: true, motivo: null };
 }
 
 /** No son mercadería, o no se dan de alta desde acá (RN-98). */
@@ -207,22 +233,40 @@ export async function opcionesDeAlta(): Promise<CatalogoAltaOpciones> {
     })),
     codigosUsados: usados,
     mediaUrl: baseDelStore(),
+    escrituraEnDux: escrituraEnDux(),
   };
 }
 
 /* ---- Borradores ----------------------------------------------------------- */
 
-const aBorrador = (fila: {
+export const aBorrador = (fila: {
   id: string;
   data: Prisma.JsonValue;
   createdByLabel: string;
   updatedAt: Date;
+  steps: Prisma.JsonValue | null;
+  duxDoneAt: Date | null;
 }): CatalogoBorrador => ({
   id: fila.id,
   input: fila.data as CatalogoAltaInput,
   quien: fila.createdByLabel,
   cuando: fila.updatedAt.toISOString(),
+  publicacion: fila.steps ? { pasos: fila.steps as CatalogoPasoDeDux[], enDux: fila.duxDoneAt !== null } : null,
 });
+
+/** Con un código creado en DUX, lo que se está publicando ya no se puede cambiar: DUX no borra ni renombra por API. */
+const yaHayCodigosEnDux = (steps: Prisma.JsonValue | null) =>
+  ((steps as CatalogoPasoDeDux[] | null) ?? []).some(({ estado }) => estado === "creado");
+
+/** Los subrubros de DUX, para validar sin depender de lo que mande el navegador. */
+export async function subrubrosDeLasReferencias() {
+  const referencias = await getDb().duxReference.findMany({ where: { kind: { in: ["rubro", "subrubro"] } } });
+  const rubros = new Map(referencias.filter(({ kind }) => kind === "rubro").map(({ duxId, name }) => [duxId, name]));
+  return referencias.flatMap(({ kind, parentId, name }) => {
+    const rubro = kind === "subrubro" ? rubros.get(parentId) : undefined;
+    return rubro ? [{ rubro, subrubro: name }] : [];
+  });
+}
 
 export async function listarBorradores(): Promise<CatalogoBorrador[]> {
   const filas = await getDb().catalogDraft.findMany({ orderBy: { updatedAt: "desc" } });
@@ -239,9 +283,16 @@ export async function guardarBorrador(
   const ahora = new Date();
   const data = input as unknown as Prisma.InputJsonObject;
   if (id) {
-    const previo = await db.catalogDraft.findUnique({ where: { id }, select: { data: true } });
+    const previo = await db.catalogDraft.findUnique({ where: { id }, select: { data: true, steps: true } });
     if (!previo) throw new NotFoundError("Ese borrador ya no está.");
-    const guardado = await db.catalogDraft.update({ where: { id }, data: { data, updatedAt: ahora } });
+    if (yaHayCodigosEnDux(previo.steps)) {
+      throw new ConflictError("Ya hay códigos creados en DUX: este producto no se puede cambiar desde el borrador.");
+    }
+    // Si DUX lo rechazó antes de crear nada, se corrige y se vuelve a empezar.
+    const guardado = await db.catalogDraft.update({
+      where: { id },
+      data: { data, updatedAt: ahora, steps: Prisma.DbNull, duxDoneAt: null },
+    });
     const quedan = new Set(input.fotos.map(({ clave }) => clave));
     await borrarFotosSinUso(fotosDelBorrador(previo.data).filter((clave) => !quedan.has(clave)));
     return aBorrador(guardado);
@@ -262,8 +313,11 @@ export async function guardarBorrador(
 
 export async function borrarBorrador(id: string): Promise<void> {
   const db = getDb();
-  const previo = await db.catalogDraft.findUnique({ where: { id }, select: { data: true } });
+  const previo = await db.catalogDraft.findUnique({ where: { id }, select: { data: true, steps: true } });
   if (!previo) throw new NotFoundError("Ese borrador ya no está.");
+  if (yaHayCodigosEnDux(previo.steps)) {
+    throw new ConflictError("Ya hay códigos creados en DUX: este borrador no se puede borrar.");
+  }
   await db.catalogDraft.delete({ where: { id } });
   await borrarFotosSinUso(fotosDelBorrador(previo.data));
 }

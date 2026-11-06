@@ -25,6 +25,7 @@ function aFila(item: ErpItem) {
     category: item.rubro,
     subcategory: item.subrubro,
     brand: item.marca,
+    brandCode: item.marcaCodigo,
     supplierId: item.proveedorId,
     supplier: item.proveedor,
     costCents: BigInt(item.costoCentavos),

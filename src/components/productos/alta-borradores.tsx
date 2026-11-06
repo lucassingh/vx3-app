@@ -19,6 +19,11 @@ import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { borrarBorradorDeAlta } from "@/modules/catalog/actions";
 
+const enDux = ({ publicacion }: CatalogoBorrador) => publicacion?.enDux ?? false;
+/** Con un código creado en DUX ya no se puede borrar: DUX no los borra. */
+const conCodigos = ({ publicacion }: CatalogoBorrador) =>
+  publicacion?.pasos.some(({ estado }) => estado === "creado") ?? false;
+
 const tituloDe = ({ input }: CatalogoBorrador) => input.prenda.trim() || input.nombre.trim() || "Sin nombre todavía";
 
 function BorrarBorrador({
@@ -123,6 +128,7 @@ export function AltaBorradores({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {borrador.quien} · {formatRelativeTime(borrador.cuando)}
+                    {enDux(borrador) ? " · Está en DUX" : conCodigos(borrador) ? " · A medio publicar" : ""}
                   </p>
                 </div>
                 {abierto ? (
@@ -132,7 +138,7 @@ export function AltaBorradores({
                     Abrir
                   </Button>
                 )}
-                {puedeEditar && <BorrarBorrador borrador={borrador} alBorrar={alBorrar} />}
+                {puedeEditar && !conCodigos(borrador) && <BorrarBorrador borrador={borrador} alBorrar={alBorrar} />}
               </li>
             );
           })}

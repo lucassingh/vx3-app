@@ -1,0 +1,15 @@
+{
+  "cols": ["CODIGO", "LOCAL EF/TR (ID. 71697)", "MAYORISTA EF/TR (ID. 71695)"],
+  "filas": [
+    {
+      "CODIGO": "ZZTEST1",
+      "LOCAL EF/TR (ID. 71697)": 8900,
+      "MAYORISTA EF/TR (ID. 71695)": ""
+    },
+    {
+      "CODIGO": "ZZTEST1-6",
+      "LOCAL EF/TR (ID. 71697)": 31200,
+      "MAYORISTA EF/TR (ID. 71695)": 31200
+    }
+  ]
+}
