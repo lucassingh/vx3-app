@@ -70,7 +70,7 @@ function SaludBadge({ producto }: { producto: CatalogoFila }) {
   const bloquean = producto.faltantes.filter(({ bloquea }) => bloquea);
   const [primero] = bloquean;
   return (
-    <Badge variant="warning" dot title={bloquean.map(({ dato }) => dato).join(" · ")}>
+    <Badge variant="warning" dot title={bloquean.map(({ dato }) => dato).join(" · ")} className="whitespace-normal">
       {primero ? `Falta: ${primero.dato.toLowerCase()}` : "Le falta algo"}
       {bloquean.length > 1 && ` +${bloquean.length - 1}`}
     </Badge>
