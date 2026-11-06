@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { defineAction } from "@/lib/action";
+import { borrarBorrador, guardarBorrador } from "./alta-consultas";
 import {
   confirmarHistoricosPendientes,
   decidirFoto,
@@ -79,5 +80,51 @@ export const deshacerDecisionDelCatalogo = defineAction({
       after: { deshecha: true },
     });
     return { aplicada: resultado.aplicada };
+  },
+});
+
+/* ---- Borradores del alta ---- */
+
+const entradaDeAlta = z.object({
+  sku: z.string().max(64),
+  rubro: z.string().max(120),
+  subrubro: z.string().max(120),
+  nombre: z.string().max(250),
+  prenda: z.string().max(200),
+  color: z.string().max(120),
+  copa: z.string().max(40),
+  marca: z.string().max(120),
+  proveedorId: z.string().max(40),
+  tela: z.string().max(200),
+  colores: z.array(z.string().max(80)).max(60),
+  talles: z.string().max(120),
+  atributos: z.record(z.string().max(40), z.string().max(200)),
+  opcionales: z.object({
+    tres: z.boolean().optional(),
+    docena: z.boolean().optional(),
+    dosDocenas: z.boolean().optional(),
+  }),
+  costoDocena: z.number().min(0),
+  pesoBultoKg: z.number().min(0),
+  medidasCm: z.tuple([z.number().min(0), z.number().min(0), z.number().min(0)]),
+});
+
+/** Sin `id`, crea uno. Sin validar: guarda lo que todavía no está completo. */
+export const guardarBorradorDeAlta = defineAction({
+  name: "catalogo.guardarBorrador",
+  input: z.object({ id: z.uuid().nullable(), input: entradaDeAlta }),
+  permission: "catalogo.editar",
+  handler: async ({ id, input }, { user }) => {
+    return guardarBorrador(id, input, { id: user.id, label: user.name });
+  },
+});
+
+export const borrarBorradorDeAlta = defineAction({
+  name: "catalogo.borrarBorrador",
+  input: z.object({ id: z.uuid() }),
+  permission: "catalogo.editar",
+  handler: async ({ id }) => {
+    await borrarBorrador(id);
+    return { borrado: true };
   },
 });

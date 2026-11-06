@@ -164,7 +164,7 @@ las fechas en que se usó. Sin ella, las copias de esas semanas no se pueden lee
   Responde `{ ok: true, runId }`. Sin el secreto responde 401.
 - **La sincronización con DUX** (productos, stock y precios, las ventas de los últimos
   35 días y las clientas) corre a las 05:00 de Argentina y con el botón **Sincronizar
-  ahora** de Configuración → Integraciones. Son unos 250 requests y menos de 5 minutos.
+  ahora** de Configuración → Integraciones. Son unos 260 requests y menos de 5 minutos.
   Nunca hay dos a la vez: la segunda avisa y no arranca. La frecuencia se cambia en la
   línea de `/api/cron/dux` en `vercel.json` (y el texto en
   `src/modules/platform/integraciones/estado.ts`). Solo lee: la app no escribe en DUX.

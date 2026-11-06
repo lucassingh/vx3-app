@@ -7,7 +7,7 @@ import type { ErpGateway } from "@/modules/inventory/erp-gateway";
 import { createDuxClient, LIMITES_DUX } from "./client";
 import { createDuxEscritura } from "./escritura";
 import { aErpComprobante, aErpItem, aPaginaDeClientas } from "./mapeo";
-import { POR_PAGINA_DUX } from "./paginas";
+import { POR_PAGINA_DUX, todasLasPaginas } from "./paginas";
 
 const URL_POR_DEFECTO = "https://erp.duxsoftware.com.ar/WSERP/rest/services";
 
@@ -66,6 +66,33 @@ export async function erpGateway(opciones: Opciones = {}): Promise<ErpGateway> {
   const cliente = await duxClient(opciones);
   return {
     listarClientas: async (offset) => aPaginaDeClientas(await cliente.listarClientes(offset), POR_PAGINA_DUX),
+    listarReferencias: async () => {
+      const { rubros, subRubros, proveedores, listasDePrecio } = cliente.referencias;
+      return {
+        rubros: (await todasLasPaginas(rubros)).map(({ id_rubro: id, rubro: nombre }) => ({ id, nombre })),
+        subrubros: (await todasLasPaginas(subRubros)).map(
+          ({ id_sub_rubro: id, id_rubro: rubroId, sub_rubro: nombre }) => ({
+            id,
+            rubroId,
+            nombre,
+          }),
+        ),
+        proveedores: (await todasLasPaginas(proveedores)).map(
+          ({ id_proveedor: id, proveedor: nombre, habilitado }) => ({
+            id,
+            nombre,
+            habilitado: habilitado ?? true,
+          }),
+        ),
+        listas: (await listasDePrecio()).datos.map(
+          ({ id_lista_precio_venta: id, lista_precio_venta: nombre, habilitado }) => ({
+            id,
+            nombre,
+            habilitado: habilitado ?? true,
+          }),
+        ),
+      };
+    },
     listarCodigos: async (offset) => {
       const { DUX_ID_DEPOSITO: deposito } = serverEnv();
       if (!deposito) throw new ExternalServiceError("DUX", "Falta DUX_ID_DEPOSITO en este ambiente.");

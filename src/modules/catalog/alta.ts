@@ -137,6 +137,38 @@ export function problemasDelNombre(nombre: string): string[] {
   ].filter((problema): problema is string => Boolean(problema));
 }
 
+/* ---- Antes de crear ------------------------------------------------------- */
+
+const NO_DISTINGUEN = new Set(["a", "con", "de", "del", "el", "en", "la", "para", "sin", "y"]);
+
+/**
+ * Lo que comparte palabras con lo que se está cargando: buscar con todas dejaría afuera al que solo
+ * difiere en un detalle, que es justo el que interesa ver (RN-04). Con dos en común alcanza. Van
+ * primero los que comparten más; a igual cantidad, los del mismo subrubro, y después, el orden que traían.
+ */
+export function losMasParecidos<T extends { texto: string; rubro: string | null; subrubro: string | null }>(
+  productos: readonly T[],
+  { q, rubro, subrubro }: { q: string; rubro?: string; subrubro?: string },
+  limite = 5,
+): T[] {
+  const palabras = [...new Set(normalizeText(q).split(/\s+/))].filter(
+    (palabra) => palabra.length > 1 && !NO_DISTINGUEN.has(palabra),
+  );
+  if (palabras.length === 0) return [];
+  const minimo = Math.min(2, palabras.length);
+  const buscado = rubro && subrubro ? clave(rubro, subrubro) : null;
+  const mismoSubrubro = (producto: T) =>
+    buscado !== null && producto.rubro && producto.subrubro && clave(producto.rubro, producto.subrubro) === buscado
+      ? 1
+      : 0;
+  return productos
+    .map((producto) => ({ producto, comunes: palabras.filter((palabra) => producto.texto.includes(palabra)).length }))
+    .filter(({ comunes }) => comunes >= minimo)
+    .toSorted((a, b) => b.comunes - a.comunes || mismoSubrubro(b.producto) - mismoSubrubro(a.producto))
+    .slice(0, limite)
+    .map(({ producto }) => producto);
+}
+
 /* ---- Presentaciones ------------------------------------------------------- */
 
 export type PresentacionDelAlta = PresentacionCalculada & {

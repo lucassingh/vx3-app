@@ -48,7 +48,7 @@ export function erroresDeAlta(
   else if (codigosUsados.some((usado) => normalizarCodigo(usado).split("-")[0] === normalizarCodigo(sku)))
     errores.push({
       campo: "sku",
-      mensaje: `Ese número ya se usó en DUX, aunque ahora no esté habilitado: ${sku} no se puede reusar.`,
+      mensaje: `Ese número ya se usó en DUX, esté o no habilitado: ${sku} no se puede reusar.`,
     });
 
   if (!input.rubro || !input.subrubro)
@@ -65,7 +65,10 @@ export function erroresDeAlta(
       campo: "subrubro",
       mensaje: `${input.rubro} › ${input.subrubro} no existe en DUX: hay que crearlo primero allá, la API no crea subrubros.`,
     });
-  if (!(input.nombre ?? "").trim()) errores.push({ campo: "nombre", mensaje: "Falta el nombre del producto." });
+  if (!input.proveedorId) errores.push({ campo: "proveedorId", mensaje: "Elegí el proveedor." });
+  if (!(input.prenda ?? "").trim()) errores.push({ campo: "prenda", mensaje: "Falta la prenda y su detalle." });
+  if (!(input.color ?? "").trim())
+    errores.push({ campo: "color", mensaje: "Elegí qué dice el nombre sobre los colores." });
   for (const mensaje of problemasDelNombre(input.nombre ?? "")) errores.push({ campo: "nombre", mensaje });
   if (!input.costoDocena || input.costoDocena <= 0)
     errores.push({ campo: "costoDocena", mensaje: "El costo de la docena tiene que ser mayor a $ 0." });
@@ -123,22 +126,4 @@ export function avisosDeAlta(
   if (!input.marca) avisos.push({ campo: "marca", mensaje: "Sin marca: el producto queda incompleto para el bot." });
   if (!input.tela) avisos.push({ campo: "tela", mensaje: "Sin tela: el bot no va a poder filtrar por tela." });
   return avisos;
-}
-
-/** Nombre según RN-05: rubro + marca + detalle + aclaración + curva. La terminación del pack la agrega el sistema. */
-export function nombreGenerado(parts: {
-  base: string;
-  marca: string;
-  detalle: string;
-  aclaracion: string;
-  talles: string;
-}) {
-  const head = [parts.base, parts.marca, parts.detalle]
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join(" ");
-  return [head, parts.aclaracion.trim(), parts.talles.trim() && `curva de talles ${parts.talles.trim()}`]
-    .filter(Boolean)
-    .join(" - ")
-    .toUpperCase();
 }

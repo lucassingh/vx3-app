@@ -205,6 +205,21 @@ model DuxUsedCode {
   @@map("dux_used_codes")
 }
 
+/// Rubros, subrubros, proveedores y listas de DUX, con su ID. Se reemplazan en cada sincronización.
+model DuxReference {
+  /// "rubro", "subrubro", "proveedor" o "lista".
+  kind     String
+  duxId    Int      @map("dux_id")
+  /// El rubro de un subrubro; 0 en los demás. Hay IDs de subrubro repetidos entre rubros.
+  parentId Int      @default(0) @map("parent_id")
+  name     String
+  enabled  Boolean
+  readAt   DateTime @map("read_at") @db.Timestamptz(6)
+
+  @@id([kind, parentId, duxId])
+  @@map("dux_references")
+}
+
 model DuxInvoice {
   id            String           @id @db.Uuid
   duxId         Int              @unique @map("dux_id")
@@ -596,4 +611,16 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([occurredAt])
   @@map("audit_logs")
+}
+
+/// Un alta sin terminar. Guarda lo que cargó la persona, tal cual: no se valida hasta publicar.
+model CatalogDraft {
+  id             String   @id @db.Uuid
+  data           Json
+  createdById    String?  @map("created_by_id")
+  createdByLabel String   @map("created_by_label")
+  createdAt      DateTime @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @map("updated_at") @db.Timestamptz(6)
+
+  @@map("catalog_drafts")
 }

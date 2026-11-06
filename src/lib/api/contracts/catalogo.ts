@@ -208,38 +208,54 @@ export type CatalogoAltaOpciones = {
   rubros: {
     rubro: string;
     familia: "lenceria" | "medias";
-    subrubros: { nombre: string; prefijo: string; proximoSku: string; nombreBase: string }[];
+    /** Sin prefijo no hay código sugerido: lo define VX3. */
+    subrubros: { nombre: string; prefijo: string | null; proximoSku: string | null }[];
   }[];
   marcas: string[];
-  proveedores: { id: string; nombre: string }[];
+  /** En DUX también son proveedores ARCA, Edesur o Meta: los que tienen productos se ofrecen primero. */
+  proveedores: { id: string; nombre: string; conProductos: boolean }[];
   telas: string[];
   colores: string[];
-  aclaraciones: string[];
-  /** SKUs existentes (para validar repetidos y para el reciclado de SKU). */
-  skus: { sku: string; nombre: string; rubro: string }[];
+  atributos: { clave: string; label: string; opciones: string[] }[];
+  /** Todos los que existen o existieron: un número no se reusa nunca (RN-03). */
+  codigosUsados: string[];
 };
 
 export type CatalogoAltaInput = {
   sku: string;
   rubro: string;
   subrubro: string;
+  /** Sale de las partes, con la regla de nombres (RN-127), sin la cantidad. */
   nombre: string;
+  /** Prenda y detalle: "TOP SEGUNDA PIEL TIRA ANCHA". */
+  prenda: string;
+  /** "COLORES BASICOS", "COLORES Y DISEÑOS DE LA FOTO", "COLORES SURTIDOS" o un color puntual. */
+  color: string;
+  copa: string;
   marca: string;
   proveedorId: string;
   tela: string;
+  /** La curva: "BLANCO, NEGRO, BEIGE". */
   colores: string[];
   talles: string;
-  aclaracion: string;
+  atributos: Record<string, string>;
+  /** Lo que no todos los productos tienen (RN-01). */
+  opcionales: { tres?: boolean; docena?: boolean; dosDocenas?: boolean };
   costoDocena: number;
   pesoBultoKg: number;
   medidasCm: [number, number, number];
 };
 
+/** Lo que ya existe y se parece: se abre su ficha antes de crear otro (RN-04, RN-125). */
+export type CatalogoParecido = Pick<CatalogoFila, "sku" | "nombre" | "colores" | "vigencia" | "foto" | "deTemporada">;
+
+export type CatalogoBorrador = { id: string; input: CatalogoAltaInput; quien: string; cuando: string };
+
 export type CatalogoAltaPaso = "dux" | "precios" | "tiendanube";
 
 export type CatalogoAltaResultado = {
   sku: string;
-  paso: CatalogoAltaPaso | "borrador";
+  paso: CatalogoAltaPaso;
   detalle: string;
 };
 
@@ -297,15 +313,13 @@ export function catalogoEndpoints(request: ApiRequest) {
     rubrosDeEjemplo: () => request<string[]>("/catalogo/ejemplo/rubros"),
     control: () => request<CatalogoControl[]>("/catalogo/control"),
     altaOpciones: () => request<CatalogoAltaOpciones>("/catalogo/alta/opciones"),
+    altaBorradores: () => request<CatalogoBorrador[]>("/catalogo/alta/borradores"),
+    altaParecidos: (query: { q: string; rubro?: string; subrubro?: string }) =>
+      request<CatalogoParecido[]>(`/catalogo/alta/parecidos${toQueryString(query)}`),
     publicar: (input: CatalogoAltaInput, paso: CatalogoAltaPaso) =>
       request<CatalogoAltaResultado>("/catalogo/alta/publicar", {
         method: "POST",
         body: JSON.stringify({ input, paso }),
-      }),
-    guardarBorrador: (input: Partial<CatalogoAltaInput>) =>
-      request<CatalogoAltaResultado>("/catalogo/alta/borrador", {
-        method: "POST",
-        body: JSON.stringify({ input }),
       }),
     combos: (query: CatalogoCombosQuery) => request<CatalogoCombosResultado>(`/catalogo/combos${toQueryString(query)}`),
   };

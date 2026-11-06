@@ -8,6 +8,7 @@ import type {
   CatalogoFaltante,
   CatalogoFicha,
   CatalogoFila,
+  CatalogoParecido,
   CatalogoQuery,
   RevisionCaso,
   RevisionDecision,
@@ -15,6 +16,7 @@ import type {
 } from "@/lib/api/contracts/catalogo";
 import type { Kpi, Paginated } from "@/lib/api/types";
 import { normalizarCodigo } from "./codigos";
+import { losMasParecidos } from "./alta";
 import { coloresDe, facetasDe, pasaLosFiltros, type ProductoFiltrable } from "./filtros";
 import { DECISION_DE_FOTO, DECISION_DE_HISTORICO } from "./importar";
 import { BLOQUES } from "./revision";
@@ -43,7 +45,7 @@ const FALTANTE: Record<DatoQueFalta, { dato: string; bloquea: boolean; fuente: "
 
 const enDrive = (driveId: string) => `https://drive.google.com/file/d/${driveId}/view`;
 
-const ATRIBUTOS: Record<string, string> = {
+export const ATRIBUTOS: Record<string, string> = {
   copa: "Copa",
   encaje: "Encaje",
   push_up: "Push up",
@@ -242,6 +244,33 @@ export async function listarProductos(
     total: coinciden.length,
     totalPages,
   };
+}
+
+/** Con los históricos: no se dan de alta de nuevo, vuelven con su mismo SKU (RN-125). Sin combos: no se cargan acá (RN-98). */
+export async function parecidosDelAlta(consulta: {
+  q: string;
+  rubro?: string;
+  subrubro?: string;
+}): Promise<CatalogoParecido[]> {
+  const parecidos = losMasParecidos(
+    (await leerProductos())
+      .filter(({ isCombo }) => !isCombo)
+      .map((fila) => ({ ...fila, rubro: fila.category, subrubro: fila.subcategory, texto: fila.searchText })),
+    consulta,
+  );
+  const primeras = await getDb().catalogPhoto.findMany({
+    where: { position: 0, productId: { in: parecidos.map(({ id }) => id) } },
+    select: { productId: true, driveId: true },
+  });
+  const fotoDe = new Map(primeras.map(({ productId, driveId }) => [productId, urlDeMiniatura(driveId)]));
+  return parecidos.map((fila) => ({
+    sku: fila.baseCode,
+    nombre: fila.name,
+    colores: coloresDe(fila.colors),
+    vigencia: fila.lifecycle,
+    deTemporada: fila.seasonal,
+    foto: fotoDe.get(fila.id) ?? null,
+  }));
 }
 
 export async function fichaDelProducto(sku: string): Promise<CatalogoFicha | null> {

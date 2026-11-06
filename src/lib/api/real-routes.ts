@@ -6,8 +6,10 @@ import {
   fichaDelProducto,
   kpisDelCatalogo,
   listarProductos,
+  parecidosDelAlta,
   resumenDeRevision,
 } from "@/modules/catalog/consultas";
+import { listarBorradores, opcionesDeAlta } from "@/modules/catalog/alta-consultas";
 import { leerQueryDelCatalogo } from "@/modules/catalog/filtros";
 import {
   clientasUnificadas,
@@ -125,6 +127,28 @@ const queryDelCatalogo = (url: URL) => leerQueryDelCatalogo((nombre) => url.sear
 
 /** El catálogo armado desde el Sheet, Drive y DUX (1.8). El alta, los combos y el control final siguen simulados. */
 const catalogo: Route[] = [
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/alta\/opciones$/,
+    handler: async () => Response.json(await opcionesDeAlta()),
+  },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/alta\/borradores$/,
+    handler: async () => Response.json(await listarBorradores()),
+  },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/alta\/parecidos$/,
+    handler: async ({ url }) =>
+      Response.json(
+        await parecidosDelAlta({
+          q: url.searchParams.get("q") ?? "",
+          rubro: url.searchParams.get("rubro") ?? undefined,
+          subrubro: url.searchParams.get("subrubro") ?? undefined,
+        }),
+      ),
+  },
   { method: "GET", pattern: /^\/catalogo\/revision$/, handler: async () => Response.json(await resumenDeRevision()) },
   {
     method: "GET",

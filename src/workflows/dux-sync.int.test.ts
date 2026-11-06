@@ -21,6 +21,7 @@ vi.mock("@/integrations/dux", () => ({
     listarComprobantes: () => erp.comprobantes(),
     listarClientas: () => erp.clientas(),
     listarCodigos: () => erp.codigos(),
+    listarReferencias: async () => ({ rubros: [], subrubros: [], proveedores: [], listas: [] }),
   }),
 }));
 
@@ -62,7 +63,14 @@ describe("sincronizarDux", () => {
 
     expect(resultado).toEqual({ items: "ok", ventas: "ok", clientas: "ok" });
     const filas = await corridas();
-    expect(filas.map(({ operation }) => operation)).toEqual(["items", "ventas", "clientas", "codigos", "fichas"]);
+    expect(filas.map(({ operation }) => operation)).toEqual([
+      "items",
+      "ventas",
+      "clientas",
+      "codigos",
+      "referencias",
+      "fichas",
+    ]);
     expect(filas.every(({ trigger, triggeredBy }) => trigger === "manual" && triggeredBy === "Prueba")).toBe(true);
     expect(await db.syncLock.count()).toBe(0);
   });

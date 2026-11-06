@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   aFormatoDeNombre,
+  losMasParecidos,
   nombreDelProducto,
   prefijoDeCodigo,
   prefijoDelSubrubro,
@@ -194,5 +195,72 @@ describe("las presentaciones", () => {
       precio: 94_200,
       listas: ["MAYORISTA EF/TR", "LOCAL EF/TR"],
     });
+  });
+});
+
+describe("losMasParecidos", () => {
+  const producto = (sku: string, texto: string, subrubro = "NORMAL", rubro = "CORPIÑOS") => ({
+    sku,
+    texto,
+    rubro,
+    subrubro,
+  });
+  const skus = (filas: { sku: string }[]) => filas.map(({ sku }) => sku);
+
+  it("encuentra al que solo difiere en un detalle: no hace falta que estén todas las palabras", () => {
+    const productos = [producto("CTSPN1", "ctspn1 top segunda piel tira fina"), producto("LN1", "ln1 less algodon")];
+
+    expect(skus(losMasParecidos(productos, { q: "TOP SEGUNDA PIEL TIRA ANCHA" }))).toEqual(["CTSPN1"]);
+  });
+
+  it("una sola palabra en común no alcanza: casi todo es un top o lleva algodón", () => {
+    const productos = [producto("CTSPN1", "ctspn1 top segunda piel")];
+
+    expect(losMasParecidos(productos, { q: "TOP ALGODON" })).toEqual([]);
+  });
+
+  it("si escribió una sola palabra, con esa alcanza", () => {
+    const productos = [producto("CTSPN1", "ctspn1 top segunda piel"), producto("LN1", "ln1 less")];
+
+    expect(skus(losMasParecidos(productos, { q: "top" }))).toEqual(["CTSPN1"]);
+  });
+
+  it("no cuenta las palabras que no distinguen, ni le importan las tildes", () => {
+    const productos = [producto("A", "a less con de la"), producto("B", "b corpino de algodon")];
+
+    expect(skus(losMasParecidos(productos, { q: "CORPIÑO CON ALGODÓN" }))).toEqual(["B"]);
+    expect(losMasParecidos(productos, { q: "con de la" })).toEqual([]);
+  });
+
+  it("los que comparten más palabras van primero; a igual puntaje, los del mismo subrubro", () => {
+    const productos = [
+      producto("OTRO", "otro top segunda", "GRANDE"),
+      producto("MISMO", "mismo top segunda", "NORMAL"),
+      producto("MAS", "mas top segunda piel", "GRANDE"),
+    ];
+
+    expect(skus(losMasParecidos(productos, { q: "top segunda piel", rubro: "CORPIÑOS", subrubro: "NORMAL" }))).toEqual([
+      "MAS",
+      "MISMO",
+      "OTRO",
+    ]);
+  });
+
+  it("un subrubro con el mismo nombre en otro rubro no cuenta como el mismo", () => {
+    const productos = [
+      producto("OTRO", "otro top segunda", "NORMAL", "CULOTES"),
+      producto("MISMO", "mismo top segunda", "NORMAL", "CORPIÑOS"),
+    ];
+
+    expect(skus(losMasParecidos(productos, { q: "top segunda", rubro: "CORPIÑOS", subrubro: "NORMAL" }))).toEqual([
+      "MISMO",
+      "OTRO",
+    ]);
+  });
+
+  it("trae como mucho cinco, en el orden en que venían", () => {
+    const productos = Array.from({ length: 8 }, (_, i) => producto(`P${i}`, "top segunda"));
+
+    expect(skus(losMasParecidos(productos, { q: "top segunda" }))).toEqual(["P0", "P1", "P2", "P3", "P4"]);
   });
 });

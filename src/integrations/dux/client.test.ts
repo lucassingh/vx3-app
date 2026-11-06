@@ -2,6 +2,7 @@ import { Writable } from "node:stream";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createLogger } from "@/lib/logger";
 import { createDuxClient, LIMITES_DUX } from "./client";
+import { POR_PAGINA_DUX, todasLasPaginas } from "./paginas";
 import fixtureClientes from "./fixtures/clientes.json";
 import fixtureFacturas from "./fixtures/facturas.json";
 import fixtureItems from "./fixtures/items.json";
@@ -261,5 +262,41 @@ describe("seguridad", () => {
   it("los límites son los medidos: la v2 a 4 por segundo y la v1 cada 5,5 s", () => {
     expect(LIMITES_DUX.v2.intervaloMs).toBe(250);
     expect(LIMITES_DUX.v1.intervaloMs).toBe(5_500);
+  });
+});
+
+describe("todasLasPaginas", () => {
+  const pagina = (cuantas: number) => Array.from({ length: cuantas }, (_, i) => i);
+
+  it("sigue mientras DUX diga que hay más", async () => {
+    const offsets: number[] = [];
+
+    const filas = await todasLasPaginas(async (offset) => {
+      offsets.push(offset);
+      return { datos: pagina(2), paginacion: { hay_mas: offset === 0 } };
+    });
+
+    expect(filas).toHaveLength(4);
+    expect(offsets).toEqual([0, POR_PAGINA_DUX]);
+  });
+
+  it("si no manda la paginación, corta en la primera página incompleta", async () => {
+    const offsets: number[] = [];
+
+    const filas = await todasLasPaginas(async (offset) => {
+      offsets.push(offset);
+      return { datos: pagina(offset === 0 ? POR_PAGINA_DUX : 3) };
+    });
+
+    expect(filas).toHaveLength(POR_PAGINA_DUX + 3);
+    expect(offsets).toEqual([0, POR_PAGINA_DUX]);
+  });
+
+  it("una página que falla no se disimula", async () => {
+    await expect(
+      todasLasPaginas(async () => {
+        throw new Error("DUX no respondió");
+      }),
+    ).rejects.toThrow("DUX no respondió");
   });
 });

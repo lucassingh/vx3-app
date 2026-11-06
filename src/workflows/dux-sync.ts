@@ -5,6 +5,7 @@ import { abrirCorrida, cerrarCorrida, soltarBloqueo, type OrigenDeCorrida } from
 import { importarCatalogoTrasDux } from "./catalogo";
 import { leerCodigosDux } from "./dux-codigos";
 import { barrerItemsDux } from "./dux-items";
+import { leerReferenciasDux } from "./dux-referencias";
 import { leerClientasDux } from "./dux-clientas";
 import { leerVentasDux, traerHistorialDeVentasDux } from "./dux-ventas";
 
@@ -22,6 +23,7 @@ export async function sincronizarDux(origen: OrigenDeCorrida, bloqueo: string) {
     const { status: ventas } = await leerVentasDux(origen);
     const { status: clientas } = await leerClientasDux(origen);
     await leerCodigosDux(origen);
+    await leerReferenciasDux(origen);
     await recalcularFichasDux(origen);
     resumen = { items, ventas, clientas };
   } finally {
