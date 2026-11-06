@@ -48,7 +48,12 @@ export function CargarCredencial({
         return;
       }
       setOpen(false);
-      toast.success(`Credencial de ${nombre} guardada`, { description: `Termina en ${result.data.mascara}.` });
+      toast.success(`Credencial de ${nombre} guardada`, {
+        description:
+          integracion === "google"
+            ? `Es la de ${result.data.mascara.replace(/^•+/, "")}.`
+            : `Termina en ${result.data.mascara}.`,
+      });
       router.refresh();
     });
   };
@@ -78,7 +83,9 @@ export function CargarCredencial({
           </DialogHeader>
           <DialogBody>
             <div className="space-y-2">
-              <Label htmlFor={`${id}-valor`}>Token</Label>
+              <Label htmlFor={`${id}-valor`}>
+                {integracion === "google" ? "Clave de la cuenta de servicio (el archivo JSON entero)" : "Token"}
+              </Label>
               <Input
                 id={`${id}-valor`}
                 name="valor"

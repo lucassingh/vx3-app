@@ -3,6 +3,7 @@ import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
 import { serverEnv } from "@/env";
 import type { CredencialEnmascarada } from "@/lib/api/types";
+import { leerCuentaDeServicio } from "@/integrations/google/cuenta";
 import { AppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { cifrar, descifrar, enmascarar } from "./crypto";
@@ -33,7 +34,9 @@ export async function guardarCredencial(
 ): Promise<{ mascara: string; anterior: string | null }> {
   const clave = claveMaestra();
   const db = getDb();
-  const mascara = enmascarar(valor);
+  // De una cuenta de servicio se muestra el mail, que no es secreto: el final del JSON no dice nada.
+  const cuenta = integracion === "google" ? leerCuentaDeServicio(valor) : null;
+  const mascara = cuenta ? `••••${cuenta.client_email}` : enmascarar(valor);
   const previa = await db.integrationCredential.findUnique({ where: { integration: integracion } });
   const datos = {
     encrypted: cifrar(valor, clave, integracion),

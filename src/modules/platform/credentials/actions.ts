@@ -2,7 +2,9 @@
 
 import { z } from "zod";
 import { defineAction } from "@/lib/action";
+import { leerCuentaDeServicio } from "@/integrations/google/cuenta";
 import { ConflictError } from "@/lib/errors";
+import { arrancarImportacionDelCatalogo } from "@/workflows/arrancar-catalogo";
 import { arrancarSincronizacionDux } from "@/workflows/arrancar-dux";
 import { INTEGRACIONES_CON_CREDENCIAL, NOMBRE_INTEGRACION } from "./integraciones";
 import { probarConexion } from "./probar";
@@ -13,10 +15,15 @@ const integracion = z.enum(INTEGRACIONES_CON_CREDENCIAL, "Integración desconoci
 /** Carga o reemplaza la credencial de una integración: solo admin (plataforma.editar). */
 export const cargarCredencial = defineAction({
   name: "credenciales.cargar",
-  input: z.object({
-    integracion,
-    valor: z.string().trim().min(8, "Parece incompleta: revisá que la hayas copiado entera.").max(4096),
-  }),
+  input: z
+    .object({
+      integracion,
+      valor: z.string().trim().min(8, "Parece incompleta: revisá que la hayas copiado entera.").max(4096),
+    })
+    .refine(({ integracion, valor }) => integracion !== "google" || leerCuentaDeServicio(valor) !== null, {
+      path: ["valor"],
+      message: "No es la clave de una cuenta de servicio: pegá el archivo JSON entero.",
+    }),
   permission: "plataforma.editar",
   handler: async ({ integracion, valor }, { user, audit }) => {
     const { mascara, anterior } = await guardarCredencial(integracion, valor, { id: user.id, label: user.name });
@@ -43,15 +50,23 @@ export const probarIntegracion = defineAction({
   },
 });
 
-/** Lanza la sincronización y no espera a que termine: solo admin. */
+/** Lanza la lectura de esa integración y no espera a que termine: solo admin. */
 export const sincronizarIntegracion = defineAction({
   name: "integraciones.sincronizar",
   input: z.object({ integracion }),
   permission: "plataforma.editar",
-  handler: async (_input, { user, log }) => {
-    const resultado = await arrancarSincronizacionDux({ trigger: "manual", triggeredBy: user.name });
-    if (!resultado.arrancada) throw new ConflictError("Ya hay una sincronización en curso: esperá a que termine.");
-    log.info({ runId: resultado.runId }, "sincronización manual");
+  handler: async ({ integracion: id }, { user, log }) => {
+    const origen = { trigger: "manual" as const, triggeredBy: user.name };
+    const resultado =
+      id === "google" ? await arrancarImportacionDelCatalogo(origen) : await arrancarSincronizacionDux(origen);
+    if (!resultado.arrancada) {
+      throw new ConflictError(
+        id === "google"
+          ? "Ya hay una importación en curso: esperá a que termine."
+          : "Ya hay una sincronización en curso: esperá a que termine.",
+      );
+    }
+    log.info({ integracion: id, runId: resultado.runId }, "lectura manual");
     return { runId: resultado.runId };
   },
 });

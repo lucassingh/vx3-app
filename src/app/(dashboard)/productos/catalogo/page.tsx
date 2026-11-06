@@ -1,5 +1,6 @@
-import { PackagePlus, WandSparkles } from "lucide-react";
+import { ListChecks, WandSparkles } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 import { PageBody, PageHeader } from "@/components/layout/page-header";
 import {
   CatalogoKpis,
@@ -8,9 +9,8 @@ import {
   CatalogoProductosCard,
   CatalogoProductosCardSkeleton,
   CatalogoProductosSkeleton,
-  ControlFinalCard,
-  ControlFinalCardSkeleton,
 } from "@/components/productos/catalogo-widgets";
+import { ProductoFromParams } from "@/components/productos/producto-detalle";
 import { Button } from "@/components/ui/button";
 import { AsyncWidget } from "@/components/views/async-widget";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
@@ -20,7 +20,10 @@ const HREF = "/productos/catalogo";
 
 export const metadata = getRouteMetadata(HREF);
 
-/** M1 · Catálogo maestro (PIM): la fuente única del producto. */
+/**
+ * M1 · Catálogo maestro: el producto armado desde el Sheet, Drive y DUX. Hasta el pase es de
+ * consulta (`solucion_doc/06` §6.2): el alta y el control final vuelven con la 1.9.
+ */
 export default async function CatalogoPage({ searchParams }: PageProps<"/productos/catalogo">) {
   await requirePageAccess("/productos/catalogo");
   const route = findRoute(HREF);
@@ -40,9 +43,9 @@ export default async function CatalogoPage({ searchParams }: PageProps<"/product
               </Link>
             </Button>
             <Button asChild>
-              <Link href="/productos/alta">
-                <PackagePlus />
-                Nuevo producto
+              <Link href="/productos/revision">
+                <ListChecks />
+                Revisión
               </Link>
             </Button>
           </>
@@ -53,12 +56,8 @@ export default async function CatalogoPage({ searchParams }: PageProps<"/product
           <CatalogoKpis />
         </AsyncWidget>
 
-        <AsyncWidget title="el control final" fallback={<ControlFinalCardSkeleton />}>
-          <ControlFinalCard />
-        </AsyncWidget>
-
         <AsyncWidget title="los productos" fallback={<CatalogoProductosCardSkeleton />}>
-          <CatalogoProductosCard>
+          <CatalogoProductosCard searchParams={searchParams}>
             <AsyncWidget
               title="los productos"
               className="rounded-none border-x-0 border-b-0 shadow-none"
@@ -68,6 +67,10 @@ export default async function CatalogoPage({ searchParams }: PageProps<"/product
             </AsyncWidget>
           </CatalogoProductosCard>
         </AsyncWidget>
+
+        <Suspense fallback={null}>
+          <ProductoFromParams searchParams={searchParams} basePath={HREF} />
+        </Suspense>
       </PageBody>
     </>
   );

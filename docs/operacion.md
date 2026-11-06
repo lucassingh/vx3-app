@@ -168,6 +168,8 @@ las fechas en que se usó. Sin ella, las copias de esas semanas no se pueden lee
   Nunca hay dos a la vez: la segunda avisa y no arranca. La frecuencia se cambia en la
   línea de `/api/cron/dux` en `vercel.json` (y el texto en
   `src/modules/platform/integraciones/estado.ts`). Solo lee: la app no escribe en DUX.
+- **La importación del catálogo** corre al terminar cada sincronización con DUX, y con el
+  botón **Reimportar** (sección 12).
 - **El historial de 12 meses de ventas** se dispara a mano, una vez por ambiente y
   **avisándole antes a Elías**: son unos 150 requests y 15 minutos sobre el límite de la v1
   que comparten sus scripts. Si se corta, volver a llamarlo solo trae los meses que faltan.
@@ -279,6 +281,62 @@ en la lista, apenas se despliega.
    FROM customers WHERE purchases > 0;
    ```
 
+## 12. Catálogo: importar y revisar
+
+Hasta el pase, el catálogo es de consulta: se corrige en el Sheet, Drive y DUX, y la app lo arma
+desde ahí (`solucion_doc/06` §6.2). Se puede borrar y reimportar sin perder nada: lo único que no
+sale de las fuentes son las decisiones de la revisión (`catalog_decisions`), y cada corrida las
+vuelve a aplicar.
+
+**Cuándo se importa.** Al terminar cada sincronización con DUX, si la clave de Google está cargada
+en ese ambiente, y con **Reimportar** en Configuración → Integraciones. Son unos 6 pedidos a Google
+y unos segundos, salvo que Google se demore. Nunca hay dos a la vez, y dos corridas iguales no
+cambian nada. Lee la pestaña `CatalogoDetalle` y la carpeta de fotos: copia las dos fuentes, y
+recién después arma el catálogo y la cola, en una sola transacción.
+
+**Si falla, el catálogo anterior queda entero.** La tarjeta de Google dice "Caída" y el motivo:
+
+| Dice                                 | Qué hacer                                                                                                                   |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Google no respondió                  | Reimportar más tarde. Google tuvo esperas de más de 3 minutos, y la app ya reintenta sola.                                  |
+| En el Sheet falta o cambió de nombre | Alguien renombró esa columna. Volver el nombre, o cambiarlo en `COLUMNAS_QUE_SE_LEEN`, en `src/modules/catalog/fuentes.ts`. |
+| La carpeta de fotos volvió vacía     | Revisar que la carpeta siga compartida con la cuenta de servicio.                                                           |
+| No se pudo leer la credencial        | La clave maestra cambió: cargar de nuevo la clave de Google desde la pantalla.                                              |
+
+Una preview no puede importar: no lee credenciales (`APP_ENV=preview`). Si alguien aprieta el botón
+ahí, la tarjeta de QA dice "Caída" hasta la importación siguiente, porque comparten la base.
+
+**Las fotos** las sirve Drive, sin pasar por la app: la carpeta tiene que seguir pública
+("cualquiera con el link puede ver"), y **Probar conexión** lo comprueba. Si se cierra, los productos
+muestran una miniatura con el código, y Tienda Nube deja de poder subir fotos.
+
+**Estado y prioridad** salen solos de las ventas y el stock, y un agotado o un histórico vuelve solo
+a activo cuando entra stock:
+
+| Qué                | Regla                                                                             |
+| ------------------ | --------------------------------------------------------------------------------- |
+| Activo             | Tiene stock, vendió en los últimos 90 días, o se creó hace menos de 90            |
+| Agotado            | Si no: se vendió hace menos de 6 meses, o es de temporada y se vendió en el año   |
+| Histórico          | El resto. Sale de la lista y de la revisión, y se encuentra buscándolo            |
+| Prioridad A, B y C | A: los que hacen el 80 % de la venta de 90 días. B: lo demás vendido. C: el resto |
+| Bulto              | `-12` en medias, `-6` en el resto (`sku_venta`, si está cargado, manda)           |
+
+Los valores se cambian en `src/modules/catalog/salud.ts` (`MESES_PARA_HISTORICO`, `PARETO`,
+`RUBROS_DE_TEMPORADA`). Los bloques de la cola, en `src/modules/catalog/revision.ts`.
+
+**Revisión** (Productos → Revisión). Lo corregido en la fuente desaparece en la importación
+siguiente. En la app se decide solo lo que el Sheet no puede guardar: de qué producto es una foto
+suelta, si se descarta, y los históricos. Cada decisión queda en la auditoría, se aplica enseguida y
+se puede deshacer desde la misma pantalla. Las deciden los roles que editan el catálogo.
+
+**En cada ambiente nuevo:**
+
+1. Cargar `GOOGLE_SHEET_ID`, `GOOGLE_FOTOS_CARPETA_ID` y `catalogo` en `API_REAL_DOMAINS`, y desplegar.
+2. Cargar la clave de Google desde Integraciones. **Probar conexión** tiene que decir que las fotos
+   se ven sin credenciales, y avisa si la cuenta puede editar: tiene que ser lectora.
+3. Apretar **Reimportar**.
+4. En Revisión, confirmar los históricos: Elías aprobó los 357 el 05/11.
+
 ## Variables y secretos de cada lugar
 
 **Vercel** (Settings → Environment Variables):
@@ -291,14 +349,16 @@ en la lista, apenas se despliega.
 | `CRON_SECRET`               | propio de producción         | propio de QA                   |
 | `NEXT_PUBLIC_SENTRY_DSN`    | el DSN de `cli-vx3`          | el mismo                       |
 | `CREDENTIALS_KEY`           | propia de producción         | la de `.env.local`             |
-| `API_REAL_DOMAINS`          | `stock,clientas`             | `stock,clientas`               |
+| `API_REAL_DOMAINS`          | `stock,clientas,catalogo`    | `stock,clientas,catalogo`      |
+| `GOOGLE_SHEET_ID`           | el del catálogo              | el mismo                       |
+| `GOOGLE_FOTOS_CARPETA_ID`   | la de las fotos              | la misma                       |
 | `DUX_ID_EMPRESA`            | `9432`                       | `9432`                         |
 | `DUX_ID_SUCURSAL_ECOMMERCE` | `1`                          | `1`                            |
 | `DUX_ID_SUCURSAL_LOCAL`     | `2`                          | `2`                            |
 
 Las previews ven las variables de QA, pero ignoran `CREDENTIALS_KEY`: con
 `APP_ENV=preview` no se conectan a DUX. El token de DUX no es una variable: está cifrado
-en la base de cada ambiente, y se carga desde la pantalla.
+en la base de cada ambiente, y se carga desde la pantalla. La clave de Google, igual.
 
 **GitHub** (Settings → Secrets and variables → Actions, a nivel de repo):
 `NEON_API_KEY`, `NEON_PROJECT_ID`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`,

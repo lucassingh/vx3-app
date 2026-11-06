@@ -19,11 +19,10 @@ export type CodigoLeido = {
   normalizado: string;
   /** Unidades del pack; null si no es un pack o si es un pack viejo. */
   cantidad: number | null;
-  /** El -3 fuera de medias: se lee como pack, pero la regla no lo prevé. Lo decide VX3. */
-  fueraDeRegla: boolean;
 };
 
-const CANTIDADES = { medias: [3, 6, 12, 24], lenceria: [6, 12] };
+/** El -3 fuera de medias es a propósito: va donde VX3 lo decida, como en mallas y shorts (Elías, 04/11). */
+const CANTIDADES = { medias: [3, 6, 12, 24], lenceria: [3, 6, 12] };
 
 /** CF, y los que empiezan con ENVIO, EMBALAJE o FLETE (RN-104). */
 const NO_ES_MERCADERIA = /^(CF$|ENVIO|EMBALAJE|FLETE)/;
@@ -43,12 +42,11 @@ export function esMedias(rubro: string | null | undefined): boolean {
 
 export function leerCodigo(codigo: string, rubro: string | null | undefined): CodigoLeido {
   const normalizado = normalizarCodigo(codigo);
-  const resultado = (tipo: TipoDeCodigo, base: string, cantidad: number | null = null, fueraDeRegla = false) => ({
+  const resultado = (tipo: TipoDeCodigo, base: string, cantidad: number | null = null) => ({
     tipo,
     base,
     normalizado,
     cantidad,
-    fueraDeRegla,
   });
 
   if (NO_ES_MERCADERIA.test(normalizado)) return resultado("no_producto", normalizado);
@@ -64,7 +62,6 @@ export function leerCodigo(codigo: string, rubro: string | null | undefined): Co
     if (CANTIDADES[esMedias(rubro) ? "medias" : "lenceria"].includes(cantidad)) {
       return resultado("pack", base, cantidad);
     }
-    if (cantidad === 3) return resultado("pack", base, cantidad, true);
   }
   return resultado("prenda", normalizado);
 }

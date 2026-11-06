@@ -4,9 +4,10 @@ import type { SyncRunStatus } from "@/generated/prisma/client";
 import type { Integracion } from "@/lib/api/types";
 import { businessTime } from "@/lib/dates";
 import { formatNumber } from "@/lib/format";
+import { NOMBRE_INTEGRACION, usaCredencial } from "../credentials/integraciones";
 import { credencialEnmascarada } from "../credentials/service";
 import { hayCorridaEnCurso } from "../sync-runs";
-import { estadoDeDux, frecuenciaDeDux, LECTURAS_DUX, type UltimaCorrida } from "./estado";
+import { estadoDeDux, estadoDeGoogle, frecuenciaDeDux, LECTURAS_DUX, type UltimaCorrida } from "./estado";
 
 /**
  * Panel de integraciones (RF-M0-04): lo que muestra sale de las corridas reales. Lo que
@@ -88,6 +89,50 @@ const aPendiente = (pendiente: Pendiente): Integracion => ({
   credencial: null,
 });
 
+/** El catálogo se arma desde el Sheet y Drive hasta el pase (`solucion_doc/06` §6.2). */
+async function integracionGoogle(): Promise<Integracion> {
+  const db = getDb();
+  const importaciones = { integration: "google", operation: "catalogo" };
+  const presentes = { present: true };
+  const [credencial, ultima, ultimaBuena, importando, productos, enLasTres, filas, archivos] = await Promise.all([
+    credencialEnmascarada("google"),
+    db.syncRun.findFirst({
+      where: { ...importaciones, status: { not: "en_curso" } },
+      orderBy: { startedAt: "desc" },
+    }),
+    db.syncRun.findFirst({ where: { ...importaciones, status: "ok" }, orderBy: { startedAt: "desc" } }),
+    hayCorridaEnCurso("google"),
+    db.catalogProduct.count({ where: presentes }),
+    db.catalogProduct.count({ where: { ...presentes, inSheet: true, inDux: true, photos: { some: {} } } }),
+    db.catalogSheetRow.count(),
+    db.catalogDriveFile.count(),
+  ]);
+  const { estado, motivo } = estadoDeGoogle({
+    tieneCredencial: Boolean(credencial),
+    ultima: ultima?.status === "en_curso" ? null : (ultima as UltimaCorrida | null),
+    ahora: new Date(),
+  });
+  return {
+    id: "google",
+    nombre: "Google · Sheet y Drive",
+    tipo: "Cuenta de servicio · solo lectura",
+    estado,
+    detalle: importando ? `Hay una importación en curso. ${motivo}` : motivo,
+    frecuencia: "Después de cada sincronización con DUX, y con el botón",
+    ultimoSync: ultimaBuena?.finishedAt?.toISOString() ?? null,
+    metricas: credencial
+      ? [
+          { label: "Productos", value: formatNumber(productos) },
+          { label: "En las tres fuentes", value: formatNumber(enLasTres) },
+          { label: "Filas del Sheet", value: formatNumber(filas) },
+          { label: "Archivos de Drive", value: formatNumber(archivos) },
+        ]
+      : [],
+    credencial,
+    sincronizando: importando,
+  };
+}
+
 async function integracionDux(): Promise<Integracion> {
   const db = getDb();
   const dux = { integration: "dux" };
@@ -138,7 +183,7 @@ async function integracionDux(): Promise<Integracion> {
 }
 
 export async function listarIntegraciones(): Promise<Integracion[]> {
-  return [await integracionDux(), ...PENDIENTES.map(aPendiente)];
+  return [await integracionDux(), await integracionGoogle(), ...PENDIENTES.map(aPendiente)];
 }
 
 export type FilaDelRegistro = {
@@ -160,6 +205,7 @@ function nombreDeOperacion(operacion: string): string {
   const [, mes, sucursal] = /^ventas_historial:(.+):(.+)$/.exec(operacion) ?? [];
   if (mes && sucursal) return `Historial de ventas · ${mes} · sucursal ${sucursal}`;
   if (operacion === "fichas") return "Fichas de clientas";
+  if (operacion === "catalogo") return "Importación del catálogo";
   return LECTURAS_DUX[operacion] ?? operacion;
 }
 
@@ -167,7 +213,7 @@ export async function registroDeSincronizaciones(limite = 20): Promise<FilaDelRe
   const corridas = await getDb().syncRun.findMany({ orderBy: { startedAt: "desc" }, take: limite });
   return corridas.map((corrida) => ({
     id: corrida.id,
-    integracion: corrida.integration === "dux" ? "DUX" : corrida.integration,
+    integracion: usaCredencial(corrida.integration) ? NOMBRE_INTEGRACION[corrida.integration] : corrida.integration,
     operacion: nombreDeOperacion(corrida.operation),
     origen: corrida.trigger === "cron" ? "automática" : (corrida.triggeredBy ?? "manual"),
     resultado: corrida.status,

@@ -8,7 +8,8 @@ Lo que cambia en cada versión de producción. Cada versión es un tag `vX.Y.Z` 
 ## [Sin publicar]
 
 Entran los primeros datos reales: la app lee de DUX los productos, el stock, los precios,
-las ventas y las clientas, y los guarda en su base. Solo lee: no escribe nada en DUX.
+las ventas y las clientas, arma el catálogo con el Sheet y las fotos de Drive, y guarda todo
+en su base. Solo lee: no escribe nada en DUX, en el Sheet ni en Drive.
 
 ### Stock
 
@@ -33,6 +34,21 @@ las ventas y las clientas, y los guarda en su base. Solo lee: no escribe nada en
   se puede mandar hasta completarlo.
 - La pantalla cuenta cuántas volvieron a comprar en los 14 días siguientes al mensaje.
 
+### Catálogo
+
+- El catálogo se arma solo desde el Sheet, Drive y DUX, cada vez que se sincroniza con DUX y
+  con un botón. Hasta el pase es de consulta: los datos se siguen corrigiendo en cada fuente.
+- Buscador con fotos y filtros por rubro, subrubro, marca, tela, talle, color, último proveedor
+  y estado. Primero aparecen los más vendidos.
+- Cada producto dice si está activo, agotado o es histórico, si es de temporada, qué le falta
+  para venderse y dónde se corrige.
+- Los históricos salen de la lista, pero se encuentran al buscarlos. Si vuelven a tener stock,
+  vuelven solos como activos.
+- Revisión: una sola lista de lo que hay que corregir, por ventas, que se vacía sola con cada
+  importación. En la app se decide solo lo que el Sheet no puede guardar: de qué producto es una
+  foto suelta, y los históricos, que se confirman en bloque.
+- El alta de producto y los combos siguen simulados, y ahora lo dicen en pantalla.
+
 ### Navegación
 
 - Al pasar entre pantallas de una misma sección, el esqueleto de carga aparece enseguida.
@@ -44,13 +60,16 @@ las ventas y las clientas, y los guarda en su base. Solo lee: no escribe nada en
   pendiente, con la PR en la que entra, y sin datos inventados.
 - Un admin carga el token de DUX desde la pantalla: queda cifrado, y nunca vuelve al navegador.
 - **Sincronizar ahora** lanza una lectura completa. Nunca hay dos a la vez.
+- Google tiene su tarjeta real, con **Reimportar**. Si una lectura falla o cambia una columna del
+  Sheet, dice el motivo y el catálogo anterior queda entero.
 
 ### Sincronización
 
 - Una vez por día en producción: productos, stock y precios, ventas de los últimos 35 días,
   para ver anulaciones y notas de crédito tardías, y clientas.
 - El historial de 12 meses de ventas se dispara a mano, y si se corta, retoma.
-- Cada sincronización recalcula las fichas, sus métricas y sus segmentos.
+- Cada sincronización recalcula las fichas, sus métricas y sus segmentos, y al terminar importa
+  el catálogo, si la clave de Google está cargada.
 - Fuera de producción, las clientas se anonimizan antes de guardarse, y las previews no se
   conectan a DUX.
 

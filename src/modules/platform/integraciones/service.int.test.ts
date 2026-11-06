@@ -155,7 +155,7 @@ describe("listarIntegraciones", () => {
   });
 
   it("lo que no está conectado aparece pendiente, con su PR y sin datos", async () => {
-    const pendientes = (await listarIntegraciones()).filter(({ id }) => id !== "dux");
+    const pendientes = (await listarIntegraciones()).filter(({ id }) => id !== "dux" && id !== "google");
 
     expect(pendientes.length).toBeGreaterThan(0);
     for (const integracion of pendientes) {
@@ -165,6 +165,76 @@ describe("listarIntegraciones", () => {
       expect(integracion.metricas).toEqual([]);
       expect(integracion.credencial).toBeNull();
     }
+  });
+});
+
+describe("Google", () => {
+  const google = async () => (await listarIntegraciones()).find(({ id }) => id === "google")!;
+  const conClave = () =>
+    guardarCredencial("google", '{"client_email":"a@b.c"}', { id: USUARIO, label: "Admin de Prueba" });
+  const importacion = (cambios: Record<string, unknown> = {}) =>
+    corrida("catalogo", { integration: "google", detail: "Productos: 2.", ...cambios });
+
+  it("sin clave está pendiente, sin datos", async () => {
+    expect(await google()).toMatchObject({ estado: "pendiente", metricas: [], ultimoSync: null, credencial: null });
+  });
+
+  it("con clave y sin importar, dice qué hacer", async () => {
+    await conClave();
+
+    expect(await google()).toMatchObject({
+      estado: "pendiente",
+      detalle: expect.stringContaining("Reimportar"),
+      sincronizando: false,
+    });
+  });
+
+  it("con una importación buena, está al día y muestra lo que hay", async () => {
+    await conClave();
+    const { finishedAt } = await importacion();
+
+    const integracion = await google();
+
+    expect(integracion).toMatchObject({ estado: "ok", ultimoSync: finishedAt!.toISOString() });
+    expect(integracion.metricas.map(({ label }) => label)).toEqual([
+      "Productos",
+      "En las tres fuentes",
+      "Filas del Sheet",
+      "Archivos de Drive",
+    ]);
+  });
+
+  it("si la última falló, lo dice, y el último sync sigue siendo el bueno", async () => {
+    await conClave();
+    const { finishedAt } = await importacion({
+      startedAt: new Date(Date.now() - 120_000),
+      finishedAt: new Date(Date.now() - 100_000),
+    });
+    await importacion({ status: "error", detail: "Google no respondió. El catálogo sigue como estaba." });
+
+    expect(await google()).toMatchObject({
+      estado: "caido",
+      detalle: "Google no respondió. El catálogo sigue como estaba.",
+      ultimoSync: finishedAt!.toISOString(),
+    });
+  });
+
+  it("avisa si hay una importación en curso", async () => {
+    await conClave();
+    await tomarBloqueo("google", 60_000);
+
+    expect(await google()).toMatchObject({
+      sincronizando: true,
+      detalle: expect.stringContaining("Hay una importación en curso."),
+    });
+  });
+
+  it("no se mezcla con DUX", async () => {
+    await conToken();
+    await tresBien();
+    await importacion({ status: "error" });
+
+    expect((await dux()).estado).toBe("ok");
   });
 });
 
@@ -190,6 +260,14 @@ describe("registroDeSincronizaciones", () => {
     });
     expect(vieja).toMatchObject({ operacion: "Productos, stock y precios", origen: "automática", resultado: "ok" });
     expect(vieja?.duracionMs).toBeGreaterThan(0);
+  });
+
+  it("nombra la importación del catálogo", async () => {
+    await corrida("catalogo", { integration: "google" });
+
+    expect(await registroDeSincronizaciones()).toMatchObject([
+      { integracion: "Google", operacion: "Importación del catálogo" },
+    ]);
   });
 
   it("nombra el armado de las fichas", async () => {

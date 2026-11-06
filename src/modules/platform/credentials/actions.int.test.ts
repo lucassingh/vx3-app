@@ -54,6 +54,35 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
+describe("la clave de Google", () => {
+  const CUENTA = JSON.stringify({
+    type: "service_account",
+    client_email: "lectura@prueba.iam.gserviceaccount.com",
+    private_key: "-----BEGIN PRIVATE KEY-----\\nclave-secreta\\n-----END PRIVATE KEY-----\\n",
+    token_uri: "https://oauth2.googleapis.com/token",
+  });
+
+  it("guarda el JSON cifrado y muestra el mail, nunca la clave", async () => {
+    const resultado = await cargarCredencial({ integracion: "google", valor: CUENTA });
+
+    expect(resultado).toMatchObject({ ok: true, data: { mascara: "••••lectura@prueba.iam.gserviceaccount.com" } });
+    expect(JSON.stringify(resultado)).not.toContain("clave-secreta");
+    expect(await leerCredencial("google")).toBe(CUENTA);
+    const fila = await db.integrationCredential.findUniqueOrThrow({ where: { integration: "google" } });
+    expect(fila.encrypted).not.toContain("clave-secreta");
+    await db.integrationCredential.delete({ where: { integration: "google" } });
+  });
+
+  it("rechaza lo que no es una cuenta de servicio", async () => {
+    const resultado = await cargarCredencial({ integracion: "google", valor: "un-token-cualquiera" });
+
+    expect(resultado).toMatchObject({
+      ok: false,
+      error: { fieldErrors: { valor: [expect.stringMatching(/cuenta de servicio/)] } },
+    });
+  });
+});
+
 describe("cargar una credencial", () => {
   it("guarda el valor cifrado y devuelve solo la máscara", async () => {
     expect(await cargarCredencial({ integracion: "dux", valor: `  ${TOKEN}  ` })).toEqual({
@@ -136,6 +165,22 @@ describe("sincronizar", () => {
 
     const [, [origen]] = workflow.start.mock.calls[0] as [unknown, [unknown]];
     expect(origen).toEqual({ trigger: "manual", triggeredBy: "Prueba admin" });
+    await db.syncLock.deleteMany();
+  });
+
+  it("en Google, lanza la importación del catálogo", async () => {
+    expect(await sincronizarIntegracion({ integracion: "google" })).toMatchObject({
+      ok: true,
+      data: { runId: "wrun_01" },
+    });
+    const [funcion, [origen]] = workflow.start.mock.calls[0] as [{ name: string }, [unknown]];
+    expect(funcion.name).toBe("importarCatalogo");
+    expect(origen).toEqual({ trigger: "manual", triggeredBy: "Prueba admin" });
+
+    expect(await sincronizarIntegracion({ integracion: "google" })).toMatchObject({
+      ok: false,
+      error: { code: "CONFLICT", message: expect.stringContaining("importación en curso") },
+    });
     await db.syncLock.deleteMany();
   });
 

@@ -65,3 +65,26 @@ export function estadoDeDux({ tieneCredencial, ultimas, ahora }: Entrada): {
 }
 
 const soloError = ({ status }: UltimaCorrida) => status === "error";
+
+/** Sale de la última importación del catálogo. Si falló, el catálogo anterior sigue entero. */
+export function estadoDeGoogle({
+  tieneCredencial,
+  ultima,
+  ahora,
+}: {
+  tieneCredencial: boolean;
+  ultima: UltimaCorrida | null;
+  ahora: Date;
+}): { estado: IntegracionEstado; motivo: string } {
+  if (!tieneCredencial) {
+    return { estado: "pendiente", motivo: "De acá sale el catálogo hasta el pase. Falta cargar la clave." };
+  }
+  if (!ultima)
+    return { estado: "pendiente", motivo: "La clave está cargada: apretá Reimportar para traer el catálogo." };
+  if (ultima.status !== "ok") return { estado: "caido", motivo: ultima.detail ?? "Falló la última importación." };
+  if (!estaAlDia(ultima.finishedAt, ahora)) {
+    const horas = Math.floor((ahora.getTime() - (ultima.finishedAt?.getTime() ?? 0)) / HORA_MS);
+    return { estado: "degradado", motivo: `La última importación terminó hace ${horas} horas.` };
+  }
+  return { estado: "ok", motivo: "El catálogo está al día con el Sheet, Drive y DUX. Solo lectura." };
+}

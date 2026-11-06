@@ -1,5 +1,15 @@
 import type { RecompraEstado, Segmento, StockEstado } from "@/lib/api/types";
 import {
+  casosDeUnBloque,
+  decisionesDeRevision,
+  facetasDelCatalogo,
+  fichaDelProducto,
+  kpisDelCatalogo,
+  listarProductos,
+  resumenDeRevision,
+} from "@/modules/catalog/consultas";
+import { leerQueryDelCatalogo } from "@/modules/catalog/filtros";
+import {
   clientasUnificadas,
   coberturaDeClientas,
   fichaDeClienta,
@@ -111,9 +121,59 @@ const clientas: Route[] = [
   },
 ];
 
+const queryDelCatalogo = (url: URL) => leerQueryDelCatalogo((nombre) => url.searchParams.get(nombre));
+
+/** El catálogo armado desde el Sheet, Drive y DUX (1.8). El alta, los combos y el control final siguen simulados. */
+const catalogo: Route[] = [
+  { method: "GET", pattern: /^\/catalogo\/revision$/, handler: async () => Response.json(await resumenDeRevision()) },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/revision\/casos$/,
+    handler: async ({ url }) =>
+      Response.json(
+        await casosDeUnBloque({
+          bloque: url.searchParams.get("bloque") ?? "",
+          page: readInt(url.searchParams.get("page"), 1),
+          pageSize: readInt(url.searchParams.get("pageSize"), 20, 100),
+        }),
+      ),
+  },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/revision\/decisiones$/,
+    handler: async () => Response.json(await decisionesDeRevision()),
+  },
+  { method: "GET", pattern: /^\/catalogo\/kpis$/, handler: async () => Response.json(await kpisDelCatalogo()) },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/facetas$/,
+    handler: async ({ url }) => Response.json(await facetasDelCatalogo(queryDelCatalogo(url))),
+  },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/productos$/,
+    handler: async ({ url }) =>
+      Response.json(
+        await listarProductos({
+          ...queryDelCatalogo(url),
+          page: readInt(url.searchParams.get("page"), 1),
+          pageSize: readInt(url.searchParams.get("pageSize"), 24, 100),
+        }),
+      ),
+  },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/productos\/([^/]+)$/,
+    handler: async ({ params: [sku] }) => {
+      const ficha = await fichaDelProducto(decodeURIComponent(sku));
+      return ficha ? Response.json(ficha) : errorResponse(404, `No existe el producto ${decodeURIComponent(sku)}.`);
+    },
+  },
+];
+
 /**
  * Implementaciones reales de cada dominio, con el mismo contrato que su mock
  * (src/mocks/domains). Se activan con API_REAL_DOMAINS, y lo que un dominio todavía no
  * tiene acá sigue saliendo de la API simulada (dispatch.ts).
  */
-export const realRoutes: Partial<Record<ApiDomain, Route[]>> = { stock, clientas };
+export const realRoutes: Partial<Record<ApiDomain, Route[]>> = { stock, clientas, catalogo };

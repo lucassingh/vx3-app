@@ -161,6 +161,48 @@ describe("Sincronizar ahora", () => {
   });
 });
 
+describe("Reimportar", () => {
+  const google = (cambios: Partial<Integracion> = {}) =>
+    integracion("google", "Google · Sheet y Drive", { credencial: CREDENCIAL, ...cambios });
+
+  it("Google ofrece reimportar, no sincronizar", () => {
+    render(<IntegracionCard integracion={google()} labels={LABELS} />);
+
+    expect(screen.getByRole("button", { name: "Reimportar" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Sincronizar ahora" })).toBeNull();
+  });
+
+  it("lanza la importación y lo confirma", async () => {
+    sincronizarIntegracion.mockResolvedValue({ ok: true, data: { runId: "wrun_01" } });
+
+    render(<IntegracionCard integracion={google()} labels={LABELS} />);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Reimportar" }));
+
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith("El catálogo se está importando", expect.anything()),
+    );
+    expect(sincronizarIntegracion).toHaveBeenCalledWith({ integracion: "google" });
+  });
+
+  it("sin la clave no se puede apretar", () => {
+    render(<IntegracionCard integracion={google({ credencial: null })} labels={LABELS} />);
+
+    expect(screen.getByRole("button", { name: "Reimportar" })).toBeDisabled();
+  });
+
+  it("mientras corre, dice que está importando", () => {
+    render(<IntegracionCard integracion={google({ sincronizando: true })} labels={LABELS} />);
+
+    expect(screen.getByRole("button", { name: "Importando…" })).toBeDisabled();
+  });
+
+  it("si falló, ofrece reintentar", () => {
+    render(<IntegracionCard integracion={google({ estado: "caido" })} labels={LABELS} />);
+
+    expect(screen.getByRole("button", { name: "Reintentar" })).toBeEnabled();
+  });
+});
+
 describe("mientras se sincroniza", () => {
   const dux = (sincronizando: boolean) =>
     integracion("dux", "DUX", { credencial: CREDENCIAL, sincronizando, detalle: "Detalle" });

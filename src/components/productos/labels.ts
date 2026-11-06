@@ -1,15 +1,8 @@
-import type { CatalogoEstado } from "@/lib/api/types";
+import type { CatalogoVigencia } from "@/lib/api/types";
 import type { BadgeTone } from "@/lib/domain";
 
-export const ESTADO_PRODUCTO: Record<CatalogoEstado, { label: string; tone: BadgeTone }> = {
-  borrador: { label: "Borrador", tone: "neutral" },
-  listo: { label: "Listo", tone: "accent" },
-  publicado: { label: "Publicado", tone: "success" },
-  pausado: { label: "Pausado", tone: "warning" },
+export const VIGENCIA: Record<CatalogoVigencia, { label: string; plural: string; tone: BadgeTone }> = {
+  activo: { label: "Activo", plural: "Activos", tone: "success" },
+  agotado: { label: "Agotado", plural: "Agotados", tone: "warning" },
+  historico: { label: "Histórico", plural: "Históricos", tone: "neutral" },
 };
-
-export const CANALES_PUBLICACION = [
-  { key: "dux", label: "DUX" },
-  { key: "tiendaNube", label: "Tienda Nube" },
-  { key: "meta", label: "Meta" },
-] as const;

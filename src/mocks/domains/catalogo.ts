@@ -10,13 +10,17 @@ import type {
   CatalogoControl,
   CatalogoEstado,
   CatalogoFacetas,
+  CatalogoFicha,
+  CatalogoFila,
   CatalogoFoto,
   CatalogoProducto,
+  CatalogoVigencia,
   Kpi,
 } from "@/lib/api/types";
 import { normalizeText } from "@/lib/utils";
+import { facetasDe, leerQueryDelCatalogo, pasaLosFiltros, type ProductoFiltrable } from "@/modules/catalog/filtros";
 import { defineStore } from "../db";
-import { errorResponse, readJson, type Route } from "../http";
+import { errorResponse, paginate, readJson, type Route } from "../http";
 import { bultosDisponibles, productos, proveedores, type ProductoSeed } from "../seed";
 
 /** M1 · Catálogo maestro. Los productos nuevos del alta quedan en memoria. */
@@ -106,61 +110,99 @@ export function toCatalogoProducto(producto: ProductoSeed): CatalogoProducto {
   };
 }
 
-const ESTADOS: CatalogoEstado[] = ["borrador", "listo", "publicado", "pausado"];
+const VIGENCIA_DE_EJEMPLO: Record<CatalogoEstado, CatalogoVigencia> = {
+  borrador: "activo",
+  listo: "activo",
+  publicado: "activo",
+  pausado: "agotado",
+};
+
+const aFiltrable = (item: CatalogoProducto): ProductoFiltrable => ({
+  rubro: item.rubro,
+  subrubro: item.subrubro,
+  marca: item.marca,
+  tela: item.tela,
+  talle: item.talles,
+  colores: item.colores,
+  proveedor: item.proveedor,
+  vigencia: VIGENCIA_DE_EJEMPLO[item.estado],
+  listo: item.faltantes.length === 0,
+  texto: normalizeText(`${item.sku} ${item.nombre} ${item.marca ?? ""}`),
+});
+
+const aFila = (item: CatalogoProducto): CatalogoFila => ({
+  sku: item.sku,
+  nombre: item.nombre,
+  rubro: item.rubro,
+  subrubro: item.subrubro,
+  marca: item.marca,
+  colores: item.colores,
+  vigencia: VIGENCIA_DE_EJEMPLO[item.estado],
+  deTemporada: false,
+  prioridad: item.ventas30dBultos > 0 ? "A" : "C",
+  foto: null,
+  bulto: item.bulto,
+  bultosDisponibles: item.bultosDisponibles,
+  listoParaVender: item.faltantes.length === 0,
+  faltantes: item.faltantes.map((dato) => ({ dato, situacion: "falta", bloquea: true, seCorrigeEn: "Sheet" })),
+});
+
+const aFicha = (item: CatalogoProducto): CatalogoFicha => ({
+  ...aFila(item),
+  tela: item.tela,
+  coloresTexto: item.colores.join(", "),
+  talles: item.talles,
+  proveedor: item.proveedor,
+  atributos: [],
+  medidasCm: item.medidasCm,
+  pesoKg: item.pesoBultoKg,
+  ranking: null,
+  ultimaVenta: null,
+  enSheet: true,
+  filaDelSheet: null,
+  enDux: true,
+  presentaciones: item.presentaciones.map(({ codigo, label, prendas, precio, listas, esBulto }) => ({
+    codigo,
+    label,
+    prendas,
+    precio,
+    listas,
+    esBulto,
+    disponible: item.bultosDisponibles,
+    enDux: true,
+  })),
+  fotos: [],
+});
+
+const queryDe = (url: URL) => leerQueryDelCatalogo((nombre) => url.searchParams.get(nombre));
 
 function listar(url: URL) {
-  const q = normalizeText(url.searchParams.get("q")?.trim() ?? "");
-  const rubro = url.searchParams.get("rubro");
-  const marca = url.searchParams.get("marca");
-  const proveedor = url.searchParams.get("proveedor");
-  const estado = url.searchParams.get("estado") as CatalogoEstado | null;
-  const salud = url.searchParams.get("salud");
-
-  return getCatalogo()
+  const query = queryDe(url);
+  const items = getCatalogo()
     .productos.map(toCatalogoProducto)
-    .filter((item) => (q ? normalizeText(`${item.sku} ${item.nombre} ${item.marca ?? ""}`).includes(q) : true))
-    .filter((item) => (rubro ? item.rubro === rubro : true))
-    .filter((item) => (marca ? item.marca === marca : true))
-    .filter((item) => (proveedor ? item.proveedorId === proveedor : true))
-    .filter((item) => (estado && ESTADOS.includes(estado) ? item.estado === estado : true))
-    .filter((item) =>
-      salud === "completo" ? item.completoParaBot : salud === "con_faltantes" ? !item.completoParaBot : true,
-    );
+    .filter((item) => pasaLosFiltros(aFiltrable(item), query));
+  return paginate(items.map(aFila), url, 24);
 }
 
 function kpis(): Kpi[] {
   const items = getCatalogo().productos.map(toCatalogoProducto);
-  const completos = items.filter((item) => item.completoParaBot).length;
-  const repetidos = items.filter((item) => item.faltantes.some((f) => f.startsWith("SKU repetido"))).length;
-  const sinMarca = items.filter((item) => !item.marca).length;
+  const de = (vigencia: CatalogoVigencia) => items.filter((item) => VIGENCIA_DE_EJEMPLO[item.estado] === vigencia);
   return [
+    { id: "productos", label: "Productos", value: items.length, format: "number", hint: "Datos de ejemplo" },
     {
-      id: "productos",
-      label: "Productos en el catálogo",
-      value: items.length,
+      id: "activos",
+      label: "Activos",
+      value: de("activo").length,
       format: "number",
-      hint: `${items.filter((item) => item.estado === "publicado").length} publicados en DUX`,
+      hint: `${de("activo").filter((item) => item.faltantes.length === 0).length} listos para vender`,
     },
+    { id: "agotados", label: "Agotados", value: de("agotado").length, format: "number", hint: "0 de temporada" },
     {
-      id: "completos",
-      label: "Completos para el bot",
-      value: completos / items.length,
-      format: "percent",
-      hint: "Atributos, marca, tela y las 4 fotos",
-    },
-    {
-      id: "repetidos",
-      label: "SKUs repetidos",
-      value: repetidos,
+      id: "historicos",
+      label: "Históricos",
+      value: de("historico").length,
       format: "number",
-      hint: "Se resuelven antes de publicar",
-    },
-    {
-      id: "sin-marca",
-      label: "Sin marca",
-      value: sinMarca,
-      format: "number",
-      hint: "Tienen que existir en DUX escritas igual",
+      hint: "Fuera del catálogo, pero se pueden buscar",
     },
   ];
 }
@@ -227,14 +269,8 @@ function control(): CatalogoControl[] {
   ];
 }
 
-function facetas(): CatalogoFacetas {
-  const items = getCatalogo().productos;
-  return {
-    rubros: [...new Set(items.map((item) => item.rubro))],
-    marcas: [...new Set(items.flatMap((item) => (item.marca ? [item.marca] : [])))].toSorted(),
-    proveedores: proveedores.map(({ id, nombre }) => ({ id, nombre })),
-  };
-}
+const facetas = (url: URL): CatalogoFacetas =>
+  facetasDe(getCatalogo().productos.map(toCatalogoProducto).map(aFiltrable), queryDe(url));
 
 /* ---- Alta ---------------------------------------------------------------- */
 
@@ -308,7 +344,7 @@ function altaOpciones(): CatalogoAltaOpciones {
 
   return {
     rubros: [...rubros.values()],
-    marcas: facetas().marcas,
+    marcas: [...new Set(getCatalogo().productos.flatMap(({ marca }) => (marca ? [marca] : [])))].toSorted(),
     proveedores: proveedores.map(({ id, nombre }) => ({ id, nombre })),
     telas: [
       "Algodón",
@@ -562,7 +598,24 @@ function combos(url: URL): CatalogoCombosResultado {
 
 export const routes: Route[] = [
   { method: "GET", pattern: /^\/catalogo\/kpis$/, handler: () => Response.json(kpis()) },
-  { method: "GET", pattern: /^\/catalogo\/facetas$/, handler: () => Response.json(facetas()) },
+  { method: "GET", pattern: /^\/catalogo\/facetas$/, handler: ({ url }) => Response.json(facetas(url)) },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/ejemplo\/rubros$/,
+    handler: () => Response.json([...new Set(getCatalogo().productos.map(({ rubro }) => rubro))]),
+  },
+  // La cola sale de la importación: en la maqueta no hay nada para revisar.
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/revision$/,
+    handler: () => Response.json({ bloques: [], casos: 0, actualizadoEl: null }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/catalogo\/revision\/casos$/,
+    handler: ({ url }) => Response.json(paginate([], url, 20)),
+  },
+  { method: "GET", pattern: /^\/catalogo\/revision\/decisiones$/, handler: () => Response.json([]) },
   { method: "GET", pattern: /^\/catalogo\/control$/, handler: () => Response.json(control()) },
   { method: "GET", pattern: /^\/catalogo\/productos$/, handler: ({ url }) => Response.json(listar(url)) },
   {
@@ -571,7 +624,7 @@ export const routes: Route[] = [
     handler: ({ params: [sku] }) => {
       const producto = getCatalogo().productos.find((item) => item.sku === decodeURIComponent(sku));
       return producto
-        ? Response.json(toCatalogoProducto(producto))
+        ? Response.json(aFicha(toCatalogoProducto(producto)))
         : errorResponse(404, `No existe el producto ${sku}.`);
     },
   },

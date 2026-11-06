@@ -5,6 +5,7 @@ import { AltaForm } from "@/components/productos/alta-form";
 import { Button } from "@/components/ui/button";
 import { LoadingLabel } from "@/components/ui/skeleton";
 import { AsyncWidget } from "@/components/views/async-widget";
+import { DatosSimulados } from "@/components/views/datos-simulados";
 import { CardSkeleton, SkeletonText } from "@/components/views/skeletons";
 import { api } from "@/lib/api/server";
 import { findRoute, getRouteMetadata } from "@/lib/navigation";
@@ -51,12 +52,15 @@ export default async function AltaPage() {
         title={route?.link.title ?? "Alta de producto"}
         description={route?.link.description}
         actions={
-          <Button variant="outline" asChild>
-            <Link href="/productos/catalogo">
-              <LayoutGrid />
-              Ver catálogo
-            </Link>
-          </Button>
+          <>
+            <DatosSimulados pr="1.9" />
+            <Button variant="outline" asChild>
+              <Link href="/productos/catalogo">
+                <LayoutGrid />
+                Ver catálogo
+              </Link>
+            </Button>
+          </>
         }
       />
       <PageBody>
