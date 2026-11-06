@@ -68,7 +68,8 @@ export type CatalogoFicha = CatalogoFila & {
     id: string;
     nombre: string;
     miniatura: string;
-    enDrive: string;
+    /** Donde está el original: Drive o el store. */
+    original: string;
     ancho: number | null;
     alto: number | null;
   }[];
@@ -219,7 +220,12 @@ export type CatalogoAltaOpciones = {
   atributos: { clave: string; label: string; opciones: string[] }[];
   /** Todos los que existen o existieron: un número no se reusa nunca (RN-03). */
   codigosUsados: string[];
+  /** Dónde se ven las fotos subidas. Null: este ambiente no tiene store. */
+  mediaUrl: string | null;
 };
+
+/** `clave`: dónde queda en el store. La dirección completa depende del ambiente. */
+export type FotoSubida = { clave: string; nombre: string; ancho: number | null; alto: number | null };
 
 export type CatalogoAltaInput = {
   sku: string;
@@ -244,6 +250,8 @@ export type CatalogoAltaInput = {
   costoDocena: number;
   pesoBultoKg: number;
   medidasCm: [number, number, number];
+  /** En orden: la primera es la principal, la que va al frente en Tienda Nube y en DUX. */
+  fotos: FotoSubida[];
 };
 
 /** Lo que ya existe y se parece: se abre su ficha antes de crear otro (RN-04, RN-125). */

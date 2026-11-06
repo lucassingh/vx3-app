@@ -4,7 +4,6 @@ import {
   Check,
   CircleAlert,
   CircleCheck,
-  ImagePlus,
   LoaderCircle,
   PackageCheck,
   Plus,
@@ -16,8 +15,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { AltaBorradores } from "@/components/productos/alta-borradores";
+import { AltaFotos } from "@/components/productos/alta-fotos";
 import { AltaParecidos } from "@/components/productos/alta-parecidos";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,14 +36,6 @@ import { aFormatoDeNombre, nombreDelProducto, presentacionesDelAlta } from "@/mo
 import type { OpcionalesDeAlta } from "@/modules/catalog/motor-precios";
 import { avisosDeAlta, erroresDeAlta, type AltaProblema } from "@/modules/catalog/reglas-alta";
 
-const FOTOS = [
-  { tipo: "colores", label: "Todos los colores", hint: "La que manda el bot primero" },
-  { tipo: "comercial", label: "Comercial", hint: "Para la vidriera y Tienda Nube" },
-  { tipo: "textura", label: "Textura y calidad", hint: "De cerca, con buena luz" },
-  { tipo: "detalle", label: "Detalle para IA", hint: "Encaje, aro, etiqueta" },
-] as const;
-
-type FotoTipo = (typeof FOTOS)[number]["tipo"];
 type PasoEstado = "idle" | "running" | "done" | "error";
 
 const PASOS: { id: CatalogoAltaPaso; label: string }[] = [
@@ -94,6 +86,7 @@ type Campos = {
   costo: string;
   peso: string;
   medidas: [string, string, string];
+  fotos: CatalogoAltaInput["fotos"];
 };
 
 function camposDe(input?: CatalogoAltaInput): Campos {
@@ -117,6 +110,7 @@ function camposDe(input?: CatalogoAltaInput): Campos {
     costo: aTexto(input?.costoDocena),
     peso: aTexto(input?.pesoBultoKg),
     medidas: [aTexto(input?.medidasCm[0]), aTexto(input?.medidasCm[1]), aTexto(input?.medidasCm[2])],
+    fotos: input?.fotos ?? [],
   };
 }
 
@@ -247,7 +241,6 @@ function Formulario({
   const subActual = rubroActual?.subrubros.find((item) => item.nombre === campos.subrubro);
 
   const [otroColor, setOtroColor] = useState("");
-  const [fotos, setFotos] = useState<Partial<Record<FotoTipo, { url: string; nombre: string }>>>({});
   const [intentado, setIntentado] = useState(false);
   const [pasos, setPasos] = useState<Record<CatalogoAltaPaso, PasoEstado>>({
     dux: "idle",
@@ -258,13 +251,6 @@ function Formulario({
   const [publicado, setPublicado] = useState<string | null>(null);
   const [guardando, startGuardado] = useTransition();
   const [guardadoA, setGuardadoA] = useState<string | null>(null);
-
-  // Libera las vistas previas locales al salir de la pantalla.
-  const fotosRef = useRef(fotos);
-  useEffect(() => {
-    fotosRef.current = fotos;
-  }, [fotos]);
-  useEffect(() => () => Object.values(fotosRef.current).forEach((foto) => foto && URL.revokeObjectURL(foto.url)), []);
 
   const familia = rubroActual?.familia ?? "lenceria";
   const esMedias = familia === "medias";
@@ -307,6 +293,7 @@ function Formulario({
     costoDocena,
     pesoBultoKg: parse(campos.peso),
     medidasCm: campos.medidas.map(parse) as [number, number, number],
+    fotos: campos.fotos,
   };
 
   const subrubrosDeDux = opciones.rubros.flatMap(({ rubro, subrubros }) =>
@@ -314,11 +301,8 @@ function Formulario({
   );
   const errores = erroresDeAlta(input, [], { codigosUsados: opciones.codigosUsados, subrubrosDeDux });
   const avisos = avisosDeAlta(input, opciones.marcas, subActual?.prefijo);
-  if (!fotos.colores)
-    avisos.push({
-      campo: "fotos",
-      mensaje: "Sin la foto de todos los colores, Tienda Nube no publica el bulto (RN-09).",
-    });
+  if (campos.fotos.length === 0)
+    avisos.push({ campo: "fotos", mensaje: "Sin foto, Tienda Nube no publica el bulto (RN-09)." });
 
   const errorDe = (campo: AltaProblema["campo"]) =>
     intentado ? errores.find((item) => item.campo === campo)?.mensaje : undefined;
@@ -344,14 +328,6 @@ function Formulario({
     if (!valor) return;
     if (!campos.colores.includes(valor)) cambiar("colores", [...campos.colores, valor]);
     setOtroColor("");
-  };
-
-  const cargarFoto = (tipo: FotoTipo, file: File | undefined) => {
-    setFotos((actual) => {
-      const previa = actual[tipo];
-      if (previa) URL.revokeObjectURL(previa.url);
-      return { ...actual, [tipo]: file ? { url: URL.createObjectURL(file), nombre: file.name } : undefined };
-    });
   };
 
   const revisar = () => {
@@ -944,72 +920,12 @@ function Formulario({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <div>
-              <CardTitle>Fotos</CardTitle>
-              <CardDescription>
-                Todavía no se suben: es solo una vista previa, y el borrador no las guarda
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-5">
-            <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              {FOTOS.map((foto) => {
-                const cargada = fotos[foto.tipo];
-                return (
-                  <li key={foto.tipo} className="space-y-2">
-                    <label
-                      className={cn(
-                        "relative flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border text-center transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring",
-                        cargada ? "border-border" : "border-dashed border-border-strong bg-canvas/60 hover:bg-muted",
-                      )}
-                    >
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="sr-only"
-                        aria-label={`Foto: ${foto.label}`}
-                        onChange={(event) => cargarFoto(foto.tipo, event.target.files?.[0])}
-                      />
-                      {cargada ? (
-                        // Vista previa local (blob:), no pasa por el optimizador de imágenes.
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={cargada.url}
-                          alt={`Vista previa: ${foto.label}`}
-                          className="absolute inset-0 size-full object-cover"
-                        />
-                      ) : (
-                        <>
-                          <ImagePlus aria-hidden className="size-6 text-muted-foreground" />
-                          <span className="px-2 text-xs text-muted-foreground">Elegí una foto</span>
-                        </>
-                      )}
-                    </label>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium">{foto.label}</p>
-                        <p className="truncate text-xs text-muted-foreground">{cargada ? cargada.nombre : foto.hint}</p>
-                      </div>
-                      {cargada && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-xs"
-                          aria-label={`Quitar la foto ${foto.label}`}
-                          onClick={() => cargarFoto(foto.tipo, undefined)}
-                        >
-                          <X />
-                        </Button>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </CardContent>
-        </Card>
+        <AltaFotos
+          fotos={campos.fotos}
+          mediaUrl={opciones.mediaUrl}
+          puedeEditar={puedeEditar}
+          alCambiar={(cambio) => setCampos((actuales) => ({ ...actuales, fotos: cambio(actuales.fotos) }))}
+        />
       </div>
 
       <aside className="space-y-6 xl:sticky xl:top-20 xl:self-start" aria-label="Resumen del alta">

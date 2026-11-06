@@ -2,7 +2,8 @@
 
 import { z } from "zod";
 import { defineAction } from "@/lib/action";
-import { borrarBorrador, guardarBorrador } from "./alta-consultas";
+import { borrarBorrador, borrarFotosSinUso, guardarBorrador } from "./alta-consultas";
+import { CLAVE_DE_FOTO, FOTOS_POR_PRODUCTO } from "./fotos";
 import {
   confirmarHistoricosPendientes,
   decidirFoto,
@@ -107,6 +108,16 @@ const entradaDeAlta = z.object({
   costoDocena: z.number().min(0),
   pesoBultoKg: z.number().min(0),
   medidasCm: z.tuple([z.number().min(0), z.number().min(0), z.number().min(0)]),
+  fotos: z
+    .array(
+      z.object({
+        clave: z.string().regex(CLAVE_DE_FOTO).max(300),
+        nombre: z.string().max(250),
+        ancho: z.number().int().min(0).nullable(),
+        alto: z.number().int().min(0).nullable(),
+      }),
+    )
+    .max(FOTOS_POR_PRODUCTO),
 });
 
 /** Sin `id`, crea uno. Sin validar: guarda lo que todavía no está completo. */
@@ -126,5 +137,16 @@ export const borrarBorradorDeAlta = defineAction({
   handler: async ({ id }) => {
     await borrarBorrador(id);
     return { borrado: true };
+  },
+});
+
+/** Una foto que se quitó del formulario. Si sigue en un borrador guardado, se borra al guardarlo sin ella. */
+export const descartarFotosSubidas = defineAction({
+  name: "catalogo.descartarFotos",
+  input: z.object({ claves: z.array(z.string().regex(CLAVE_DE_FOTO).max(300)).min(1).max(FOTOS_POR_PRODUCTO) }),
+  permission: "catalogo.editar",
+  handler: async ({ claves }) => {
+    await borrarFotosSinUso(claves);
+    return { descartadas: claves.length };
   },
 });

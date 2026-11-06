@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { getDb } from "@/db/client";
 import type { Prisma } from "@/generated/prisma/client";
+import { mediaUrl } from "@/integrations/blob";
 import { urlDeMiniatura } from "@/integrations/google/client";
 import type {
   CatalogoFacetas,
@@ -44,6 +45,15 @@ const FALTANTE: Record<DatoQueFalta, { dato: string; bloquea: boolean; fuente: "
 };
 
 const enDrive = (driveId: string) => `https://drive.google.com/file/d/${driveId}/view`;
+
+type OrigenDeFoto = { driveId: string | null; storageKey: string | null };
+
+/** Una foto de Drive o subida en la app se muestra igual. Sin store en este ambiente, una subida no tiene dirección. */
+const miniaturaDe = ({ driveId, storageKey }: OrigenDeFoto, ancho?: number): string | null =>
+  storageKey ? mediaUrl(storageKey) : driveId ? urlDeMiniatura(driveId, ancho) : null;
+
+const originalDe = ({ driveId, storageKey }: OrigenDeFoto): string | null =>
+  storageKey ? mediaUrl(storageKey) : driveId ? enDrive(driveId) : null;
 
 export const ATRIBUTOS: Record<string, string> = {
   copa: "Copa",
@@ -232,10 +242,10 @@ export async function listarProductos(
     leerEspejo(pagina.flatMap(({ baseCode, bulkCode }) => (bulkCode ? [baseCode, bulkCode] : [baseCode]))),
     getDb().catalogPhoto.findMany({
       where: { position: 0, productId: { in: pagina.map(({ id }) => id) } },
-      select: { productId: true, driveId: true },
+      select: { productId: true, driveId: true, storageKey: true },
     }),
   ]);
-  const fotoDe = new Map(primeras.map(({ productId, driveId }) => [productId, urlDeMiniatura(driveId)]));
+  const fotoDe = new Map(primeras.map((foto) => [foto.productId, miniaturaDe(foto)]));
 
   return {
     data: pagina.map((fila) => aFila(fila, espejo, fotoDe.get(fila.id) ?? null)),
@@ -260,9 +270,9 @@ export async function parecidosDelAlta(consulta: {
   );
   const primeras = await getDb().catalogPhoto.findMany({
     where: { position: 0, productId: { in: parecidos.map(({ id }) => id) } },
-    select: { productId: true, driveId: true },
+    select: { productId: true, driveId: true, storageKey: true },
   });
-  const fotoDe = new Map(primeras.map(({ productId, driveId }) => [productId, urlDeMiniatura(driveId)]));
+  const fotoDe = new Map(primeras.map((foto) => [foto.productId, miniaturaDe(foto)]));
   return parecidos.map((fila) => ({
     sku: fila.baseCode,
     nombre: fila.name,
@@ -282,7 +292,7 @@ export async function fichaDelProducto(sku: string): Promise<CatalogoFicha | nul
 
   const espejo = await leerEspejo(producto.presentations.map(({ code }) => code));
   const [primera] = producto.photos;
-  const fila = aFila(producto, espejo, primera ? urlDeMiniatura(primera.driveId) : null);
+  const fila = aFila(producto, espejo, primera ? miniaturaDe(primera) : null);
   const atributos = producto.attributes as Record<string, string>;
   const conMedidas = producto.lengthCm && producto.widthCm && producto.heightCm;
 
@@ -318,14 +328,21 @@ export async function fichaDelProducto(sku: string): Promise<CatalogoFicha | nul
         };
       })
       .toSorted((a, b) => (a.prendas ?? 0) - (b.prendas ?? 0)),
-    fotos: producto.photos.map(({ driveId, name, width, height }) => ({
-      id: driveId,
-      nombre: name,
-      miniatura: urlDeMiniatura(driveId, ANCHO_EN_LA_FICHA),
-      enDrive: enDrive(driveId),
-      ancho: width,
-      alto: height,
-    })),
+    fotos: producto.photos.flatMap((foto) => {
+      const miniatura = miniaturaDe(foto, ANCHO_EN_LA_FICHA);
+      const original = originalDe(foto);
+      if (!miniatura || !original) return [];
+      return [
+        {
+          id: foto.driveId ?? foto.storageKey ?? foto.id,
+          nombre: foto.name,
+          miniatura,
+          original,
+          ancho: foto.width,
+          alto: foto.height,
+        },
+      ];
+    }),
   };
 }
 

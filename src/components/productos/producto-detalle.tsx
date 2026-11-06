@@ -80,7 +80,7 @@ function ProductoContent({ producto }: { producto: CatalogoFicha }) {
               {producto.fotos.map((foto) => (
                 <li key={foto.id}>
                   <a
-                    href={foto.enDrive}
+                    href={foto.original}
                     target="_blank"
                     rel="noopener noreferrer"
                     title={foto.nombre}
@@ -92,7 +92,7 @@ function ProductoContent({ producto }: { producto: CatalogoFicha }) {
                       colores={producto.colores}
                       className="rounded-none"
                     />
-                    <span className="sr-only">Abrir {foto.nombre} en Drive (pestaña nueva)</span>
+                    <span className="sr-only">Abrir {foto.nombre} (pestaña nueva)</span>
                   </a>
                 </li>
               ))}

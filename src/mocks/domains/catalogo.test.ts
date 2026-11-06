@@ -31,6 +31,7 @@ const input: CatalogoAltaInput = {
   copa: "",
   atributos: {},
   opcionales: {},
+  fotos: [],
   costoDocena: 58_000,
   pesoBultoKg: 0.7,
   medidasCm: [32, 18, 9],

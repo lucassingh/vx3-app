@@ -1,4 +1,5 @@
 import "server-only";
+import { baseDelStore, borrarDelStore } from "@/integrations/blob";
 import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
 import type { Prisma } from "@/generated/prisma/client";
@@ -205,6 +206,7 @@ export async function opcionesDeAlta(): Promise<CatalogoAltaOpciones> {
           ).filter((opcion) => !NO_ES_UNA_OPCION[clave]?.has(opcion)),
     })),
     codigosUsados: usados,
+    mediaUrl: baseDelStore(),
   };
 }
 
@@ -237,9 +239,12 @@ export async function guardarBorrador(
   const ahora = new Date();
   const data = input as unknown as Prisma.InputJsonObject;
   if (id) {
-    const { count } = await db.catalogDraft.updateMany({ where: { id }, data: { data, updatedAt: ahora } });
-    if (count === 0) throw new NotFoundError("Ese borrador ya no está.");
-    return aBorrador(await db.catalogDraft.findUniqueOrThrow({ where: { id } }));
+    const previo = await db.catalogDraft.findUnique({ where: { id }, select: { data: true } });
+    if (!previo) throw new NotFoundError("Ese borrador ya no está.");
+    const guardado = await db.catalogDraft.update({ where: { id }, data: { data, updatedAt: ahora } });
+    const quedan = new Set(input.fotos.map(({ clave }) => clave));
+    await borrarFotosSinUso(fotosDelBorrador(previo.data).filter((clave) => !quedan.has(clave)));
+    return aBorrador(guardado);
   }
   return aBorrador(
     await db.catalogDraft.create({
@@ -256,6 +261,38 @@ export async function guardarBorrador(
 }
 
 export async function borrarBorrador(id: string): Promise<void> {
-  const { count } = await getDb().catalogDraft.deleteMany({ where: { id } });
-  if (count === 0) throw new NotFoundError("Ese borrador ya no está.");
+  const db = getDb();
+  const previo = await db.catalogDraft.findUnique({ where: { id }, select: { data: true } });
+  if (!previo) throw new NotFoundError("Ese borrador ya no está.");
+  await db.catalogDraft.delete({ where: { id } });
+  await borrarFotosSinUso(fotosDelBorrador(previo.data));
+}
+
+/* ---- Fotos subidas ---------------------------------------------------------- */
+
+const fotosDelBorrador = (data: Prisma.JsonValue): string[] =>
+  ((data as { fotos?: { clave: string }[] } | null)?.fotos ?? []).map(({ clave }) => clave);
+
+/**
+ * Del store se va solo lo que nadie usa: ni un producto, ni un borrador. La lista puede venir del
+ * navegador, así que esto es lo que evita borrar una foto en uso.
+ */
+export async function borrarFotosSinUso(claves: readonly string[]): Promise<void> {
+  if (claves.length === 0) return;
+  const db = getDb();
+  const enProductos = await db.catalogPhoto.findMany({
+    where: { storageKey: { in: [...claves] } },
+    select: { storageKey: true },
+  });
+  const usadas = new Set(enProductos.map(({ storageKey }) => storageKey));
+  const libres: string[] = [];
+  for (const clave of claves) {
+    if (usadas.has(clave)) continue;
+    const enBorrador = await db.catalogDraft.findFirst({
+      where: { data: { path: ["fotos"], array_contains: [{ clave }] } },
+      select: { id: true },
+    });
+    if (!enBorrador) libres.push(clave);
+  }
+  await borrarDelStore(libres);
 }

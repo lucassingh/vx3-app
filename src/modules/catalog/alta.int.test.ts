@@ -1,4 +1,6 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { del } from "@vercel/blob";
+import { getPayloadFromClientToken } from "@vercel/blob/client";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
 import type {
@@ -9,12 +11,16 @@ import type {
 } from "@/lib/api/contracts/catalogo";
 import { dispatchApiRequest } from "@/lib/api/dispatch";
 import { getAuth } from "@/modules/platform/auth/auth";
-import { borrarBorradorDeAlta, guardarBorradorDeAlta } from "./actions";
+import { borrarBorradorDeAlta, descartarFotosSubidas, guardarBorradorDeAlta } from "./actions";
 import { guardarReferencias, opcionesDeAlta } from "./alta-consultas";
 
 // Las acciones leen la sesión de los headers del request: acá, los del usuario de prueba.
 const request = vi.hoisted(() => ({ headers: new Headers() }));
 vi.mock("next/headers", () => ({ headers: async () => request.headers }));
+vi.mock("@vercel/blob", () => ({ del: vi.fn(async () => {}) }));
+
+const MEDIA = "https://abc.public.blob.vercel-storage.com";
+const url = (clave: string) => `${MEDIA}/${clave}`;
 
 const db = getDb();
 const sufijo = Date.now();
@@ -140,6 +146,7 @@ const INPUT = {
   costoDocena: 0,
   pesoBultoKg: 0,
   medidasCm: [0, 0, 0],
+  fotos: [],
 } satisfies CatalogoAltaInput;
 
 const limpiar = async () => {
@@ -154,6 +161,13 @@ const limpiar = async () => {
 beforeEach(async () => {
   await limpiar();
   request.headers = compras;
+  vi.mocked(del).mockClear();
+  vi.stubEnv("MEDIA_URL", MEDIA);
+  vi.stubEnv("BLOB_READ_WRITE_TOKEN", "vercel_blob_rw_abc_secreto");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 afterAll(async () => {
@@ -316,6 +330,167 @@ describe("los borradores", () => {
       error: { code: "FORBIDDEN" },
     });
     expect(await db.catalogDraft.count()).toBe(0);
+  });
+});
+
+describe("las fotos", () => {
+  const foto = (nombre: string) => ({ clave: `catalogo/${nombre}`, nombre, ancho: 800, alto: 800 });
+  const guardada = async (...nombres: string[]) => {
+    const resultado = await guardarBorradorDeAlta({ id: null, input: { ...INPUT, fotos: nombres.map(foto) } });
+    if (!resultado.ok) throw new Error("No se guardó");
+    return resultado.data.id;
+  };
+
+  it("el borrador conserva las fotos y su orden: la primera es la principal", async () => {
+    const id = await guardada("b.jpg", "a.jpg");
+
+    const fila = await db.catalogDraft.findUniqueOrThrow({ where: { id } });
+
+    expect((fila.data as CatalogoAltaInput).fotos.map(({ clave }) => clave)).toEqual([
+      "catalogo/b.jpg",
+      "catalogo/a.jpg",
+    ]);
+  });
+
+  it("una foto fuera de la carpeta del catálogo no entra al borrador", async () => {
+    const fotos = [{ ...foto("x.jpg"), clave: "comprobantes/x.jpg" }];
+
+    expect(await guardarBorradorDeAlta({ id: null, input: { ...INPUT, fotos } })).toMatchObject({
+      ok: false,
+      error: { code: "VALIDATION" },
+    });
+  });
+
+  it("guardar sin una foto la borra del store; reordenar no borra nada", async () => {
+    const id = await guardada("a.jpg", "b.jpg");
+
+    await guardarBorradorDeAlta({ id, input: { ...INPUT, fotos: [foto("b.jpg"), foto("a.jpg")] } });
+    expect(del).not.toHaveBeenCalled();
+
+    await guardarBorradorDeAlta({ id, input: { ...INPUT, fotos: [foto("b.jpg")] } });
+    expect(del).toHaveBeenCalledExactlyOnceWith([url("catalogo/a.jpg")], expect.anything());
+  });
+
+  it("borrar el borrador se lleva sus fotos", async () => {
+    const id = await guardada("a.jpg", "b.jpg");
+
+    await borrarBorradorDeAlta({ id });
+
+    expect(del).toHaveBeenCalledExactlyOnceWith([url("catalogo/a.jpg"), url("catalogo/b.jpg")], expect.anything());
+  });
+
+  it("una foto que todavía usa otro borrador no se borra", async () => {
+    await guardada("compartida.jpg");
+    const id = await guardada("compartida.jpg", "propia.jpg");
+
+    await borrarBorradorDeAlta({ id });
+
+    expect(del).toHaveBeenCalledExactlyOnceWith([url("catalogo/propia.jpg")], expect.anything());
+  });
+
+  it("una foto que ya es de un producto no se borra", async () => {
+    const { id: productId } = await producto("LN1");
+    await db.catalogPhoto.create({
+      data: { id: newId(), productId, storageKey: "catalogo/publicada.jpg", name: "x", position: 0 },
+    });
+    const id = await guardada("publicada.jpg");
+
+    await borrarBorradorDeAlta({ id });
+
+    expect(del).not.toHaveBeenCalled();
+  });
+
+  it("descartar una foto recién subida la borra; si está en un borrador, espera a que se guarde sin ella", async () => {
+    await guardada("guardada.jpg");
+
+    await descartarFotosSubidas({ claves: ["catalogo/guardada.jpg"] });
+    expect(del).not.toHaveBeenCalled();
+
+    await descartarFotosSubidas({ claves: ["catalogo/recien.jpg"] });
+    expect(del).toHaveBeenCalledExactlyOnceWith([url("catalogo/recien.jpg")], expect.anything());
+  });
+
+  it("no se puede pedir que borre algo fuera del catálogo, ni con un rol que solo ve", async () => {
+    expect(await descartarFotosSubidas({ claves: ["comprobantes/x.jpg"] })).toMatchObject({
+      ok: false,
+      error: { code: "VALIDATION" },
+    });
+
+    request.headers = marketing;
+    expect(await descartarFotosSubidas({ claves: ["catalogo/x.jpg"] })).toMatchObject({
+      ok: false,
+      error: { code: "FORBIDDEN" },
+    });
+    expect(del).not.toHaveBeenCalled();
+  });
+
+  it("si el store no responde, el borrador se guarda igual", async () => {
+    vi.mocked(del).mockRejectedValueOnce(new Error("Blob no responde"));
+    const id = await guardada("a.jpg");
+
+    expect(await guardarBorradorDeAlta({ id, input: { ...INPUT, fotos: [] } })).toMatchObject({ ok: true });
+  });
+});
+
+describe("el permiso de subida", () => {
+  const pedir = (rol: string, pathname: string, type = "blob.generate-client-token") =>
+    dispatchApiRequest(
+      new Request("http://app.local/api/v1/catalogo/alta/fotos", {
+        method: "POST",
+        body: JSON.stringify({ type, payload: { pathname, multipart: false, clientPayload: null } }),
+      }),
+      { user: { role: rol as "admin" }, realDomains: ["catalogo"] },
+    );
+
+  it("exige el tipo y el tamaño en el store: no alcanza con saltearse el formulario", async () => {
+    const respuesta = await pedir("compras", "catalogo/top.jpg");
+
+    expect(respuesta.status).toBe(200);
+    const { clientToken } = (await respuesta.json()) as { clientToken: string };
+    expect(getPayloadFromClientToken(clientToken)).toMatchObject({
+      pathname: "catalogo/top.jpg",
+      allowedContentTypes: ["image/jpeg", "image/png", "image/webp"],
+      maximumSizeInBytes: 10 * 1024 * 1024,
+      addRandomSuffix: true,
+    });
+  });
+
+  it("vence a los 10 minutos", async () => {
+    const antes = Date.now();
+
+    const { clientToken } = (await (await pedir("compras", "catalogo/top.jpg")).json()) as { clientToken: string };
+
+    const { validUntil } = getPayloadFromClientToken(clientToken);
+    expect(validUntil).toBeGreaterThanOrEqual(antes + 9 * 60 * 1000);
+    expect(validUntil).toBeLessThanOrEqual(Date.now() + 10 * 60 * 1000);
+  });
+
+  it("no da permiso fuera de la carpeta del catálogo", async () => {
+    expect((await pedir("compras", "comprobantes/x.jpg")).status).toBe(400);
+    expect((await pedir("compras", "catalogo/../x.jpg")).status).toBe(400);
+  });
+
+  it("un rol que solo ve el catálogo no sube", async () => {
+    expect((await pedir("marketing", "catalogo/top.jpg")).status).toBe(403);
+  });
+
+  it("no acepta otro tipo de pedido", async () => {
+    expect((await pedir("compras", "catalogo/top.jpg", "blob.upload-completed")).status).toBe(400);
+  });
+
+  it("sin store en este ambiente lo dice", async () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "");
+
+    const respuesta = await pedir("compras", "catalogo/top.jpg");
+
+    expect(respuesta.status).toBe(503);
+  });
+
+  it("las opciones avisan si hay store", async () => {
+    expect((await opcionesDeAlta()).mediaUrl).toBe(MEDIA);
+
+    vi.stubEnv("MEDIA_URL", "");
+    expect((await opcionesDeAlta()).mediaUrl).toBeNull();
   });
 });
 

@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDb } from "@/db/client";
 import { newId } from "@/db/ids";
 import type { CatalogoFacetas, CatalogoFicha, CatalogoFila } from "@/lib/api/contracts/catalogo";
@@ -127,6 +127,10 @@ const limpiar = async () => {
 };
 
 beforeEach(limpiar);
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 afterAll(async () => {
   await limpiar();
@@ -350,7 +354,7 @@ describe("la ficha", () => {
         {
           id: "uno",
           miniatura: "https://drive.google.com/thumbnail?id=uno&sz=w800",
-          enDrive: "https://drive.google.com/file/d/uno/view",
+          original: "https://drive.google.com/file/d/uno/view",
         },
         { id: "dos" },
       ],
@@ -379,6 +383,76 @@ describe("la ficha", () => {
 
     expect((await ficha("LN1")).status).toBe(404);
     expect((await ficha("NOEXISTE1")).status).toBe(404);
+  });
+});
+
+describe("las fotos subidas en la app", () => {
+  const MEDIA = "https://abc.public.blob.vercel-storage.com";
+  const subida = async (baseCode: string, position: number, storageKey: string) => {
+    const { id } = await db.catalogProduct.findUniqueOrThrow({ where: { baseCode } });
+    await db.catalogPhoto.create({
+      data: { id: newId(), productId: id, storageKey, name: "subida.jpg", position, width: 800, height: 600 },
+    });
+  };
+
+  beforeEach(() => {
+    vi.stubEnv("MEDIA_URL", MEDIA);
+  });
+
+  it("la lista muestra la principal igual, venga de Drive o del store", async () => {
+    await producto("LN1", { fotos: ["en-drive"] });
+    await producto("LN2");
+    await subida("LN2", 0, "catalogo/nueva.jpg");
+
+    const { data } = await listarProductos({});
+
+    expect(data.find(({ sku }) => sku === "LN1")?.foto).toContain("en-drive");
+    expect(data.find(({ sku }) => sku === "LN2")?.foto).toBe(`${MEDIA}/catalogo/nueva.jpg`);
+  });
+
+  it("la ficha las muestra en orden, con su original", async () => {
+    await producto("LN1", { fotos: ["en-drive"] });
+    await subida("LN1", 1, "catalogo/nueva.jpg");
+
+    const {
+      cuerpo: { fotos, foto },
+    } = await pedir<CatalogoFicha>("/catalogo/productos/LN1");
+
+    expect(foto).toContain("en-drive");
+    expect(fotos).toMatchObject([
+      { nombre: "en-drive.jpg", original: "https://drive.google.com/file/d/en-drive/view" },
+      {
+        nombre: "subida.jpg",
+        miniatura: `${MEDIA}/catalogo/nueva.jpg`,
+        original: `${MEDIA}/catalogo/nueva.jpg`,
+        ancho: 800,
+        alto: 600,
+      },
+    ]);
+  });
+
+  it("sin store en este ambiente, una subida no se muestra rota", async () => {
+    vi.stubEnv("MEDIA_URL", "");
+    await producto("LN1");
+    await subida("LN1", 0, "catalogo/nueva.jpg");
+
+    const {
+      cuerpo: { fotos, foto },
+    } = await pedir<CatalogoFicha>("/catalogo/productos/LN1");
+
+    expect(fotos).toEqual([]);
+    expect(foto).toBeNull();
+  });
+
+  it("una foto tiene un solo origen", async () => {
+    await producto("LN1");
+    const { id: productId } = await db.catalogProduct.findUniqueOrThrow({ where: { baseCode: "LN1" } });
+
+    const fila = { id: newId(), productId, name: "x", position: 0 };
+    await expect(db.catalogPhoto.create({ data: fila })).rejects.toThrow();
+    await expect(
+      db.catalogPhoto.create({ data: { ...fila, driveId: "uno", storageKey: "catalogo/dos.jpg" } }),
+    ).rejects.toThrow();
   });
 });
 

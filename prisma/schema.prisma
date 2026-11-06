@@ -477,11 +477,13 @@ model CatalogPhoto {
   id        String         @id @db.Uuid
   productId String         @map("product_id") @db.Uuid
   product   CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
-  driveId   String         @unique @map("drive_id")
-  name      String
-  position  Int
-  width     Int?
-  height    Int?
+  /// De Drive, hasta el pase; subida en la app, en `storageKey`. Una foto tiene una de las dos.
+  driveId    String?        @unique @map("drive_id")
+  storageKey String?        @unique @map("storage_key")
+  name       String
+  position   Int
+  width      Int?
+  height     Int?
 
   @@index([productId])
   @@map("catalog_photos")

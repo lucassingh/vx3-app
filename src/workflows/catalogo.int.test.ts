@@ -354,6 +354,54 @@ describe("cuando algo falla, el catálogo anterior queda entero", () => {
   });
 });
 
+describe("lo subido en la app", () => {
+  const subida = async (baseCode: string) => {
+    const { id } = await producto(baseCode);
+    await db.catalogPhoto.create({
+      data: { id: newId(), productId: id, storageKey: "catalogo/nueva.jpg", name: "nueva.jpg", position: 5 },
+    });
+  };
+  const clave = async (baseCode: string) =>
+    (await producto(baseCode)).photos.flatMap(({ storageKey }) => storageKey ?? []);
+
+  it("sobrevive a una importación que cambia el producto, y las de Drive se renuevan", async () => {
+    await importar();
+    await subida("LN1");
+    conFuentes([{ sku: "LN1", tela: "OTRA" }, { sku: "LN2" }], "LN1.jpg", "LN2.jpg");
+
+    expect(await importar()).toEqual({ status: "ok" });
+
+    const { fabric, photos } = await producto("LN1");
+    expect(fabric).toBe("OTRA");
+    expect(photos.map(({ driveId, storageKey }) => driveId ?? storageKey)).toEqual([
+      "id-LN1.jpg",
+      "catalogo/nueva.jpg",
+    ]);
+  });
+
+  it("sobrevive a una importación donde el producto no cambió", async () => {
+    await importar();
+    await subida("LN1");
+
+    await importar();
+
+    expect(await clave("LN1")).toEqual(["catalogo/nueva.jpg"]);
+  });
+
+  it("un producto que deja de estar suelta sus fotos de Drive, pero conserva la suya", async () => {
+    await importar();
+    await subida("LN1");
+    conFuentes([{ sku: "LN2" }], "LN2.jpg");
+    await db.duxItem.deleteMany({ where: { baseCode: "LN1" } });
+
+    await importar();
+
+    const { present, photos } = await producto("LN1");
+    expect(present).toBe(false);
+    expect(photos.map(({ storageKey }) => storageKey)).toEqual(["catalogo/nueva.jpg"]);
+  });
+});
+
 describe("nunca hay dos a la vez", () => {
   it("el botón la lanza, y un segundo apretón no lanza otra", async () => {
     workflow.start.mockResolvedValue({ runId: "wrun_01" });

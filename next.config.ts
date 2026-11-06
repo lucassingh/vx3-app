@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
     APP_COMMIT: process.env.GITHUB_SHA ?? "local",
     APP_ENV: process.env.APP_ENV ?? "local",
   },
+  // Las fotos subidas en la app. Las de Drive no pasan por el optimizador.
+  images: { remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }] },
   // El indicador de desarrollo de Next tapaba "Cerrar sesión" abajo a la izquierda.
   devIndicators: { position: "bottom-right" },
   turbopack: {

@@ -335,11 +335,15 @@ export async function armarDesdeLasCopias(ahora: Date, hoy = businessTime.today(
   const aEscribir = [...nuevos, ...cambiados];
 
   await db.$transaction(async (tx) => {
+    // Lo que se subió en la app no está en Drive, así que la importación no lo puede volver a traer.
+    const subidasEnLaApp = await tx.catalogPhoto.findMany({
+      where: { productId: { in: cambiados.map(({ fila }) => fila.id) }, storageKey: { not: null } },
+    });
     // Sus presentaciones y fotos se van en cascada, y vuelven con la fila nueva, con el mismo ID.
     await tx.catalogProduct.deleteMany({ where: { id: { in: cambiados.map(({ fila }) => fila.id) } } });
     // Lo que dejó de existir no se borra, pero suelta sus códigos y sus fotos: los puede tomar otro producto.
     await tx.catalogPresentation.deleteMany({ where: { productId: { in: ausentes } } });
-    await tx.catalogPhoto.deleteMany({ where: { productId: { in: ausentes } } });
+    await tx.catalogPhoto.deleteMany({ where: { productId: { in: ausentes }, driveId: { not: null } } });
     await tx.catalogProduct.updateMany({ where: { id: { in: ausentes } }, data: { present: false, changedAt: ahora } });
 
     await tx.catalogProduct.createMany({ data: aEscribir.map(({ fila }) => fila) });
@@ -371,6 +375,7 @@ export async function armarDesdeLasCopias(ahora: Date, hoy = businessTime.today(
         })),
       ),
     });
+    await tx.catalogPhoto.createMany({ data: subidasEnLaApp });
 
     // Se regenera entera: lo corregido en la fuente desaparece solo.
     await tx.catalogReviewCase.deleteMany();
