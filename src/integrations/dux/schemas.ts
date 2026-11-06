@@ -36,6 +36,31 @@ export const duxItemSchema = z.object({
 
 export type DuxItem = z.output<typeof duxItemSchema>;
 
+const paginaDe = <T extends z.ZodType>(fila: T) =>
+  z.object({
+    datos: z.array(fila),
+    paginacion: z.object({ total: z.number(), hay_mas: z.boolean() }).optional(),
+  });
+
+/** Lo que la escritura necesita por ID. De un proveedor y de una persona no entra nada más que el nombre. */
+export const duxRubrosSchema = paginaDe(z.object({ id_rubro: z.number(), rubro: z.string() }));
+export const duxSubRubrosSchema = paginaDe(
+  z.object({ id_rubro: z.number(), id_sub_rubro: z.number(), sub_rubro: z.string() }),
+);
+export const duxProveedoresSchema = paginaDe(
+  z.object({ id_proveedor: z.number(), proveedor: z.string(), habilitado: z.boolean().optional() }),
+);
+export const duxListasSchema = paginaDe(
+  z.object({ id_lista_precio_venta: z.number(), lista_precio_venta: z.string(), habilitado: z.boolean().optional() }),
+);
+export const duxMonedasSchema = paginaDe(z.object({ id_moneda: z.number(), moneda: z.string() }));
+export const duxPersonalesSchema = paginaDe(
+  z.object({ id_personal: z.number(), apellido_razon_social: z.string().nullable(), nombre: z.string().nullable() }),
+);
+export const duxSucursalesSchema = paginaDe(z.object({ id_sucursal: z.number(), sucursal: z.string() }));
+/** `/v2/stock` también trae los inhabilitados: un código usado no se reusa nunca (RN-03). */
+export const duxStockSchema = paginaDe(z.object({ cod_item: z.string(), habilitado: z.boolean().optional() }));
+
 export const duxPaginaItemsSchema = z.object({
   datos: z.array(duxItemSchema),
   paginacion: z.object({ total: z.number(), hay_mas: z.boolean() }),

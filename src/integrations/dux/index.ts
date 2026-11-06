@@ -5,6 +5,7 @@ import { limiteCompartido } from "@/lib/rate-limit";
 import { leerCredencial } from "@/modules/platform/credentials/service";
 import type { ErpGateway } from "@/modules/inventory/erp-gateway";
 import { createDuxClient, LIMITES_DUX } from "./client";
+import { createDuxEscritura } from "./escritura";
 import { aErpComprobante, aErpItem, aPaginaDeClientas } from "./mapeo";
 import { POR_PAGINA_DUX } from "./paginas";
 
@@ -31,6 +32,22 @@ export async function duxClient({ esperasMs, alIntentar }: Opciones = {}) {
         v1: limiteCompartido(LIMITES_DUX.v1.clave, LIMITES_DUX.v1.intervaloMs),
         v2: limiteCompartido(LIMITES_DUX.v2.clave, LIMITES_DUX.v2.intervaloMs),
       },
+    },
+  );
+}
+
+/** Lo único que escribe en DUX. Fuera de producción falla, salvo con el conjunto de datos de prueba. */
+export async function duxEscritura({ alIntentar }: Pick<Opciones, "alIntentar"> = {}) {
+  const env = serverEnv();
+  const token = await leerCredencial("dux");
+  if (!token) throw new ExternalServiceError("DUX", "Todavía no se cargó el token de DUX.");
+  return createDuxEscritura(
+    { baseUrl: env.DUX_API_URL ?? URL_POR_DEFECTO, token },
+    {
+      alIntentar,
+      ambiente: process.env.APP_ENV,
+      prueba: env.DUX_CABECERA_DE_PRUEBA,
+      limite: limiteCompartido(LIMITES_DUX.v2.clave, LIMITES_DUX.v2.intervaloMs),
     },
   );
 }

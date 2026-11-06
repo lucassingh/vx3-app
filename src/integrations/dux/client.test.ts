@@ -48,6 +48,39 @@ beforeEach(() => {
   lineas = [];
 });
 
+describe("las referencias", () => {
+  it("piden cada recurso por la v2, y de un proveedor no guardan más que su nombre", async () => {
+    const { cliente, fetch } = armar([
+      json({
+        datos: [{ id_proveedor: 7, proveedor: "BETHY", habilitado: true, email: "x@y.z", telefono: "1" }],
+        paginacion: { total: 1, hay_mas: false },
+      }),
+    ]);
+
+    const { datos } = await cliente.referencias.proveedores();
+
+    expect(datos).toEqual([{ id_proveedor: 7, proveedor: "BETHY", habilitado: true }]);
+    expect(String((fetch.mock.calls[0] as unknown[])[0])).toContain("/v2/proveedores?offset=0&limit=50");
+  });
+
+  it("los códigos salen del stock del depósito, también los inhabilitados", async () => {
+    const { cliente, fetch } = armar([
+      json({ datos: [{ cod_item: "VIEJO1", habilitado: false, item: "X" }], paginacion: { total: 1, hay_mas: false } }),
+    ]);
+
+    const { datos } = await cliente.listarStock(18516, 50);
+
+    expect(datos).toEqual([{ cod_item: "VIEJO1", habilitado: false }]);
+    expect(String((fetch.mock.calls[0] as unknown[])[0])).toContain("/v2/stock?offset=50&limit=50&id_deposito=18516");
+  });
+
+  it("sin paginación en la respuesta, también sirve", async () => {
+    const { cliente } = armar([json({ datos: [{ id_moneda: 1, moneda: "Peso argentino" }] })]);
+
+    expect((await cliente.referencias.monedas()).datos).toEqual([{ id_moneda: 1, moneda: "Peso argentino" }]);
+  });
+});
+
 describe("listarItems", () => {
   it("lee la v2 con Bearer y su límite", async () => {
     const { cliente, pedido, limites } = armar([json(fixtureItems)]);

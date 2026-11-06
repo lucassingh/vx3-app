@@ -7,8 +7,7 @@ import type { LimiteDeTasa } from "./rate-limit";
 /**
  * Cliente HTTP de las integraciones (`tecnica.md` §7): límite de tasa, reintentos
  * con espera solo en lo reintentable, `Retry-After`, timeout y log de cada
- * problema. Solo lectura por ahora: el primer método que escriba tiene que resolver
- * antes la idempotencia.
+ * problema. Leer se reintenta solo; escribir, no (ver `escribir`).
  *
  * Nunca loguea los headers ni el cuerpo: el token va en los headers, y el cuerpo
  * puede traer datos personales.
@@ -129,6 +128,60 @@ export function createHttpClient({
         // Lo que pide el proveedor vale para todas las instancias, no solo para esta.
         if (pedirEspera) await limite?.postergar(pedirEspera);
         await esperar(hasta);
+      }
+    },
+
+    /**
+     * Sin reintentos: si se corta la red o responde mal, no se sabe si el cambio quedó hecho, y
+     * repetirlo puede duplicarlo. Quien llama mira antes de volver a intentar. Solo se repite un
+     * 429, porque ese pedido no se procesó.
+     */
+    async escribir(metodo: "POST" | "PUT", ruta: string, cuerpo: unknown): Promise<RespuestaHttp> {
+      const registro = log.child({ servicio, ruta, metodo });
+      const sinConfirmar = `${servicio} no confirmó el cambio, y no se sabe si quedó hecho. Revisalo antes de volver a intentar.`;
+
+      for (let intento = 0; ; intento++) {
+        await limite?.turno();
+        alIntentar?.();
+        let res: Response;
+        try {
+          res = await fetchHttp(`${baseUrl}${ruta}`, {
+            method: metodo,
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "User-Agent": userAgent,
+              ...headers,
+            },
+            body: JSON.stringify(cuerpo),
+            signal: AbortSignal.timeout(timeoutMs),
+          });
+        } catch (error) {
+          registro.error({ motivo: error instanceof Error ? error.name : "error de red" }, "escritura sin respuesta");
+          throw new ExternalServiceError(servicio, sinConfirmar);
+        }
+
+        const espera = esperasMs[intento];
+        if (res.status === 429 && espera !== undefined) {
+          const pedirEspera = retryAfterMs(res.headers.get("retry-after"));
+          registro.warn({ status: 429, intento: intento + 1 }, "escritura postergada");
+          if (pedirEspera) await limite?.postergar(pedirEspera);
+          await esperar(Math.max(espera, pedirEspera ?? 0));
+          continue;
+        }
+
+        const respuesta = { status: res.status, cuerpo: leerCuerpo(await res.text()) };
+        const veredicto = clasificar(respuesta);
+        if (veredicto.tipo === "ok") return respuesta;
+        if (veredicto.tipo === "error") {
+          registro.warn({ status: res.status, ...veredicto.contexto }, veredicto.mensaje);
+          throw new ExternalServiceError(servicio, veredicto.mensaje);
+        }
+        registro.error(
+          { status: res.status, motivo: veredicto.motivo, ...veredicto.contexto },
+          "escritura sin confirmar",
+        );
+        throw new ExternalServiceError(servicio, sinConfirmar);
       }
     },
   };
