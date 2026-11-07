@@ -47,8 +47,9 @@ export default defineConfig({
           include: ["src/**/*.int.test.ts"],
           // Comparten la base: uno por vez, y con margen para que arranque el compute de Neon.
           fileParallelism: false,
-          testTimeout: 30_000,
-          hookTimeout: 30_000,
+          // Desde la CI, la base queda lejos: una prueba con muchas consultas pasa los 30 s sin tener nada mal.
+          testTimeout: 60_000,
+          hookTimeout: 60_000,
         },
       },
     ],

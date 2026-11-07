@@ -121,6 +121,9 @@ async function producto(
 }
 
 const limpiar = async () => {
+  // La branch de prueba es una copia de develop, que ya tiene la tienda leída.
+  await db.storeProduct.deleteMany();
+  await db.syncRun.deleteMany({ where: { integration: "tiendanube" } });
   await db.catalogProduct.deleteMany();
   await db.duxInvoice.deleteMany();
   await db.duxItem.deleteMany();

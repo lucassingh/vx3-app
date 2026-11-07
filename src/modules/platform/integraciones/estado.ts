@@ -90,10 +90,11 @@ export function estadoDeLaTienda({
     const horas = Math.floor((ahora.getTime() - (ultima.finishedAt?.getTime() ?? 0)) / HORA_MS);
     return { estado: "degradado", motivo: `La última lectura terminó hace ${horas} horas.` };
   }
+  // Es un dato para corregir, no un problema de la conexión: lo marca el control final.
   if (fueraDeLasSecciones > 0) {
     return {
-      estado: "degradado",
-      motivo: `${fueraDeLasSecciones === 1 ? "Hay 1 producto" : `Hay ${fueraDeLasSecciones} productos`} fuera de las secciones: no ${fueraDeLasSecciones === 1 ? "aparece" : "aparecen"} en el menú de la tienda.`,
+      estado: "ok",
+      motivo: `Lo publicado está al día. ${fueraDeLasSecciones === 1 ? "1 producto quedó" : `${fueraDeLasSecciones} productos quedaron`} fuera de las secciones: lo marca el control final.`,
     };
   }
   return { estado: "ok", motivo: "Lo publicado está al día, y todo cuelga de una sección." };
