@@ -218,14 +218,14 @@ describe("Tienda Nube", () => {
     });
   });
 
-  it("un producto fuera de las secciones se avisa: no aparece en ningún menú", async () => {
+  it("un producto fuera de las secciones se avisa, pero la conexión sigue bien", async () => {
     await conToken();
     await lectura();
     await db.storeProduct.createMany({ data: [producto(1n, null)] });
 
     expect(await tienda()).toMatchObject({
-      estado: "degradado",
-      detalle: "Hay 1 producto fuera de las secciones: no aparece en el menú de la tienda.",
+      estado: "ok",
+      detalle: "Lo publicado está al día. 1 producto quedó fuera de las secciones: lo marca el control final.",
     });
   });
 
